@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <h2 class="text-center mb-4">Criar Conta</h2>
+                    <p class="text-muted text-center mb-4">Preencha os dados abaixo para começar</p>
+                    
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.first_name.label }}</label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="text-danger small">{{ form.first_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.last_name.label }}</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="text-danger small">{{ form.last_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.username.label }}</label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                                <div class="text-danger small">{{ form.username.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.email.label }}</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small">{{ form.email.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <hr>
+                        <p class="text-muted mb-3">Tipo de cadastro:</p>
+                        <div class="mb-3">
+                            {% for value, label in form.role.field.choices %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="role" id="role_{{ value }}" value="{{ value }}" {% if form.role.value == value %}checked{% endif %} onchange="toggleFormFields()">
+                                    <label class="form-check-label" for="role_{{ value }}">
+                                        <strong>{{ label }}</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            {% if value == 'STUDENT' %}
+                                                Busco aulas de direção
+                                            {% else %}
+                                                Sou instrutor e quero anunciar
+                                            {% endif %}
+                                        </small>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                            {% if form.role.errors %}
+                                <div class="text-danger small">{{ form.role.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div id="locationFields">
+                            <hr>
+                            <h6 class="mb-3">Localização</h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.preferred_state.label }} *</label>
+                                {{ form.preferred_state }}
+                                {% if form.preferred_state.errors %}
+                                    <div class="text-danger small">{{ form.preferred_state.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.preferred_city.label }} *</label>
+                                {{ form.preferred_city }}
+                                <small class="form-text text-muted d-block" id="cityHelpStudent">
+                                    Cidade onde você busca instrutores
+                                </small>
+                                <small class="form-text text-muted d-block" id="cityHelpInstructor" style="display: none;">
+                                    Cidade onde você atua como instrutor
+                                </small>
+                                {% if form.preferred_city.errors %}
+                                    <div class="text-danger small">{{ form.preferred_city.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div id="instructorOnlyFields" style="display: none;">
+                            <hr>
+                            <h6 class="mb-3">Informações Profissionais (Opcional)</h6>
+                            <p class="text-muted small">Você poderá completar essas informações depois no seu perfil</p>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">WhatsApp para contato</label>
+                                <input type="tel" name="whatsapp" class="form-control" placeholder="+5511999999999">
+                                <small class="form-text text-muted">Será usado pelos alunos para entrar em contato</small>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Anos de experiência</label>
+                                    <input type="number" name="years_experience" class="form-control" min="0" max="50" value="0">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Possui carro próprio?</label>
+                                    <select name="has_own_car" class="form-select">
+                                        <option value="">Selecione</option>
+                                        <option value="true">Sim</option>
+                                        <option value="false">Não</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        <p class="text-muted mb-3">Crie uma senha segura:</p>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.password1.label }}</label>
+                            {{ form.password1 }}
+                            {% if form.password1.errors %}
+                                <div class="text-danger small">{{ form.password1.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.password2.label }}</label>
+                            {{ form.password2 }}
+                            {% if form.password2.errors %}
+                                <div class="text-danger small">{{ form.password2.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                        {% endif %}
+                        
+                        <button type="submit" class="btn btn-primary btn-lg w-100">Criar Conta</button>
+                    </form>
+                    
+                    <hr class="my-4">
+                    <p class="text-center mb-0">
+                        Já tem uma conta? <a href="{% url 'accounts:login' %}">Entrar</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const stateSelect = document.getElementById('id_preferred_state');
+    const citySelect = document.getElementById('id_preferred_city');
+    const studentRadio = document.getElementById('role_STUDENT');
+    const instructorRadio = document.getElementById('role_INSTRUCTOR');
+    
+    // Toggle form fields based on role
+    function toggleFormFields() {
+        const isInstructor = instructorRadio && instructorRadio.checked;
+        const instructorFields = document.getElementById('instructorOnlyFields');
+        const cityHelpStudent = document.getElementById('cityHelpStudent');
+        const cityHelpInstructor = document.getElementById('cityHelpInstructor');
+        
+        if (instructorFields) {
+            instructorFields.style.display = isInstructor ? 'block' : 'none';
+        }
+        
+        if (cityHelpStudent && cityHelpInstructor) {
+            cityHelpStudent.style.display = isInstructor ? 'none' : 'block';
+            cityHelpInstructor.style.display = isInstructor ? 'block' : 'none';
+        }
+    }
+    
+    // Load cities when state changes
+    if (stateSelect && citySelect) {
+        stateSelect.addEventListener('change', function() {
+            const stateId = this.value;
+            
+            // Clear cities
+            citySelect.innerHTML = '<option value="">Carregando...</option>';
+            citySelect.disabled = true;
+            
+            if (!stateId) {
+                citySelect.innerHTML = '<option value="">Selecione primeiro o estado</option>';
+                return;
+            }
+            
+            // Get state code from selected option
+            const selectedOption = this.options[this.selectedIndex];
+            const stateCode = selectedOption.text.split(' - ')[0];
+            
+            // Fetch cities via API
+            fetch(`/instrutores/api/cidades/${stateCode}/`)
+                .then(response => response.json())
+                .then(data => {
+                    citySelect.innerHTML = '<option value="">Selecione sua cidade</option>';
+                    
+                    data.cities.forEach(city => {
+                        const option = document.createElement('option');
+                        option.value = city.id;
+                        option.textContent = city.name;
+                        citySelect.appendChild(option);
+                    });
+                    
+                    citySelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar cidades:', error);
+                    citySelect.innerHTML = '<option value="">Erro ao carregar cidades</option>';
+                });
+        });
+    }
+    
+    // Initialize form state
+    toggleFormFields();
+    
+    // Add event listeners to role radios
+    if (studentRadio) studentRadio.addEventListener('change', toggleFormFields);
+    if (instructorRadio) instructorRadio.addEventListener('change', toggleFormFields);
+});
+</script>
+{% endblock %}

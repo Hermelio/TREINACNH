@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Filters Sidebar -->
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-funnel-fill me-2"></i>Filtros</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get">
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-primary w-100">Aplicar Filtros</button>
+                        <a href="{% url 'marketplace:city_list' state_code=city.state.code city_slug=city.slug %}" class="btn btn-outline-secondary w-100 mt-2">Limpar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Instructors List -->
+        <div class="col-md-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="mb-0">Instrutores em {{ city.name }}/{{ city.state.code }}</h1>
+                    <p class="text-muted mb-0">{{ total_instructors }} instrutor(es) encontrado(s)</p>
+                </div>
+            </div>
+            
+            {% if page_obj %}
+                <div class="row">
+                    {% for instructor in page_obj %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card instructor-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex mb-3">
+                                        {% if instructor.user.profile.avatar %}
+                                            <img src="{{ instructor.user.profile.avatar.url }}" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                                        {% else %}
+                                            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
+                                                <i class="bi bi-person-fill fs-4"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div class="flex-grow-1">
+                                            <h5 class="mb-1">{{ instructor.user.get_full_name }}</h5>
+                                            <p class="text-muted small mb-2">
+                                                <i class="bi bi-briefcase-fill me-1"></i>{{ instructor.years_experience }} anos de experiência
+                                            </p>
+                                            <div>
+                                                {% for badge in instructor.badges %}
+                                                    <span class="badge bg-{{ badge.class }} me-1">{{ badge.name }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <p class="card-text small">{{ instructor.bio|truncatewords:20|default:"Sem descrição" }}</p>
+                                    
+                                    <div class="d-flex gap-2">
+                                        <a href="{% url 'marketplace:instructor_detail' pk=instructor.pk %}" class="btn btn-primary btn-sm flex-grow-1">
+                                            <i class="bi bi-eye-fill me-1"></i>Ver Perfil
+                                        </a>
+                                        {% if instructor.user.profile.whatsapp_number %}
+                                            <a href="{{ instructor.get_whatsapp_link }}" target="_blank" class="btn btn-whatsapp btn-sm">
+                                                <i class="bi bi-whatsapp me-1"></i>WhatsApp
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                    <nav>
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+                            {% endif %}
+                            
+                            <li class="page-item active"><a class="page-link" href="#">{{ page_obj.number }}</a></li>
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a></li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>Nenhum instrutor encontrado com estes filtros.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

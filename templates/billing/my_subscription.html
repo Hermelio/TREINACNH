@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4"><i class="bi bi-credit-card me-2"></i>Minha Assinatura</h1>
+    
+    <div class="row">
+        <div class="col-md-8">
+            {% if subscriptions %}
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Assinatura Ativa</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for sub in subscriptions %}
+                            <h4>{{ sub.plan.name }}</h4>
+                            <p class="text-muted">R$ {{ sub.plan.price_monthly }}/mês</p>
+                            <p>
+                                <strong>Período:</strong> {{ sub.start_date|date:"d/m/Y" }} até {{ sub.end_date|date:"d/m/Y"|default:"Indeterminado" }}
+                            </p>
+                            {% if sub.notes %}
+                                <p class="small text-muted">{{ sub.notes }}</p>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>Você não possui assinatura ativa no momento.
+                    <a href="{% url 'billing:plans' %}" class="alert-link">Ver planos disponíveis</a>
+                </div>
+            {% endif %}
+            
+            {% if highlights %}
+                <div class="card">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0">Destaques Ativos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Cidade</th>
+                                        <th>Peso</th>
+                                        <th>Período</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for highlight in highlights %}
+                                        <tr>
+                                            <td>{{ highlight.city }}</td>
+                                            <td>
+                                                <span class="badge bg-warning">{{ highlight.weight }}</span>
+                                            </td>
+                                            <td>{{ highlight.start_date|date:"d/m/Y" }} - {{ highlight.end_date|date:"d/m/Y" }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Precisa de ajuda?</h5>
+                    <p class="card-text small">Para contratar ou alterar planos, entre em contato com nossa equipe.</p>
+                    <a href="{% url 'core:contact' %}" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-envelope-fill me-2"></i>Falar Conosco
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">Quer mais visibilidade?</h6>
+                    <p class="card-text small">Conheça nossos planos e destaques.</p>
+                    <a href="{% url 'billing:plans' %}" class="btn btn-outline-primary btn-sm w-100">
+                        Ver Planos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

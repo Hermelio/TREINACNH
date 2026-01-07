@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notícias - DETRAN e Trânsito{% endblock %}
+
+{% block content %}
+<!-- Hero Notícias -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-bold mb-3">Notícias DETRAN</h1>
+                <p class="lead text-muted">Fique por dentro das últimas novidades sobre legislação de trânsito, habilitação e segurança.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Filtros de Categoria -->
+<section class="py-4 bg-white border-bottom">
+    <div class="container">
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'core:news_list' %}" class="btn {% if not selected_category %}btn-dark{% else %}btn-outline-dark{% endif %} btn-sm">
+                Todas
+            </a>
+            {% for cat_value, cat_label in categories %}
+                <a href="?category={{ cat_value }}" class="btn {% if selected_category == cat_value %}btn-dark{% else %}btn-outline-dark{% endif %} btn-sm">
+                    {{ cat_label }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Notícias em Destaque -->
+{% if featured_news %}
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="h3 fw-bold mb-4">Em Destaque</h2>
+        <div class="row g-4">
+            {% for news in featured_news %}
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm news-card">
+                    {% if news.image_url %}
+                        <img src="{{ news.image_url }}" class="card-img-top" alt="{{ news.title }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                        <div class="card-img-top bg-gradient" style="height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-newspaper" style="font-size: 4rem; color: white;"></i>
+                        </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <span class="badge bg-primary mb-2">{{ news.get_category_display }}</span>
+                        <h5 class="card-title">{{ news.title }}</h5>
+                        <p class="card-text text-muted small">{{ news.summary|truncatewords:20 }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="bi bi-calendar3 me-1"></i>
+                                {{ news.published_date|date:"d/m/Y" }}
+                            </small>
+                            <a href="{{ news.source_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                Ler mais <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-0">
+                        <small class="text-muted">
+                            <i class="bi bi-newspaper me-1"></i>{{ news.source }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Todas as Notícias -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="h3 fw-bold mb-4">Todas as Notícias</h2>
+        <div class="row g-4">
+            {% for news in all_news %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm news-card">
+                    {% if news.image_url %}
+                        <img src="{{ news.image_url }}" class="card-img-top" alt="{{ news.title }}" style="height: 180px; object-fit: cover;">
+                    {% else %}
+                        <div class="card-img-top bg-secondary" style="height: 180px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-newspaper" style="font-size: 3rem; color: white;"></i>
+                        </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <span class="badge bg-secondary mb-2">{{ news.get_category_display }}</span>
+                        <h6 class="card-title">{{ news.title|truncatewords:12 }}</h6>
+                        <p class="card-text text-muted small">{{ news.summary|truncatewords:15 }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">{{ news.published_date|date:"d/m/Y" }}</small>
+                            <a href="{{ news.source_url }}" target="_blank" class="btn btn-sm btn-outline-dark">
+                                Ler <i class="bi bi-arrow-up-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-0">
+                        <small class="text-muted">
+                            <i class="bi bi-newspaper me-1"></i>{{ news.source }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Nenhuma notícia encontrada para esta categoria.
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<style>
+    .news-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .news-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15) !important;
+    }
+</style>
+{% endblock %}

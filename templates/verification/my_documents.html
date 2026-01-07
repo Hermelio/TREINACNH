@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4"><i class="bi bi-file-earmark-check me-2"></i>Meus Documentos</h1>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Documentos Enviados</h5>
+                </div>
+                <div class="card-body">
+                    {% if documents %}
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th>Status</th>
+                                        <th>Enviado em</th>
+                                        <th>Observações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for doc in documents %}
+                                        <tr>
+                                            <td>{{ doc.get_doc_type_display }}</td>
+                                            <td>
+                                                {% if doc.status == 'PENDING' %}
+                                                    <span class="badge bg-warning">Pendente</span>
+                                                {% elif doc.status == 'APPROVED' %}
+                                                    <span class="badge bg-success">Aprovado</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Rejeitado</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ doc.uploaded_at|date:"d/m/Y H:i" }}</td>
+                                            <td>{{ doc.notes|default:"-" }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">Nenhum documento enviado ainda.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Enviar Novo Documento</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'verification:document_upload' %}" class="btn btn-primary">
+                        <i class="bi bi-cloud-upload-fill me-2"></i>Enviar Documento
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Documentos Necessários</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>CNH
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>Certificado de Instrutor
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-circle text-muted me-2"></i>Documento do Veículo (opcional)
+                        </li>
+                    </ul>
+                    <hr>
+                    <p class="small text-muted mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Todos os documentos são analisados pela nossa equipe em até 48h.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

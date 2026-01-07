@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4"><i class="bi bi-credit-card me-2"></i>Planos para Instrutores</h1>
+    
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Cadastro básico é gratuito!</strong> Escolha um plano para ter benefícios extras.
+    </div>
+    
+    {% if plans %}
+        <div class="row">
+            {% for plan in plans %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 {% if forloop.counter == 2 %}border-primary{% endif %}">
+                        {% if forloop.counter == 2 %}
+                            <div class="card-header bg-primary text-white text-center">
+                                <strong>MAIS POPULAR</strong>
+                            </div>
+                        {% endif %}
+                        <div class="card-body text-center">
+                            <h3 class="card-title">{{ plan.name }}</h3>
+                            <div class="display-4 text-primary my-3">
+                                R$ {{ plan.price_monthly }}
+                                <small class="fs-6 text-muted">/mês</small>
+                            </div>
+                            <p class="text-muted">{{ plan.description }}</p>
+                            <hr>
+                            <ul class="list-unstyled text-start">
+                                {% for feature in plan.features.splitlines %}
+                                    <li class="mb-2">
+                                        <i class="bi bi-check-circle-fill text-success me-2"></i>{{ feature }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            {% if user.is_authenticated and user.profile.is_instructor %}
+                                <a href="{% url 'billing:my_subscription' %}" class="btn btn-{% if forloop.counter == 2 %}primary{% else %}outline-primary{% endif %} w-100">
+                                    Solicitar Plano
+                                </a>
+                            {% else %}
+                                <a href="{% url 'accounts:register' %}" class="btn btn-outline-primary w-100">
+                                    Cadastre-se
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-warning">
+            Nenhum plano disponível no momento.
+        </div>
+    {% endif %}
+    
+    <div class="card mt-5">
+        <div class="card-body text-center">
+            <h4>Dúvidas sobre os planos?</h4>
+            <p class="text-muted">Entre em contato conosco para mais informações.</p>
+            <a href="{% url 'core:contact' %}" class="btn btn-primary">
+                <i class="bi bi-envelope-fill me-2"></i>Falar Conosco
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

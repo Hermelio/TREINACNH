@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">
+        <i class="bi bi-{% if is_instructor %}envelope-open-fill{% else %}list-check{% endif %} me-2"></i>
+        {{ page_title }}
+    </h1>
+    
+    {% if is_instructor %}
+        <!-- Instructor view - leads received -->
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link {% if not request.GET.status %}active{% endif %}" href="{% url 'marketplace:my_leads' %}">Todos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.GET.status == 'NEW' %}active{% endif %}" href="?status=NEW">Novos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.GET.status == 'CONTACTED' %}active{% endif %}" href="?status=CONTACTED">Contatados</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.GET.status == 'CLOSED' %}active{% endif %}" href="?status=CLOSED">Fechados</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                {% if leads %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Telefone</th>
+                                    <th>Horário Preferido</th>
+                                    <th>Status</th>
+                                    <th>Data</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for lead in leads %}
+                                    <tr>
+                                        <td>{{ lead.contact_name }}</td>
+                                        <td>
+                                            <a href="https://wa.me/{{ lead.contact_phone|cut:' '|cut:'-'|cut:'(' |cut:')' }}" target="_blank" class="btn btn-sm btn-whatsapp">
+                                                <i class="bi bi-whatsapp me-1"></i>{{ lead.contact_phone }}
+                                            </a>
+                                        </td>
+                                        <td>{{ lead.preferred_schedule|default:"-" }}</td>
+                                        <td>
+                                            <span class="badge bg-{% if lead.status == 'NEW' %}primary{% elif lead.status == 'CONTACTED' %}warning{% else %}secondary{% endif %}">
+                                                {{ lead.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ lead.created_at|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            <form method="post" action="{% url 'marketplace:lead_update_status' lead_pk=lead.pk %}" class="d-inline">
+                                                {% csrf_token %}
+                                                <select name="status" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()">
+                                                    <option value="NEW" {% if lead.status == 'NEW' %}selected{% endif %}>Novo</option>
+                                                    <option value="CONTACTED" {% if lead.status == 'CONTACTED' %}selected{% endif %}>Contatado</option>
+                                                    <option value="CLOSED" {% if lead.status == 'CLOSED' %}selected{% endif %}>Fechado</option>
+                                                    <option value="SPAM" {% if lead.status == 'SPAM' %}selected{% endif %}>Spam</option>
+                                                </select>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox display-1 text-muted"></i>
+                        <p class="text-muted mt-3">Nenhum lead encontrado.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <!-- Student view - leads sent -->
+        {% if leads %}
+            <div class="row">
+                {% for lead in leads %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ lead.instructor.user.get_full_name }}</h5>
+                                <p class="text-muted small mb-2">
+                                    <i class="bi bi-geo-alt-fill me-1"></i>{{ lead.city }}
+                                </p>
+                                <p class="card-text">
+                                    <strong>Status:</strong> 
+                                    <span class="badge bg-info">{{ lead.get_status_display }}</span>
+                                </p>
+                                <p class="card-text small">
+                                    <strong>Enviado em:</strong> {{ lead.created_at|date:"d/m/Y H:i" }}
+                                </p>
+                                <a href="{% url 'marketplace:instructor_detail' pk=lead.instructor.pk %}" class="btn btn-sm btn-outline-primary">
+                                    Ver Instrutor
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>Você ainda não enviou nenhuma solicitação.
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

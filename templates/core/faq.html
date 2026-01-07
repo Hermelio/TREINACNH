@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4"><i class="bi bi-question-circle-fill me-2"></i>Perguntas Frequentes</h1>
+    
+    {% if grouped_faqs %}
+        <div class="accordion" id="faqAccordion">
+            {% for category, items in grouped_faqs.items %}
+                <div class="mb-4">
+                    <h3 class="mb-3">
+                        {% if category == 'STUDENT' %}
+                            <i class="bi bi-person-fill me-2"></i>Para Alunos
+                        {% elif category == 'INSTRUCTOR' %}
+                            <i class="bi bi-briefcase-fill me-2"></i>Para Instrutores
+                        {% else %}
+                            <i class="bi bi-info-circle-fill me-2"></i>Geral
+                        {% endif %}
+                    </h3>
+                    
+                    {% for faq in items %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ faq.id }}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ faq.id }}">
+                                    {{ faq.question }}
+                                </button>
+                            </h2>
+                            <div id="collapse{{ faq.id }}" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    {{ faq.answer|linebreaks }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>Nenhuma pergunta frequente cadastrada ainda.
+        </div>
+    {% endif %}
+    
+    <div class="card mt-5">
+        <div class="card-body text-center">
+            <h5 class="card-title">Não encontrou o que procurava?</h5>
+            <p class="card-text">Entre em contato conosco que teremos prazer em ajudar!</p>
+            <a href="{% url 'core:contact' %}" class="btn btn-primary">
+                <i class="bi bi-envelope-fill me-2"></i>Falar Conosco
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

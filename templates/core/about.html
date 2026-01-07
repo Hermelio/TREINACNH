@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-8">
+            <h1 class="mb-4"><i class="bi bi-info-circle-fill me-2"></i>Sobre o TREINACNH</h1>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3>Nossa Missão</h3>
+                    <p class="lead">Conectar alunos e instrutores de direção de forma segura, transparente e eficiente em todo o Brasil.</p>
+                    
+                    <hr class="my-4">
+                    
+                    <h4>Por que o TREINACNH?</h4>
+                    <ul>
+                        <li><strong>Verificação rigorosa:</strong> Todos os instrutores passam por análise de documentos</li>
+                        <li><strong>Transparência:</strong> Avaliações reais de alunos que já fizeram aulas</li>
+                        <li><strong>Contato direto:</strong> Fale direto com o instrutor sem intermediários</li>
+                        <li><strong>Sem taxas:</strong> Não cobramos comissão sobre as aulas</li>
+                    </ul>
+                    
+                    <hr class="my-4">
+                    
+                    <h4>Como Funciona?</h4>
+                    
+                    <div class="row text-center mt-4">
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3">
+                                <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-2" style="width: 60px; height: 60px;">
+                                    <span class="fs-3 fw-bold">1</span>
+                                </div>
+                                <p class="small"><strong>Busque</strong><br>por cidade/UF</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3">
+                                <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-2" style="width: 60px; height: 60px;">
+                                    <span class="fs-3 fw-bold">2</span>
+                                </div>
+                                <p class="small"><strong>Compare</strong><br>perfis e avaliações</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3">
+                                <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-2" style="width: 60px; height: 60px;">
+                                    <span class="fs-3 fw-bold">3</span>
+                                </div>
+                                <p class="small"><strong>Contate</strong><br>via WhatsApp</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3">
+                                <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-2" style="width: 60px; height: 60px;">
+                                    <span class="fs-3 fw-bold">4</span>
+                                </div>
+                                <p class="small"><strong>Agende</strong><br>suas aulas</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <h4>Entre em Contato</h4>
+                    <p>Tem dúvidas ou sugestões? Estamos aqui para ajudar!</p>
+                    <a href="{% url 'core:contact' %}" class="btn btn-primary">
+                        <i class="bi bi-envelope-fill me-2"></i>Falar Conosco
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body text-center">
+                    <i class="bi bi-people-fill display-3 text-primary"></i>
+                    <h4 class="mt-3">Para Alunos</h4>
+                    <p class="text-muted">Encontre o instrutor ideal na sua cidade</p>
+                    <a href="{% url 'marketplace:cities_list' %}" class="btn btn-outline-primary">Buscar Instrutores</a>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="bi bi-briefcase-fill display-3 text-success"></i>
+                    <h4 class="mt-3">Para Instrutores</h4>
+                    <p class="text-muted">Cadastre-se e receba contatos de alunos</p>
+                    <a href="{% url 'accounts:register' %}" class="btn btn-outline-success">Cadastrar-se</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

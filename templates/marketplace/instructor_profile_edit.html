@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Completude do Perfil</h6>
+                    <div class="progress mb-2">
+                        <div class="progress-bar" style="width: {{ completion_score }}%">{{ completion_score }}%</div>
+                    </div>
+                    <small class="text-muted">
+                        {% if completion_score >= 80 %}
+                            <i class="bi bi-check-circle-fill text-success me-1"></i>Perfil completo!
+                        {% elif completion_score >= 50 %}
+                            <i class="bi bi-exclamation-circle-fill text-warning me-1"></i>Quase lá!
+                        {% else %}
+                            <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>Complete seu perfil
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+            
+            {% if instructor_profile %}
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h6 class="card-title">Status</h6>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" {% if instructor_profile.is_visible %}checked{% endif %} disabled>
+                            <label class="form-check-label">Visível no marketplace</label>
+                        </div>
+                        <div class="mt-2">
+                            {% if instructor_profile.is_verified %}
+                                <span class="badge bg-success"><i class="bi bi-patch-check-fill me-1"></i>Verificado</span>
+                            {% else %}
+                                <span class="badge bg-warning"><i class="bi bi-hourglass-split me-1"></i>Aguardando Verificação</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-9">
+            <h1 class="mb-4"><i class="bi bi-pencil-square me-2"></i>Editar Perfil Profissional</h1>
+            
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Informações Básicas</h5>
+                        
+                        {% for field in form %}
+                            {% if field.name in 'city,bio,gender,age,years_experience' %}
+                                <div class="mb-3">
+                                    <label class="form-label">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted d-block">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% if field.errors %}
+                                        <div class="text-danger small">{{ field.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Localização</h5>
+                        
+                        {% for field in form %}
+                            {% if field.name in 'address_street,address_neighborhood,address_zip,latitude,longitude' %}
+                                <div class="mb-3">
+                                    <label class="form-label">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted d-block">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% if field.errors %}
+                                        <div class="text-danger small">{{ field.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Veículo e Categorias</h5>
+                        
+                        {% for field in form %}
+                            {% if field.name in 'has_own_car,car_model,categories' %}
+                                <div class="mb-3">
+                                    <label class="form-label">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted d-block">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% if field.errors %}
+                                        <div class="text-danger small">{{ field.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Disponibilidade e Valores</h5>
+                        
+                        {% for field in form %}
+                            {% if field.name in 'available_morning,available_afternoon,available_evening,base_price_per_hour,price_notes' %}
+                                <div class="mb-3">
+                                    <label class="form-label">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted d-block">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% if field.errors %}
+                                        <div class="text-danger small">{{ field.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                {% endif %}
+                
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i>Salvar Alterações
+                    </button>
+                    <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

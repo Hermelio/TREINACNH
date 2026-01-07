@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">
+        {% if user.profile.is_instructor %}
+            <i class="bi bi-speedometer2 me-2"></i>Painel do Instrutor
+        {% else %}
+            <i class="bi bi-speedometer2 me-2"></i>Meu Painel
+        {% endif %}
+    </h1>
+    
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    {% if user.profile.avatar %}
+                        <img src="{{ user.profile.avatar.url }}" alt="{{ user.get_full_name }}" class="rounded-circle mb-3" style="width: 100px; height: 100px; object-fit: cover;">
+                    {% else %}
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 100px; height: 100px;">
+                            <i class="bi bi-person-fill fs-1"></i>
+                        </div>
+                    {% endif %}
+                    <h5>{{ user.get_full_name }}</h5>
+                    <p class="text-muted mb-0">{{ user.profile.get_role_display }}</p>
+                </div>
+            </div>
+            
+            <div class="list-group mt-3">
+                <a href="{% url 'accounts:profile_edit' %}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-person-fill me-2"></i>Editar Perfil
+                </a>
+                {% if user.profile.is_instructor %}
+                    <a href="{% url 'marketplace:instructor_profile_edit' %}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-pencil-square me-2"></i>Perfil Profissional
+                    </a>
+                    <a href="{% url 'marketplace:my_leads' %}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-envelope-fill me-2"></i>Meus Leads
+                    </a>
+                    <a href="{% url 'verification:my_documents' %}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-file-earmark-check me-2"></i>Documentos
+                    </a>
+                    <a href="{% url 'billing:my_subscription' %}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-credit-card me-2"></i>Assinatura
+                    </a>
+                {% else %}
+                    <a href="{% url 'marketplace:my_leads' %}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-list-check me-2"></i>Minhas Solicitações
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            {% if user.profile.is_instructor %}
+                <!-- Instructor Dashboard -->
+                {% if needs_instructor_profile %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>Complete seu perfil!</strong> Para aparecer nas buscas, você precisa completar seu perfil profissional.
+                        <a href="{% url 'marketplace:instructor_profile_edit' %}" class="alert-link">Completar agora</a>
+                    </div>
+                {% else %}
+                    <!-- Profile Completeness -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Status do Perfil</h5>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Completude: <strong>{{ instructor_profile.profile_completion_score }}%</strong></span>
+                                <span class="badge bg-{% if instructor_profile.is_verified %}success{% else %}warning{% endif %}">
+                                    {% if instructor_profile.is_verified %}Verificado{% else %}Pendente Verificação{% endif %}
+                                </span>
+                            </div>
+                            <div class="progress mb-3">
+                                <div class="progress-bar" style="width: {{ instructor_profile.profile_completion_score }}%"></div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'marketplace:instructor_profile_edit' %}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-pencil-square me-1"></i>Editar Perfil
+                                </a>
+                                <a href="{% url 'marketplace:instructor_detail' pk=instructor_profile.pk %}" class="btn btn-outline-primary btn-sm" target="_blank">
+                                    <i class="bi bi-eye-fill me-1"></i>Ver como Público
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Leads -->
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Leads Recentes</h5>
+                            <a href="{% url 'marketplace:my_leads' %}" class="btn btn-sm btn-outline-primary">Ver todos</a>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_leads %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Nome</th>
+                                                <th>Telefone</th>
+                                                <th>Status</th>
+                                                <th>Data</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for lead in recent_leads %}
+                                                <tr>
+                                                    <td>{{ lead.contact_name }}</td>
+                                                    <td>{{ lead.contact_phone }}</td>
+                                                    <td><span class="badge bg-{{ lead.status|lower }}">{{ lead.get_status_display }}</span></td>
+                                                    <td>{{ lead.created_at|date:"d/m/Y" }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="text-muted mb-0">Nenhum lead recebido ainda.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <!-- Student Dashboard -->
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Bem-vindo, {{ user.first_name }}!</h5>
+                        <p class="card-text">Encontre instrutores de direção verificados na sua cidade.</p>
+                        <a href="{% url 'marketplace:cities_list' %}" class="btn btn-primary">
+                            <i class="bi bi-search me-2"></i>Buscar Instrutores
+                        </a>
+                    </div>
+                </div>
+                
+                {% if my_leads %}
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Minhas Solicitações</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Instrutor</th>
+                                            <th>Cidade</th>
+                                            <th>Status</th>
+                                            <th>Data</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for lead in my_leads %}
+                                            <tr>
+                                                <td>{{ lead.instructor.user.get_full_name }}</td>
+                                                <td>{{ lead.city }}</td>
+                                                <td><span class="badge bg-info">{{ lead.get_status_display }}</span></td>
+                                                <td>{{ lead.created_at|date:"d/m/Y" }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

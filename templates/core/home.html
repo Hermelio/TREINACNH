@@ -1,0 +1,695 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #homeMap {
+        height: 500px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .state-info-tooltip {
+        background: white;
+        padding: 10px;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        border: 2px solid #0d6efd;
+    }
+    
+    .state-info-tooltip h6 {
+        margin: 0 0 5px 0;
+        color: #0d6efd;
+        font-weight: bold;
+    }
+    
+    .state-info-tooltip p {
+        margin: 0;
+        font-size: 13px;
+    }
+    
+    .instructor-card {
+        transition: all 0.3s ease;
+    }
+    
+    .instructor-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    /* Uber Style Hero */
+    .hero-uber {
+        background: #ffffff;
+        padding: 80px 0;
+    }
+    
+    .min-vh-75 {
+        min-height: 75vh;
+    }
+    
+    .search-uber-style {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    
+    .search-input-wrapper {
+        position: relative;
+        background: #f3f4f6;
+        border-radius: 8px;
+        padding: 16px 16px 16px 48px;
+        transition: all 0.3s ease;
+    }
+    
+    .search-input-wrapper:hover {
+        background: #e5e7eb;
+    }
+    
+    .search-input-wrapper i {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.25rem;
+    }
+    
+    .search-input-wrapper select {
+        background: transparent !important;
+        padding-left: 0;
+    }
+    
+    /* Suggestion Cards */
+    .suggestion-card {
+        background: white;
+        border-radius: 16px;
+        padding: 32px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid #e5e7eb;
+        height: 100%;
+    }
+    
+    .suggestion-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+        border-color: transparent;
+    }
+    
+    .suggestion-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+        margin-bottom: 20px;
+    }
+    
+    .suggestion-icon.bg-success {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+    
+    .suggestion-icon.bg-info {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    
+    /* Large Image Sections */
+    .large-image-wrapper {
+        text-align: center;
+        padding: 40px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 24px;
+    }
+    
+    .hero-image-wrapper {
+        text-align: center;
+        padding: 40px;
+    }
+    
+    /* Bootstrap Carousel Customization */
+    #instructorsCarousel .carousel-item {
+        transition: transform 0.6s ease-in-out;
+    }
+    
+    .instructor-carousel-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .instructor-carousel-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    
+    .instructor-carousel-img {
+        width: 100%;
+        height: 280px;
+        object-fit: cover;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .instructor-carousel-img.no-photo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 80px;
+    }
+    
+    .instructor-badge-verified {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: #198754;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        box-shadow: 0 2px 8px rgba(25, 135, 84, 0.3);
+    }
+    
+    .carousel-control-prev,
+    .carousel-control-next {
+        width: 50px;
+        height: 50px;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0.8;
+    }
+    
+    .carousel-control-prev:hover,
+    .carousel-control-next:hover {
+        background: rgba(0, 0, 0, 0.8);
+        opacity: 1;
+    }
+    
+    .carousel-indicators [data-bs-target] {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section - Estilo Uber -->
+<section class="hero-uber">
+    <div class="container">
+        <div class="row align-items-center min-vh-75">
+            <div class="col-lg-6">
+                <h1 class="display-3 fw-bold mb-4 text-dark">Encontre seu instrutor de direção</h1>
+                <p class="lead text-muted mb-5">Conecte-se com instrutores verificados na sua região. Agende suas aulas com segurança.</p>
+                
+                <!-- Search Form - Estilo Uber -->
+                <div class="search-uber-style">
+                    <form method="get" action="{% url 'marketplace:cities_list' %}">
+                        <div class="mb-3">
+                            <div class="search-input-wrapper">
+                                <i class="bi bi-geo-alt-fill text-primary"></i>
+                                <select name="state" class="form-select form-select-lg border-0" required>
+                                    <option value="">Selecione seu estado</option>
+                                    {% for state in states %}
+                                        <option value="{{ state.code }}">{{ state.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-dark btn-lg w-100 py-3">
+                            Buscar instrutores
+                        </button>
+                    </form>
+                    <p class="text-muted small mt-3 mb-0">
+                        <i class="bi bi-check-circle-fill text-success me-1"></i>
+                        Mais de <strong>{{ total_cities }}</strong> cidades atendidas
+                    </p>
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-block">
+                <div class="hero-image-wrapper">
+                    <i class="bi bi-car-front-fill" style="font-size: 20rem; color: #e8f4f8;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Cards de Sugestões - Estilo Uber -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <h2 class="h3 mb-4 fw-bold">Sugestões</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="suggestion-card">
+                    <div class="suggestion-icon">
+                        <i class="bi bi-patch-check-fill"></i>
+                    </div>
+                    <h3 class="h5 fw-bold mb-2">Instrutores Verificados</h3>
+                    <p class="text-muted mb-3">Encontre profissionais certificados e com experiência comprovada.</p>
+                    <a href="{% url 'marketplace:cities_list' %}" class="text-decoration-none fw-semibold">
+                        Ver instrutores <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="suggestion-card">
+                    <div class="suggestion-icon bg-success">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <h3 class="h5 fw-bold mb-2">Agende sua Aula</h3>
+                    <p class="text-muted mb-3">Escolha o melhor horário e local para suas aulas de direção.</p>
+                    <a href="{% url 'marketplace:cities_list' %}" class="text-decoration-none fw-semibold">
+                        Agendar agora <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="suggestion-card">
+                    <div class="suggestion-icon bg-info">
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    <h3 class="h5 fw-bold mb-2">Avaliações Reais</h3>
+                    <p class="text-muted mb-3">Veja o que outros alunos dizem sobre os instrutores.</p>
+                    <a href="{% url 'marketplace:cities_list' %}" class="text-decoration-none fw-semibold">
+                        Ver avaliações <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Seção com Imagem Grande - Para Alunos -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 order-lg-2">
+                <div class="large-image-wrapper">
+                    <i class="bi bi-person-check-fill" style="font-size: 15rem; color: #667eea;"></i>
+                </div>
+            </div>
+            <div class="col-lg-6 order-lg-1">
+                <h2 class="display-5 fw-bold mb-4">Aprenda a dirigir com segurança</h2>
+                <p class="lead text-muted mb-4">
+                    Encontre o instrutor perfeito para você. Compare preços, veja avaliações e agende suas aulas com apenas alguns cliques.
+                </p>
+                <ul class="list-unstyled mb-4">
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <strong>Instrutores verificados</strong> e certificados
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <strong>Preços transparentes</strong> sem taxas ocultas
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <strong>Avaliações reais</strong> de outros alunos
+                    </li>
+                </ul>
+                <a href="{% url 'marketplace:cities_list' %}" class="btn btn-dark btn-lg px-5">
+                    Começar agora
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Seção com Imagem Grande - Para Instrutores -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6">
+                <div class="large-image-wrapper">
+                    <i class="bi bi-cash-coin" style="font-size: 15rem; color: #11998e;"></i>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <h2 class="display-5 fw-bold mb-4">Ganhe dinheiro sendo instrutor</h2>
+                <p class="lead text-muted mb-4">
+                    Cadastre-se gratuitamente e comece a receber contatos de alunos interessados na sua região.
+                </p>
+                <ul class="list-unstyled mb-4">
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <strong>Cadastro gratuito</strong> e rápido
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <strong>Você define</strong> seus horários e preços
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <strong>Receba avaliações</strong> e construa sua reputação
+                    </li>
+                </ul>
+                <div class="d-flex gap-3">
+                    <a href="{% url 'accounts:register' %}" class="btn btn-success btn-lg px-4">
+                        Cadastrar agora
+                    </a>
+                    <a href="{% url 'accounts:login' %}" class="btn btn-outline-dark btn-lg px-4">
+                        Já tenho conta
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Instructors Bootstrap Carousel -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="mb-0"><i class="bi bi-patch-check-fill text-success me-2"></i>Instrutores Verificados</h3>
+            <a href="{% url 'marketplace:cities_list' %}" class="btn btn-primary">Ver todos</a>
+        </div>
+        
+        {% if featured_instructors %}
+        <div id="instructorsCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4000">
+            <!-- Indicators -->
+            <div class="carousel-indicators">
+                {% for instructor in featured_instructors %}
+                    <button type="button" data-bs-target="#instructorsCarousel" data-bs-slide-to="{{ forloop.counter0 }}" 
+                            {% if forloop.first %}class="active" aria-current="true"{% endif %} 
+                            aria-label="Slide {{ forloop.counter }}"></button>
+                {% endfor %}
+            </div>
+            
+            <!-- Slides -->
+            <div class="carousel-inner">
+                {% for instructor in featured_instructors %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8 col-md-10">
+                            <div class="instructor-carousel-card">
+                                <div class="position-relative">
+                                    {% if instructor.user.profile.avatar %}
+                                        <img src="{{ instructor.user.profile.avatar.url }}" 
+                                             class="instructor-carousel-img" 
+                                             alt="{{ instructor.user.get_full_name }}">
+                                    {% else %}
+                                        <div class="instructor-carousel-img no-photo">
+                                            <i class="bi bi-person-fill"></i>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if instructor.is_verified %}
+                                        <span class="instructor-badge-verified">
+                                            <i class="bi bi-patch-check-fill me-1"></i>Verificado
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="p-4">
+                                    <h4 class="mb-2">{{ instructor.user.get_full_name }}</h4>
+                                    <p class="text-muted mb-2">
+                                        <i class="bi bi-geo-alt-fill me-1"></i>
+                                        {{ instructor.city.name }} - {{ instructor.city.state.code }}
+                                    </p>
+                                    
+                                    {% if instructor.bio %}
+                                        <p class="mb-3">{{ instructor.bio|truncatewords:25 }}</p>
+                                    {% endif %}
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            {% if instructor.hourly_rate %}
+                                                <span class="h5 text-success mb-0">R$ {{ instructor.hourly_rate }}/hora</span>
+                                            {% endif %}
+                                            {% if instructor.years_experience %}
+                                                <p class="text-muted mb-0 mt-1">
+                                                    <i class="bi bi-calendar-check me-1"></i>
+                                                    {{ instructor.years_experience }} anos de experiência
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                        <a href="{% url 'marketplace:instructor_detail' pk=instructor.pk %}" 
+                                           class="btn btn-primary btn-lg">
+                                            Ver Perfil <i class="bi bi-arrow-right ms-2"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Controls -->
+            <button class="carousel-control-prev" type="button" data-bs-target="#instructorsCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Anterior</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#instructorsCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Próximo</span>
+            </button>
+        </div>
+        {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                Nenhum instrutor cadastrado ainda.
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Interactive Map Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-4">
+            <h2><i class="bi bi-map me-2"></i>Encontre Instrutores no Mapa</h2>
+            <p class="text-muted">Veja onde estão os instrutores cadastrados em todo o Brasil</p>
+        </div>
+        
+        <div class="card">
+            <div class="card-body p-0">
+                <div id="homeMap"></div>
+            </div>
+            <div class="card-footer bg-light">
+                <div class="row text-center">
+                    <div class="col-md-3 mb-2 mb-md-0">
+                        <div style="display: inline-block; width: 20px; height: 20px; background: #e8f4f8; border: 1px solid #ddd; border-radius: 3px; vertical-align: middle;"></div>
+                        <small class="ms-2">0 instrutores</small>
+                    </div>
+                    <div class="col-md-3 mb-2 mb-md-0">
+                        <div style="display: inline-block; width: 20px; height: 20px; background: #90cdf4; border: 1px solid #ddd; border-radius: 3px; vertical-align: middle;"></div>
+                        <small class="ms-2">1-5 instrutores</small>
+                    </div>
+                    <div class="col-md-3 mb-2 mb-md-0">
+                        <div style="display: inline-block; width: 20px; height: 20px; background: #4299e1; border: 1px solid #ddd; border-radius: 3px; vertical-align: middle;"></div>
+                        <small class="ms-2">6-10 instrutores</small>
+                    </div>
+                    <div class="col-md-3">
+                        <div style="display: inline-block; width: 20px; height: 20px; background: #2b6cb0; border: 1px solid #ddd; border-radius: 3px; vertical-align: middle;"></div>
+                        <small class="ms-2">11+ instrutores</small>
+                    </div>
+                </div>
+                <div class="text-center mt-2">
+                    <small class="text-muted"><i class="bi bi-cursor me-1"></i>Passe o mouse sobre os estados para ver detalhes</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5 bg-light"
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-md-4 mb-4">
+                <div class="p-4">
+                    <i class="bi bi-patch-check-fill text-success display-4 mb-3"></i>
+                    <h4>Instrutores Verificados</h4>
+                    <p class="text-muted">Todos os documentos são analisados pela nossa equipe antes da aprovação.</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="p-4">
+                    <i class="bi bi-star-fill text-warning display-4 mb-3"></i>
+                    <h4>Avaliações Reais</h4>
+                    <p class="text-muted">Veja o que outros alunos acharam das aulas antes de decidir.</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="p-4">
+                    <i class="bi bi-whatsapp text-success display-4 mb-3"></i>
+                    <h4>Contato Direto</h4>
+                    <p class="text-muted">Fale diretamente com o instrutor via WhatsApp sem intermediários.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="row text-center bg-light py-4 rounded">
+            <div class="col-md-6">
+                <h2 class="display-5 fw-bold text-primary">{{ total_instructors }}</h2>
+                <p class="text-muted">Instrutores Verificados</p>
+            </div>
+            <div class="col-md-6">
+                <h2 class="display-5 fw-bold text-primary">{{ total_cities }}</h2>
+                <p class="text-muted">Cidades Atendidas</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA for Instructors -->
+<section class="py-5 bg-primary text-white">
+    <div class="container text-center">
+        <h2 class="mb-3">Você é Instrutor?</h2>
+        <p class="lead mb-4">Cadastre-se gratuitamente e receba contatos de alunos na sua cidade.</p>
+        <a href="{% url 'accounts:register' %}" class="btn btn-light btn-lg">
+            <i class="bi bi-person-plus me-2"></i>Cadastrar como Instrutor
+        </a>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Brazil bounds (southwest and northeast corners)
+    const brazilBounds = [
+        [-33.75, -73.99], // Southwest
+        [5.27, -34.79]    // Northeast
+    ];
+    
+    // Initialize map centered on Brazil with bounds
+    const map = L.map('homeMap', {
+        center: [-14.235, -51.925],
+        zoom: 4,
+        minZoom: 4,
+        maxZoom: 10,
+        maxBounds: brazilBounds,
+        maxBoundsViscosity: 1.0
+    });
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Parse states data
+    const statesData = {{ states_json|safe }};
+    const instructorsData = {{ instructors_json|safe }};
+    
+    // Color scale based on instructor count
+    function getColor(instructorCount) {
+        if (instructorCount === 0) return '#e8f4f8';
+        if (instructorCount <= 5) return '#90cdf4';
+        if (instructorCount <= 10) return '#4299e1';
+        return '#2b6cb0';
+    }
+    
+    // Add state markers with tooltips
+    statesData.forEach(function(state) {
+        if (state.coordinates) {
+            const color = getColor(state.instructors);
+            
+            // Create circle marker for state
+            const marker = L.circleMarker([state.coordinates[0], state.coordinates[1]], {
+                radius: Math.max(10, Math.min(30, state.instructors * 2)),
+                fillColor: color,
+                color: '#fff',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.7
+            }).addTo(map);
+            
+            // Tooltip content
+            const tooltipContent = `
+                <div class="state-info-tooltip">
+                    <h6>${state.name} (${state.code})</h6>
+                    <p><i class="bi bi-people-fill me-1"></i>${state.instructors} instrutores</p>
+                </div>
+            `;
+            
+            marker.bindTooltip(tooltipContent, {
+                permanent: false,
+                direction: 'top',
+                className: 'custom-tooltip'
+            });
+            
+            // Hover effects
+            marker.on('mouseover', function() {
+                this.setStyle({
+                    fillOpacity: 0.9,
+                    radius: this.options.radius * 1.2
+                });
+            });
+            
+            marker.on('mouseout', function() {
+                this.setStyle({
+                    fillOpacity: 0.7,
+                    radius: this.options.radius / 1.2
+                });
+            });
+            
+            // Click to navigate to state
+            marker.on('click', function() {
+                window.location.href = '/instrutores/cidades/#' + state.code;
+            });
+        }
+    });
+    
+    // Add instructor markers
+    instructorsData.forEach(function(instructor) {
+        if (instructor.latitude && instructor.longitude) {
+            const instructorMarker = L.marker([instructor.latitude, instructor.longitude], {
+                icon: L.divIcon({
+                    className: 'custom-instructor-marker',
+                    html: '<div style="background-color: #dc3545; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"><i class="bi bi-person-fill"></i></div>',
+                    iconSize: [24, 24]
+                })
+            }).addTo(map);
+            
+            const instructorName = `${instructor.user__first_name} ${instructor.user__last_name}`;
+            const cityName = instructor.city__name;
+            const stateName = instructor.city__state__name;
+            
+            instructorMarker.bindPopup(`
+                <div class="text-center">
+                    <h6 class="mb-2">${instructorName}</h6>
+                    <p class="mb-1 small"><i class="bi bi-geo-alt-fill me-1"></i>${cityName} - ${stateName}</p>
+                    <a href="/instrutores/instrutor/${instructor.id}/" class="btn btn-sm btn-primary mt-2">
+                        Ver Perfil
+                    </a>
+                </div>
+            `);
+        }
+    });
+    
+    // Add custom CSS for tooltips
+    const style = document.createElement('style');
+    style.textContent = `
+        .custom-tooltip {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        .leaflet-popup-content-wrapper {
+            border-radius: 8px;
+        }
+        .custom-instructor-marker {
+            background: transparent !important;
+            border: none !important;
+        }
+    `;
+    document.head.appendChild(style);
+});
+</script>
+{% endblock %}

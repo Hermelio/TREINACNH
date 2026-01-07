@@ -1,0 +1,158 @@
+"""
+Views for authentication and profile management.
+"""
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.views.generic import CreateView, UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
+from .forms import UserRegistrationForm, CustomLoginForm, ProfileEditForm
+from .models import Profile
+
+
+def register_view(request):
+    """
+    User registration view.
+    Creates a new user and profile, then logs them in.
+    """
+    if request.user.is_authenticated:
+        return redirect('accounts:dashboard')
+    
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            
+            # Process instructor extra fields if provided
+            if user.profile.is_instructor:
+                whatsapp = request.POST.get('whatsapp', '').strip()
+                if whatsapp:
+                    user.profile.whatsapp_number = whatsapp
+                    user.profile.save()
+            
+            # Auto login after registration
+            login(request, user)
+            messages.success(request, 'Conta criada com sucesso! Bem-vindo ao TREINACNH.')
+            
+            # Redirect based on role
+            if user.profile.is_instructor:
+                messages.info(request, 'Complete seu perfil de instrutor para aparecer nas buscas.')
+                # Check if user has preferred_city to create instructor profile with it
+                try:
+                    return redirect('marketplace:instructor_profile_edit')
+                except:
+                    messages.warning(request, 'Configure seu perfil de instrutor.')
+                    return redirect('accounts:dashboard')
+            else:
+                return redirect('accounts:dashboard')
+        else:
+            messages.error(request, 'Por favor, corrija os erros abaixo.')
+    else:
+        form = UserRegistrationForm()
+    
+    return render(request, 'accounts/register.html', {'form': form})
+
+
+def login_view(request):
+    """User login view"""
+    if request.user.is_authenticated:
+        return redirect('accounts:dashboard')
+    
+    if request.method == 'POST':
+        form = CustomLoginForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                messages.success(request, f'Bem-vindo de volta, {user.first_name or user.username}!')
+                next_url = request.GET.get('next', 'accounts:dashboard')
+                return redirect(next_url)
+            else:
+                messages.error(request, 'Usuário ou senha incorretos.')
+        else:
+            # Show form errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    else:
+        form = CustomLoginForm()
+    
+    return render(request, 'accounts/login.html', {'form': form})
+
+
+@login_required
+def logout_view(request):
+    """User logout view"""
+    logout(request)
+    messages.info(request, 'Você saiu da sua conta.')
+    return redirect('core:home')
+
+
+@login_required
+def dashboard_view(request):
+    """
+    User dashboard - different content based on role.
+    For students: redirect to map filtered by their preferred city's state
+    For instructors: show dashboard
+    """
+    profile = request.user.profile
+    
+    # If student with preferred city, redirect to map
+    if profile.is_student and profile.preferred_city:
+        from django.urls import reverse
+        state_code = profile.preferred_city.state.code
+        url = reverse('marketplace:instructors_map') + f'?state={state_code}'
+        messages.info(request, f'Mostrando instrutores em {profile.preferred_city.state.name}')
+        return redirect(url)
+    
+    # If student without city, redirect to general map
+    if profile.is_student:
+        return redirect('marketplace:instructors_map')
+    
+    context = {
+        'profile': profile,
+    }
+    
+    # Add role-specific context for instructors
+    if profile.is_instructor:
+        # Import here to avoid circular imports
+        from marketplace.models import InstructorProfile, Lead
+        try:
+            instructor_profile = InstructorProfile.objects.get(user=request.user)
+            recent_leads = Lead.objects.filter(instructor=instructor_profile).order_by('-created_at')[:5]
+            context.update({
+                'instructor_profile': instructor_profile,
+                'recent_leads': recent_leads,
+            })
+        except InstructorProfile.DoesNotExist:
+            context['needs_instructor_profile'] = True
+    
+    elif profile.is_student:
+        from marketplace.models import Lead
+        my_leads = Lead.objects.filter(student_user=request.user).order_by('-created_at')[:5]
+        context['my_leads'] = my_leads
+    
+    return render(request, 'accounts/dashboard.html', context)
+
+
+@login_required
+def profile_edit_view(request):
+    """Edit user profile"""
+    profile = request.user.profile
+    
+    if request.method == 'POST':
+        form = ProfileEditForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Perfil atualizado com sucesso!')
+            return redirect('accounts:dashboard')
+        else:
+            messages.error(request, 'Por favor, corrija os erros abaixo.')
+    else:
+        form = ProfileEditForm(instance=profile)
+    
+    return render(request, 'accounts/profile_edit.html', {'form': form})

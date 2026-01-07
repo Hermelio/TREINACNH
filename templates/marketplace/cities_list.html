@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #brazilMap {
+        height: 600px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .state-info-tooltip {
+        background: white;
+        padding: 10px;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        border: 2px solid #0d6efd;
+    }
+    
+    .state-info-tooltip h6 {
+        margin: 0 0 5px 0;
+        color: #0d6efd;
+        font-weight: bold;
+    }
+    
+    .state-info-tooltip p {
+        margin: 0;
+        font-size: 13px;
+    }
+    
+    .map-legend {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    
+    .legend-color {
+        width: 30px;
+        height: 20px;
+        margin-right: 10px;
+        border-radius: 3px;
+        border: 1px solid #ddd;
+    }
+    
+    .hover-shadow:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+        transition: all 0.3s ease;
+    }
+    
+    .instructor-marker {
+        background-color: #dc3545;
+        color: white;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="container">
+        <h1 class="mb-4"><i class="bi bi-geo-alt-fill me-2"></i>Instrutores por Cidade</h1>
+        
+        <!-- Interactive Map Section -->
+        <div class="card mb-5">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-map me-2"></i>Mapa Interativo do Brasil</h4>
+            </div>
+            <div class="card-body p-0">
+                <div class="row g-0">
+                    <div class="col-lg-9">
+                        <div id="brazilMap"></div>
+                    </div>
+                    <div class="col-lg-3 p-3 bg-light">
+                        <div class="map-legend">
+                            <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2"></i>Legenda</h6>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #e8f4f8;"></div>
+                                <span>0 instrutores</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #90cdf4;"></div>
+                                <span>1-5 instrutores</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #4299e1;"></div>
+                                <span>6-10 instrutores</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #2b6cb0;"></div>
+                                <span>11+ instrutores</span>
+                            </div>
+                            <hr>
+                            <div class="legend-item">
+                                <i class="bi bi-geo-alt-fill text-danger fs-4 me-2"></i>
+                                <span>Instrutor cadastrado</span>
+                            </div>
+                            <hr>
+                            <p class="small text-muted mb-0">
+                                <i class="bi bi-cursor me-1"></i>Passe o mouse sobre os estados para ver detalhes
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+    <!-- New Instructors Section -->
+    {% if new_instructors %}
+    <div class="card mb-5">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="bi bi-star-fill me-2"></i>Novos Instrutores</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for instructor in new_instructors %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">{{ instructor.user.get_full_name }}</h6>
+                                <p class="card-text small text-muted">
+                                    <i class="bi bi-geo-alt-fill me-1"></i>{{ instructor.city }}
+                                </p>
+                                <a href="{% url 'marketplace:instructor_detail' pk=instructor.pk %}" class="btn btn-sm btn-outline-primary">Ver Perfil</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- States and Cities List -->
+    {% for state in states %}
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h4 class="mb-0">{{ state.name }} ({{ state.code }})</h4>
+                <small class="text-muted">{{ state.city_count }} cidade(s)</small>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for city in state.cities.all %}
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'marketplace:city_list' state_code=state.code city_slug=city.slug %}" class="text-decoration-none">
+                                <div class="card h-100 hover-shadow">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-geo-fill text-primary fs-2"></i>
+                                        <h6 class="mt-2 mb-1">{{ city.name }}</h6>
+                                        <small class="text-muted">{{ city.instructor_count }} instrutor(es)</small>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>Nenhuma cidade cadastrada ainda.
+        </div>
+    {% endfor %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Brazil bounds (southwest and northeast corners)
+    const brazilBounds = [
+        [-33.75, -73.99], // Southwest
+        [5.27, -34.79]    // Northeast
+    ];
+    
+    // Initialize map centered on Brazil with bounds
+    const map = L.map('brazilMap', {
+        center: [-14.235, -51.925],
+        zoom: 4,
+        minZoom: 4,
+        maxZoom: 10,
+        maxBounds: brazilBounds,
+        maxBoundsViscosity: 1.0
+    });
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Parse states data
+    const statesData = {{ states_json|safe }};
+    const instructorsData = {{ instructors_json|safe }};
+    
+    // Color scale based on instructor count
+    function getColor(instructorCount) {
+        if (instructorCount === 0) return '#e8f4f8';
+        if (instructorCount <= 5) return '#90cdf4';
+        if (instructorCount <= 10) return '#4299e1';
+        return '#2b6cb0';
+    }
+    
+    // Add state markers with tooltips
+    statesData.forEach(function(state) {
+        if (state.coordinates) {
+            const color = getColor(state.instructors);
+            
+            // Create circle marker for state
+            const marker = L.circleMarker([state.coordinates[0], state.coordinates[1]], {
+                radius: Math.max(10, Math.min(30, state.instructors * 2)),
+                fillColor: color,
+                color: '#fff',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.7
+            }).addTo(map);
+            
+            // Tooltip content
+            const tooltipContent = `
+                <div class="state-info-tooltip">
+                    <h6>${state.name} (${state.code})</h6>
+                    <p><i class="bi bi-building me-1"></i>${state.cities} cidades</p>
+                    <p><i class="bi bi-people-fill me-1"></i>${state.instructors} instrutores</p>
+                </div>
+            `;
+            
+            marker.bindTooltip(tooltipContent, {
+                permanent: false,
+                direction: 'top',
+                className: 'custom-tooltip'
+            });
+            
+            // Hover effects
+            marker.on('mouseover', function() {
+                this.setStyle({
+                    fillOpacity: 0.9,
+                    radius: this.options.radius * 1.2
+                });
+            });
+            
+            marker.on('mouseout', function() {
+                this.setStyle({
+                    fillOpacity: 0.7,
+                    radius: this.options.radius / 1.2
+                });
+            });
+        }
+    });
+    
+    // Add instructor markers
+    instructorsData.forEach(function(instructor) {
+        if (instructor.latitude && instructor.longitude) {
+            const instructorMarker = L.marker([instructor.latitude, instructor.longitude], {
+                icon: L.divIcon({
+                    className: 'instructor-marker',
+                    html: '<i class="bi bi-person-fill"></i>',
+                    iconSize: [30, 30]
+                })
+            }).addTo(map);
+            
+            const instructorName = `${instructor.user__first_name} ${instructor.user__last_name}`;
+            const cityName = instructor.city__name;
+            const stateName = instructor.city__state__name;
+            
+            instructorMarker.bindPopup(`
+                <div class="text-center">
+                    <h6 class="mb-2">${instructorName}</h6>
+                    <p class="mb-1 small"><i class="bi bi-geo-alt-fill me-1"></i>${cityName} - ${stateName}</p>
+                    <a href="/instrutores/instrutor/${instructor.id}/" class="btn btn-sm btn-primary mt-2">
+                        Ver Perfil
+                    </a>
+                </div>
+            `);
+        }
+    });
+    
+    // Add custom CSS for tooltips
+    const style = document.createElement('style');
+    style.textContent = `
+        .custom-tooltip {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        .leaflet-popup-content-wrapper {
+            border-radius: 8px;
+        }
+    `;
+    document.head.appendChild(style);
+});
+</script>
+{% endblock %}

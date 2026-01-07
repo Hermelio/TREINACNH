@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Profile Header -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            {% if instructor.user.profile.avatar %}
+                                <img src="{{ instructor.user.profile.avatar.url }}" class="rounded-circle img-fluid mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px;">
+                                    <i class="bi bi-person-fill" style="font-size: 5rem;"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-9">
+                            <h1 class="mb-2">{{ instructor.user.get_full_name }}</h1>
+                            <p class="text-muted mb-3">
+                                <i class="bi bi-geo-alt-fill me-1"></i>{{ instructor.city }}
+                                {% if instructor.neighborhoods_text %}
+                                    <br><small>Atende: {{ instructor.neighborhoods_text }}</small>
+                                {% endif %}
+                            </p>
+                            
+                            <!-- Badges -->
+                            <div class="mb-3">
+                                {% for badge in instructor.badges %}
+                                    <span class="badge bg-{{ badge.class }} me-1">
+                                        <i class="bi {{ badge.icon }} me-1"></i>{{ badge.name }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                            
+                            <!-- Stats -->
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <strong class="d-block">{{ instructor.years_experience }}</strong>
+                                    <small class="text-muted">Anos</small>
+                                </div>
+                                <div class="col-4">
+                                    <strong class="d-block rating-stars">
+                                        {% if avg_rating %}
+                                            {{ avg_rating|floatformat:1 }} <i class="bi bi-star-fill"></i>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </strong>
+                                    <small class="text-muted">Avaliação</small>
+                                </div>
+                                <div class="col-4">
+                                    <strong class="d-block">{{ reviews.count }}</strong>
+                                    <small class="text-muted">Avaliações</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- About -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-person-fill me-2"></i>Sobre</h5>
+                </div>
+                <div class="card-body">
+                    {% if instructor.bio %}
+                        <p>{{ instructor.bio|linebreaks }}</p>
+                    {% else %}
+                        <p class="text-muted">Nenhuma descrição fornecida.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Categories -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-award-fill me-2"></i>Categorias</h5>
+                </div>
+                <div class="card-body">
+                    {% if instructor.categories.exists %}
+                        {% for category in instructor.categories.all %}
+                            <span class="badge bg-primary me-1 mb-1">Categoria {{ category.code }}</span>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">Nenhuma categoria informada.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-info-circle-fill me-2"></i>Detalhes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <strong>Veículo Próprio:</strong>
+                            <p>{{ instructor.has_own_car|yesno:"Sim,Não" }}</p>
+                            {% if instructor.car_model %}
+                                <small class="text-muted">{{ instructor.car_model }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Disponibilidade:</strong>
+                            <p>{{ instructor.availability_text }}</p>
+                        </div>
+                        {% if instructor.base_price_per_hour %}
+                            <div class="col-md-6 mb-3">
+                                <strong>Preço Base:</strong>
+                                <p>R$ {{ instructor.base_price_per_hour }}/hora</p>
+                                {% if instructor.price_notes %}
+                                    <small class="text-muted">{{ instructor.price_notes }}</small>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reviews -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-star-fill me-2"></i>Avaliações</h5>
+                    {% if user.is_authenticated and not user.profile.is_instructor %}
+                        <a href="{% url 'reviews:review_create' instructor_pk=instructor.pk %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-plus-circle me-1"></i>Avaliar
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if reviews %}
+                        {% for review in reviews %}
+                            <div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <strong>{{ review.display_name }}</strong>
+                                        <div class="rating-stars">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= review.rating %}
+                                                    <i class="bi bi-star-fill"></i>
+                                                {% else %}
+                                                    <i class="bi bi-star"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">{{ review.created_at|date:"d/m/Y" }}</small>
+                                </div>
+                                {% if review.comment %}
+                                    <p class="mb-0">{{ review.comment }}</p>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">Nenhuma avaliação ainda. Seja o primeiro a avaliar!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Contact Card -->
+            <div class="card mb-3 sticky-top" style="top: 20px;">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Entre em Contato</h5>
+                    
+                    {% if whatsapp_link %}
+                        <a href="{{ whatsapp_link }}" target="_blank" class="btn btn-whatsapp w-100 mb-2">
+                            <i class="bi bi-whatsapp me-2"></i>Falar no WhatsApp
+                        </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'marketplace:lead_create' instructor_pk=instructor.pk %}" class="btn btn-primary w-100 mb-3">
+                        <i class="bi bi-envelope-fill me-2"></i>Solicitar Contato
+                    </a>
+                    
+                    <hr>
+                    
+                    <div class="d-grid gap-2">
+                        {% if user.is_authenticated and not user.profile.is_instructor %}
+                            <a href="{% url 'reviews:report_create' instructor_pk=instructor.pk %}" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-flag-fill me-1"></i>Denunciar
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tips -->
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="bi bi-lightbulb-fill me-2 text-warning"></i>Dicas de Segurança</h6>
+                    <ul class="small mb-0">
+                        <li>Verifique se o instrutor está verificado</li>
+                        <li>Leia as avaliações de outros alunos</li>
+                        <li>Confirme preços antes de iniciar as aulas</li>
+                        <li>Use sempre canais oficiais para contato</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
