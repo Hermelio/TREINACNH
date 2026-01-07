@@ -2,7 +2,21 @@
 
 Plataforma web para conectar alunos e instrutores de direção, com sistema de verificação de documentos, avaliações, leads e gestão de planos.
 
-## 🚀 Características Principais
+## � Documentação Completa
+
+- **[SERVIDOR_PRODUCAO.md](SERVIDOR_PRODUCAO.md)** - 🔥 Configurações completas do servidor de produção
+- **[CONFIGURACAO_LOGO.md](CONFIGURACAO_LOGO.md)** - Logo e identidade visual
+- **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** - Visão geral do projeto
+- **[SETUP_WINDOWS.md](SETUP_WINDOWS.md)** - Instalação no Windows
+- **[VERIFICACAO_DOCUMENTOS.md](VERIFICACAO_DOCUMENTOS.md)** - Sistema de verificação
+- **[SEGURANCA_ANTI_FRAUDE.md](SEGURANCA_ANTI_FRAUDE.md)** - Segurança
+
+## 🌐 Site em Produção
+
+- **URL**: http://72.61.36.89:8080/
+- **Status**: ✅ Online e funcionando
+
+## �🚀 Características Principais
 
 - **Marketplace completo**: Busca por cidade/UF, filtros avançados, perfis detalhados
 - **Verificação de documentos**: Sistema de upload e aprovação de CNH, certificados
