@@ -167,8 +167,11 @@ def news_list_view(request):
     # Notícias em destaque
     featured_news = news_queryset.filter(is_featured=True)[:3]
     
-    # Todas as notícias
-    all_news = news_queryset.exclude(id__in=featured_news.values_list('id', flat=True))
+    # Converter para lista de IDs antes do exclude (fix MySQL LIMIT in subquery)
+    featured_ids = list(featured_news.values_list('id', flat=True))
+    
+    # Todas as notícias exceto as em destaque
+    all_news = news_queryset.exclude(id__in=featured_ids)
     
     # Categorias para filtro
     categories = NewsArticle.CATEGORY_CHOICES
