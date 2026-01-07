@@ -53,10 +53,19 @@
             font-size: 1.5rem;
             color: #000000 !important;
             transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
         }
         
         .navbar-uber .navbar-brand:hover {
             transform: scale(1.05);
+        }
+        
+        .navbar-uber .navbar-brand img.site-logo {
+            height: 40px;
+            width: auto;
+            margin-right: 10px;
+            object-fit: contain;
         }
         
         .navbar-uber .navbar-brand i {
@@ -381,7 +390,12 @@
     <nav class="navbar navbar-expand-lg navbar-uber">
         <div class="container">
             <a class="navbar-brand" href="{% url 'core:home' %}">
-                <i class="bi bi-car-front-fill me-2"></i>TREINACNH
+                {% load static %}
+                {% if site_logo %}
+                    <img src="{% static site_logo %}" alt="{{ site_name }}" class="site-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                {% endif %}
+                <i class="bi bi-car-front-fill me-2" {% if site_logo %}style="display:none;"{% endif %}></i>
+                <span>{{ site_name|default:"TREINACNH" }}</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -474,7 +488,13 @@
         <div class="container py-5">
             <div class="row g-4">
                 <div class="col-lg-3 col-md-6">
-                    <h5 class="fw-bold mb-4">TREINACNH</h5>
+                    {% load static %}
+                    <div class="d-flex align-items-center mb-3">
+                        {% if site_logo %}
+                            <img src="{% static site_logo %}" alt="{{ site_name }}" style="height: 30px; width: auto; margin-right: 10px;" onerror="this.style.display='none';">
+                        {% endif %}
+                        <h5 class="fw-bold mb-0">{{ site_name|default:"TREINACNH" }}</h5>
+                    </div>
                     <p class="text-muted">Conectando alunos e instrutores de direção em todo o Brasil.</p>
                     <div class="social-links mt-4">
                         <a href="#" class="social-icon"><i class="bi bi-facebook"></i></a>

@@ -73,6 +73,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.media',
+                'core.context_processors.site_settings',  # Site configuration
             ],
         },
     },
@@ -128,6 +129,11 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 # Media files (User uploads)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Site Configuration
+SITE_NAME = 'TREINACNH'
+SITE_LOGO = 'images/logo.png'  # Path relativo a STATIC_URL
+SITE_URL = config('SITE_URL', default='http://localhost:8000')
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
