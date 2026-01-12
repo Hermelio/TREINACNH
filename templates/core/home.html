@@ -1300,13 +1300,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p class="mb-2 small" style="color: #666;">
                     <i class="bi bi-book-fill me-1"></i>Com teoria: ${withTheory}
                 </p>
-                <a href="/contas/registro/" class="btn btn-sm btn-success mt-2" style="width: 100%;">
-                    <i class="bi bi-person-plus-fill me-1"></i>Cadastrar para Atender
+                <a href="/alunos/${cityData.state}/${encodeURIComponent(cityData.city)}/" class="btn btn-sm btn-success mt-2" style="width: 100%;">
+                    <i class="bi bi-eye-fill me-1"></i>Ver Detalhes dos Alunos
                 </a>
             </div>
         `;
         
         studentMarker.bindPopup(popupContent);
+        
+        // Click to view students
+        studentMarker.on('click', function() {
+            window.location.href = `/alunos/${cityData.state}/${encodeURIComponent(cityData.city)}/`;
+        });
         
         // Hover effects
         studentMarker.on('mouseover', function() {

@@ -243,3 +243,65 @@ def news_detail_view(request, slug):
     }
     
     return render(request, 'core/news_detail.html', context)
+
+
+def city_students_view(request, state_code, city_name):
+    """
+    Mostra alunos de uma cidade específica.
+    Dados sensíveis mascarados para não cadastrados (LGPD).
+    WhatsApp completo apenas para instrutores verificados.
+    """
+    from marketplace.models import StudentLead
+    
+    # Get students from the city
+    students = StudentLead.objects.filter(
+        state__code=state_code,
+        city__iexact=city_name
+    ).select_related('state').order_by('-created_at')
+    
+    # Check if user is verified instructor
+    is_verified_instructor = False
+    if request.user.is_authenticated:
+        try:
+            instructor_profile = request.user.instructor_profile
+            is_verified_instructor = instructor_profile.is_verified and instructor_profile.is_visible
+        except:
+            pass
+    
+    # Mask sensitive data for non-verified users
+    students_data = []
+    for student in students:
+        # Mask name (show only first name + initial)
+        name_parts = student.name.split()
+        if is_verified_instructor:
+            masked_name = student.name
+        else:
+            masked_name = f"{name_parts[0]} {name_parts[1][0]}." if len(name_parts) > 1 else name_parts[0]
+        
+        # Mask phone (show only last 4 digits)
+        if is_verified_instructor:
+            masked_phone = student.phone
+        else:
+            masked_phone = f"(XX) XXXXX-{student.phone[-4:]}" if student.phone else "Não informado"
+        
+        students_data.append({
+            'id': student.id,
+            'name': masked_name,
+            'phone': masked_phone,
+            'category': student.get_category_display(),
+            'category_code': student.category,
+            'has_theory': student.has_theory,
+            'created_at': student.created_at,
+            'can_view_full': is_verified_instructor
+        })
+    
+    context = {
+        'city_name': city_name,
+        'state_code': state_code,
+        'students': students_data,
+        'total_students': students.count(),
+        'is_verified_instructor': is_verified_instructor,
+        'is_authenticated': request.user.is_authenticated,
+    }
+    
+    return render(request, 'core/city_students.html', context)
