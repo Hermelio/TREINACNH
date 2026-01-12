@@ -172,27 +172,28 @@ class LeadAdmin(admin.ModelAdmin):
 class StudentLeadAdmin(admin.ModelAdmin):
     """Admin for StudentLead model"""
     list_display = (
-        'name', 'city', 'state', 'category', 'phone',
+        'name', 'get_city_display', 'state', 'get_categories_display', 'phone',
         'has_theory', 'is_contacted', 'notified_about_instructor',
         'has_instructor_badge', 'created_at'
     )
     list_filter = (
-        'state', 'category', 'has_theory',
+        'state', 'has_theory',
         'is_contacted', 'notified_about_instructor',
-        'accept_marketing', 'accept_whatsapp'
+        'accept_whatsapp', 'accept_email', 'accept_terms'
     )
-    search_fields = ('name', 'phone', 'email', 'city', 'external_id')
-    readonly_fields = ('external_id', 'created_at', 'updated_at', 'has_instructor_in_state', 'whatsapp_link')
+    search_fields = ('name', 'phone', 'email', 'city__name', 'external_id')
+    readonly_fields = ('external_id', 'created_at', 'updated_at', 'has_instructor_in_state', 'whatsapp_link', 'email_verified')
+    filter_horizontal = ('categories',)
     
     fieldsets = (
         ('Informações Básicas', {
-            'fields': ('external_id', 'name', 'phone', 'email', 'city', 'state')
+            'fields': ('external_id', 'photo', 'name', 'phone', 'email', 'email_verified', 'city', 'state')
         }),
         ('CNH', {
-            'fields': ('category', 'has_theory')
+            'fields': ('categories', 'has_theory')
         }),
-        ('Preferências', {
-            'fields': ('accept_marketing', 'accept_whatsapp', 'accept_terms')
+        ('Preferências LGPD', {
+            'fields': ('accept_whatsapp', 'accept_email', 'accept_terms')
         }),
         ('Status de Contato', {
             'fields': ('is_contacted', 'contacted_at', 'notified_about_instructor', 'notified_at')
@@ -210,6 +211,19 @@ class StudentLeadAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+    
+    def get_city_display(self, obj):
+        """Display city name"""
+        return obj.city.name if obj.city else 'N/A'
+    get_city_display.short_description = 'Cidade'
+    get_city_display.admin_order_field = 'city__name'
+    
+    def get_categories_display(self, obj):
+        """Display categories"""
+        if obj.categories.exists():
+            return ', '.join([cat.code for cat in obj.categories.all()])
+        return 'N/A'
+    get_categories_display.short_description = 'Categorias'
     
     def has_instructor_badge(self, obj):
         """Display if state has instructors available"""
