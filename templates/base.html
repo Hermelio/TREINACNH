@@ -30,45 +30,47 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            padding-top: 70px; /* Espaço para navbar fixa */
+            padding-top: 60px; /* Espaço para navbar fixa (reduzido) */
         }
         main {
             flex: 1;
         }
         
-        /* Navbar Uber Style */
+        /* Navbar Uber Style - Clean & Premium */
         .navbar-uber {
             background-color: #ffffff !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            padding: 16px 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            padding: 10px 0;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 1030;
             transition: all 0.3s ease;
+            backdrop-filter: blur(8px);
         }
         
         .navbar-uber.scrolled {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-            padding: 12px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 8px 0;
         }
         
         .navbar-uber .navbar-brand {
-            font-weight: 700;
-            font-size: 1.5rem;
+            font-weight: 600;
+            font-size: 1.35rem;
             color: #000000 !important;
             transition: transform 0.3s ease;
             display: flex;
             align-items: center;
+            letter-spacing: -0.5px;
         }
         
         .navbar-uber .navbar-brand:hover {
-            transform: scale(1.05);
+            transform: scale(1.02);
         }
         
         .navbar-uber .navbar-brand img.site-logo {
-            height: 40px;
+            height: 36px;
             width: auto;
             margin-right: 10px;
             object-fit: contain;
@@ -84,15 +86,15 @@
         .navbar-uber .nav-link {
             color: #000000 !important;
             font-weight: 500;
-            font-size: 0.95rem;
-            padding: 8px 16px !important;
+            font-size: 0.9rem;
+            padding: 6px 14px !important;
             transition: all 0.3s ease;
             border-radius: 8px;
-            margin: 0 4px;
+            margin: 0 2px;
         }
         
         .navbar-uber .nav-link:hover {
-            background-color: #f3f4f6;
+            background-color: #f8f9fa;
             color: #667eea !important;
         }
         
