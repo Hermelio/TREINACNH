@@ -112,6 +112,23 @@ class Profile(models.Model):
         help_text='Cidade onde o aluno busca instrutores'
     )
     
+    # Preferences and Consents
+    accept_whatsapp_messages = models.BooleanField(
+        'Aceita Mensagens via WhatsApp',
+        default=True,
+        help_text='Permite receber mensagens via WhatsApp'
+    )
+    accept_terms = models.BooleanField(
+        'Aceita Termos de Uso',
+        default=False,
+        help_text='Confirmação de aceite dos termos de uso'
+    )
+    accept_privacy = models.BooleanField(
+        'Aceita Política de Privacidade',
+        default=False,
+        help_text='Confirmação de aceite da política de privacidade'
+    )
+    
     # Metadata
     created_at = models.DateTimeField('Criado em', auto_now_add=True)
     updated_at = models.DateTimeField('Atualizado em', auto_now=True)

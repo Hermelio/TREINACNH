@@ -50,6 +50,52 @@ class UserRegistrationForm(UserCreationForm):
         widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_preferred_city'}),
         help_text='Selecione sua cidade para ver instrutores próximos'
     )
+    cpf = forms.CharField(
+        required=True,
+        label='CPF',
+        max_length=11,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '00000000000',
+            'maxlength': '11',
+            'pattern': '[0-9]{11}'
+        }),
+        help_text='Apenas números, sem pontos ou traços'
+    )
+    whatsapp_number = forms.CharField(
+        required=True,
+        label='WhatsApp',
+        max_length=17,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '+5511999999999'
+        }),
+        help_text='Número com código do país e DDD'
+    )
+    has_own_car = forms.BooleanField(
+        required=False,
+        label='Possui carro próprio',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        help_text='Apenas para instrutores'
+    )
+    accept_whatsapp_messages = forms.BooleanField(
+        required=False,
+        initial=True,
+        label='Aceito receber mensagens via WhatsApp',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    accept_terms = forms.BooleanField(
+        required=True,
+        label='Li e aceito os Termos de Uso',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        error_messages={'required': 'Você deve aceitar os termos de uso para continuar'}
+    )
+    accept_privacy = forms.BooleanField(
+        required=True,
+        label='Li e aceito a Política de Privacidade',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        error_messages={'required': 'Você deve aceitar a política de privacidade para continuar'}
+    )
     
     class Meta:
         model = User
@@ -89,11 +135,28 @@ class UserRegistrationForm(UserCreationForm):
         user.last_name = self.cleaned_data['last_name']
         if commit:
             user.save()
-            # Update profile role and city
-            user.profile.role = self.cleaned_data['role']
+            # Update profile with all fields
+            profile = user.profile
+            profile.role = self.cleaned_data['role']
+            profile.cpf = self.cleaned_data.get('cpf', '')
+            profile.whatsapp_number = self.cleaned_data.get('whatsapp_number', '')
+            profile.accept_whatsapp_messages = self.cleaned_data.get('accept_whatsapp_messages', True)
+            profile.accept_terms = self.cleaned_data.get('accept_terms', False)
+            profile.accept_privacy = self.cleaned_data.get('accept_privacy', False)
+            
             if self.cleaned_data.get('preferred_city'):
-                user.profile.preferred_city = self.cleaned_data['preferred_city']
-            user.profile.save()
+                profile.preferred_city = self.cleaned_data['preferred_city']
+            
+            profile.save()
+            
+            # If instructor and has car info, save to InstructorProfile if it exists
+            if profile.role == 'INSTRUCTOR':
+                try:
+                    from marketplace.models import InstructorProfile
+                    # Store has_own_car temporarily for later use when creating InstructorProfile
+                    profile._has_own_car = self.cleaned_data.get('has_own_car', False)
+                except:
+                    pass
         return user
 
 
