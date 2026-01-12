@@ -5,26 +5,30 @@
 
 {% block extra_css %}
 <style>
+    body {
+        background-color: #ffffff;
+        color: #000000;
+    }
+    
     .student-card {
-        background: rgba(20, 20, 20, 0.55);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
         border-radius: 16px;
         padding: 24px;
         margin-bottom: 20px;
         transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
     
     .student-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-        border-color: rgba(34, 197, 94, 0.3);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        border-color: #22c55e;
     }
     
     .student-card h5 {
         font-family: 'Inter', sans-serif;
-        color: #ffffff;
+        color: #000000;
         font-weight: 600;
         margin-bottom: 16px;
     }
@@ -39,7 +43,7 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        color: rgba(255, 255, 255, 0.85);
+        color: #374151;
         font-size: 0.95rem;
     }
     
@@ -58,39 +62,50 @@
     }
     
     .category-A {
-        background: rgba(255, 193, 7, 0.2);
-        color: #ffc107;
+        background: rgba(255, 193, 7, 0.15);
+        color: #d97706;
         border: 1px solid rgba(255, 193, 7, 0.3);
     }
     
     .category-B {
-        background: rgba(34, 197, 94, 0.2);
-        color: #22c55e;
+        background: rgba(34, 197, 94, 0.15);
+        color: #059669;
         border: 1px solid rgba(34, 197, 94, 0.3);
     }
     
     .category-AB {
-        background: rgba(59, 130, 246, 0.2);
-        color: #3b82f6;
+        background: rgba(59, 130, 246, 0.15);
+        color: #2563eb;
         border: 1px solid rgba(59, 130, 246, 0.3);
     }
     
     .alert-lgpd {
-        background: rgba(255, 193, 7, 0.15);
+        background: rgba(255, 193, 7, 0.1);
         border: 2px solid rgba(255, 193, 7, 0.4);
         border-radius: 12px;
         padding: 20px;
         margin-bottom: 30px;
+        color: #92400e;
     }
     
     .alert-lgpd i {
-        color: #ffc107;
+        color: #d97706;
         font-size: 1.5rem;
+    }
+    
+    .alert-lgpd h5,
+    .alert-lgpd p,
+    .alert-lgpd strong {
+        color: #92400e !important;
     }
     
     .blur-text {
         filter: blur(4px);
         user-select: none;
+    }
+    
+    h1, h2, h3, h4, h5, h6, p, span {
+        color: #000000;
     }
 </style>
 {% endblock %}
