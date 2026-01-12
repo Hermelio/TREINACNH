@@ -256,28 +256,52 @@
     
     /* Feature Cards */
     .feature-card {
-        background: white;
-        border-radius: 16px;
-        padding: 32px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 36px 28px;
         height: 100%;
+        min-height: 280px;
         transition: all 0.3s ease;
-        border: 1px solid #e9ecef;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        display: flex;
+        flex-direction: column;
     }
     
     .feature-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+        transform: translateY(-6px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+        border-color: rgba(0, 0, 0, 0.08);
+    }
+    
+    .feature-card h3 {
+        font-family: 'Inter', system-ui, sans-serif;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: #1a1a1a;
+        line-height: 1.4;
+    }
+    
+    .feature-card p {
+        color: rgba(0, 0, 0, 0.65);
+        line-height: 1.6;
+        margin: 0;
+        font-size: 0.95rem;
     }
     
     .feature-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 12px;
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
         display: flex;
         align-items: center;
         justify-content: center;
         margin-bottom: 20px;
-        font-size: 1.8rem;
+        font-size: 1.75rem;
+        flex-shrink: 0;
     }
     
     .feature-icon.green {
@@ -310,28 +334,53 @@
     
     /* Benefits Section */
     .benefit-card {
-        background: #f8f9fa;
-        border-radius: 16px;
-        padding: 32px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 36px 28px;
         height: 100%;
+        min-height: 280px;
         transition: all 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        display: flex;
+        flex-direction: column;
     }
     
     .benefit-card:hover {
         background: white;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+        transform: translateY(-6px);
+        border-color: rgba(0, 0, 0, 0.08);
+    }
+    
+    .benefit-card h4 {
+        font-family: 'Inter', system-ui, sans-serif;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: #1a1a1a;
+        line-height: 1.4;
+    }
+    
+    .benefit-card p {
+        color: rgba(0, 0, 0, 0.65);
+        line-height: 1.6;
+        margin: 0;
+        font-size: 0.95rem;
     }
     
     .benefit-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 12px;
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
         display: flex;
         align-items: center;
         justify-content: center;
         margin-bottom: 20px;
-        font-size: 1.6rem;
+        font-size: 1.75rem;
+        flex-shrink: 0;
     }
     
     .benefit-icon.green {
@@ -364,10 +413,14 @@
     
     /* Section Titles */
     .section-title {
-        font-size: 2.5rem;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        font-size: clamp(1.75rem, 3.5vw, 2.5rem);
         font-weight: 700;
-        margin-bottom: 1rem;
         color: #1a1a1a;
+        line-height: 1.25;
+        letter-spacing: -0.01em;
+        margin-bottom: 1rem;
+        text-align: left;
     }
     
     /* Mapa */
@@ -654,9 +707,10 @@
 </section>
 
 <!-- Como Funciona -->
-<section class="py-5 bg-white">
-    <div class="container py-4">
-        <h2 class="section-title text-center mb-5">Treinar com a TreinaCNH Ã© fÃ¡cil:</h2>
+<section class="py-5" style="padding-top: 5rem !important; padding-bottom: 5rem !important;">
+    <div class="container">
+        <h2 class="section-title mb-4">Treinar com a TreinaCNH é fácil:</h2>
+        <p class="lead" style="color: rgba(0,0,0,0.65); max-width: 600px; margin-bottom: 3rem; font-size: 1.1rem; line-height: 1.6;">Comece a dar aulas em três passos simples</p>
         
         <div class="row g-4">
             <div class="col-md-4">
@@ -693,9 +747,10 @@
 </section>
 
 <!-- Por que se tornar instrutor -->
-<section class="py-5 bg-light">
-    <div class="container py-4">
-        <h2 class="section-title text-center mb-5">Por que se tornar um instrutor da TreinaCNH?</h2>
+<section class="py-5" style="padding-top: 5rem !important; padding-bottom: 5rem !important; background: #f8f9fa;">
+    <div class="container">
+        <h2 class="section-title mb-4">Por que se tornar um instrutor da TreinaCNH?</h2>
+        <p class="lead" style="color: rgba(0,0,0,0.65); max-width: 600px; margin-bottom: 3rem; font-size: 1.1rem; line-height: 1.6;">Vantagens exclusivas para instrutores</p>
         
         <div class="row g-4">
             <div class="col-md-4">
