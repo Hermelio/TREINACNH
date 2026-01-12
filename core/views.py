@@ -10,6 +10,7 @@ from .models import StaticPage, FAQEntry, HomeBanner, NewsArticle
 def home_view(request):
     """Homepage with search, featured instructors and interactive map"""
     import json
+    from marketplace.models import StudentLead
     
     # Get instructor count per state
     instructor_counts = InstructorProfile.objects.filter(
@@ -19,9 +20,17 @@ def home_view(request):
         total=Count('id')
     ).values('total')
     
-    # Get states for search dropdown with instructor counts
+    # Get student lead count per state
+    student_counts = StudentLead.objects.filter(
+        state=OuterRef('pk')
+    ).values('state').annotate(
+        total=Count('id')
+    ).values('total')
+    
+    # Get states for search dropdown with instructor and student counts
     states = State.objects.annotate(
-        instructor_count=Subquery(instructor_counts)
+        instructor_count=Subquery(instructor_counts),
+        student_count=Subquery(student_counts)
     ).order_by('code')
     
     # Featured/new instructors
@@ -34,9 +43,15 @@ def home_view(request):
     
     # Stats
     total_instructors = InstructorProfile.objects.filter(is_visible=True, is_verified=True).count()
+    total_students = StudentLead.objects.count()
     total_cities = City.objects.filter(is_active=True).annotate(
         instructor_count=Count('instructors', filter=Q(instructors__is_visible=True))
     ).filter(instructor_count__gt=0).count()
+    
+    # Top states with students
+    top_student_states = StudentLead.objects.values('state__code', 'state__name').annotate(
+        total=Count('id')
+    ).order_by('-total')[:10]
     
     # Banners
     banners = HomeBanner.objects.filter(is_active=True).order_by('order')[:3]
@@ -73,6 +88,7 @@ def home_view(request):
             'code': state.code,
             'name': state.name,
             'instructors': state.instructor_count or 0,
+            'students': state.student_count or 0,
             'coordinates': coords
         })
     
@@ -82,9 +98,11 @@ def home_view(request):
         'instructors_json': json.dumps(instructors_data),
         'featured_instructors': featured_instructors,
         'total_instructors': total_instructors,
+        'total_students': total_students,
         'total_cities': total_cities,
+        'top_student_states': top_student_states,
         'banners': banners,
-        'page_title': 'Encontre seu Instrutor de Direção',
+        'page_title': 'Cadastre-se como Instrutor - TREINACNH',
     }
     return render(request, 'core/home.html', context)
 
