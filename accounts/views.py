@@ -34,18 +34,17 @@ def register_view(request):
             
             # Auto login after registration
             login(request, user)
-            messages.success(request, 'Conta criada com sucesso! Bem-vindo ao TREINACNH.')
             
-            # Redirect based on role
+            # Different messages based on role
             if user.profile.is_instructor:
-                messages.info(request, 'Complete seu perfil de instrutor para aparecer nas buscas.')
-                # Check if user has preferred_city to create instructor profile with it
-                try:
-                    return redirect('marketplace:instructor_profile_edit')
-                except:
-                    messages.warning(request, 'Configure seu perfil de instrutor.')
-                    return redirect('accounts:dashboard')
+                messages.success(
+                    request, 
+                    'Cadastro realizado com sucesso! Sua conta foi criada.'
+                )
+                # Redirect to success page with instructions
+                return redirect('accounts:registration_success')
             else:
+                messages.success(request, 'Conta criada com sucesso! Bem-vindo ao TREINACNH.')
                 return redirect('accounts:dashboard')
         else:
             messages.error(request, 'Por favor, corrija os erros abaixo.')
@@ -53,6 +52,15 @@ def register_view(request):
         form = UserRegistrationForm()
     
     return render(request, 'accounts/register.html', {'form': form})
+
+
+@login_required
+def registration_success_view(request):
+    """
+    Success page after registration with next steps information.
+    Only accessible to authenticated users.
+    """
+    return render(request, 'accounts/registration_success.html')
 
 
 def login_view(request):

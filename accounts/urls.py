@@ -8,6 +8,7 @@ app_name = 'accounts'
 
 urlpatterns = [
     path('registrar/', views.register_view, name='register'),
+    path('cadastro-sucesso/', views.registration_success_view, name='registration_success'),
     path('entrar/', views.login_view, name='login'),
     path('sair/', views.logout_view, name='logout'),
     path('painel/', views.dashboard_view, name='dashboard'),

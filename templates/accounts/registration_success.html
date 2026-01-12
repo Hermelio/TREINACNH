@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadastro Realizado{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="padding-top: 7rem !important;">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg">
+                <div class="card-body p-5 text-center">
+                    <div class="mb-4">
+                        <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
+                    </div>
+                    
+                    <h1 class="mb-4" style="color: #000000; font-weight: 700;">Cadastro Realizado com Sucesso!</h1>
+                    
+                    {% if user.profile.is_instructor %}
+                    <div class="alert alert-info text-start mb-4">
+                        <h5 class="alert-heading" style="color: #000000;">
+                            <i class="bi bi-info-circle-fill me-2"></i>Próximos Passos
+                        </h5>
+                        <hr>
+                        <p style="color: #000000; margin-bottom: 12px;">
+                            <strong>1. Análise do Perfil</strong><br>
+                            Nossa equipe irá analisar suas informações para garantir a segurança da plataforma.
+                        </p>
+                        <p style="color: #000000; margin-bottom: 12px;">
+                            <strong>2. Contato da Equipe</strong><br>
+                            Você receberá um <strong>e-mail</strong> e/ou mensagem no <strong>WhatsApp</strong> com o resultado da análise.
+                        </p>
+                        <p style="color: #000000; margin-bottom: 0;">
+                            <strong>3. Conclusão do Cadastro</strong><br>
+                            Se aprovado, você receberá um link para completar seu perfil com:
+                        </p>
+                        <ul class="text-start mt-2" style="color: #000000;">
+                            <li>Tempo de experiência como instrutor</li>
+                            <li>Foto de perfil (opcional)</li>
+                            <li>Informações adicionais sobre seus serviços</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="alert alert-warning text-start">
+                        <i class="bi bi-clock-fill me-2"></i>
+                        <strong>Tempo de Análise:</strong> Geralmente entre 24 a 48 horas úteis.
+                    </div>
+                    
+                    <p class="text-muted mb-4">
+                        Enquanto isso, você pode explorar a plataforma e ver como outros instrutores estão anunciando seus serviços.
+                    </p>
+                    {% else %}
+                    <p class="lead mb-4" style="color: #000000;">
+                        Sua conta foi criada com sucesso! Agora você pode buscar instrutores na sua região.
+                    </p>
+                    {% endif %}
+                    
+                    <div class="d-flex gap-3 justify-content-center">
+                        <a href="{% url 'accounts:dashboard' %}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-speedometer2 me-2"></i>Ir para Dashboard
+                        </a>
+                        <a href="{% url 'core:home' %}" class="btn btn-outline-secondary btn-lg">
+                            <i class="bi bi-house-fill me-2"></i>Voltar ao Início
+                        </a>
+                    </div>
+                    
+                    {% if user.profile.is_instructor %}
+                    <div class="mt-5 pt-4 border-top">
+                        <h5 style="color: #000000; font-weight: 600; margin-bottom: 20px;">
+                            <i class="bi bi-envelope-fill me-2"></i>Dúvidas sobre o processo?
+                        </h5>
+                        <p class="text-muted">
+                            Entre em contato conosco pelo WhatsApp ou e-mail se tiver alguma dúvida.
+                        </p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <a href="https://wa.me/5511999999999" target="_blank" class="btn btn-success">
+                                <i class="bi bi-whatsapp me-2"></i>WhatsApp
+                            </a>
+                            <a href="{% url 'core:contact' %}" class="btn btn-outline-primary">
+                                <i class="bi bi-envelope-fill me-2"></i>E-mail
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
