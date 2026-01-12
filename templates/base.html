@@ -7,15 +7,29 @@
     <meta name="description" content="Encontre instrutores de direção verificados na sua cidade. Compare preços, veja avaliações e agende aulas.">
     <title>{% block title %}{{ page_title|default:"TREINACNH" }}{% endblock %} | TREINACNH</title>
     
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{% static 'images/logotipoTreinaCNH.png' %}">
-    <link rel="shortcut icon" type="image/png" href="{% static 'images/logotipoTreinaCNH.png' %}">
-    <link rel="apple-touch-icon" href="{% static 'images/logotipoTreinaCNH.png' %}">
+    <!-- Preconnect para recursos externos -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
     
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    {% block preload %}
+    <!-- Preload será adicionado por páginas específicas -->
+    {% endblock %}
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'images/logos/logotipoTreinaCNH-640w.webp' %}">
+    <link rel="shortcut icon" type="image/png" href="{% static 'images/logos/logotipoTreinaCNH-640w.webp' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/logos/logotipoTreinaCNH-960w.webp' %}">
+    
+    <!-- CSS Crítico Inline -->
+    <style>{% include "includes/critical.css" %}</style>
+    
+    <!-- Bootstrap CSS - Non-blocking -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"></noscript>
+    
+    <!-- Bootstrap Icons - Non-blocking -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"></noscript>
     
     <style>
         :root {
