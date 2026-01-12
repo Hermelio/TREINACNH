@@ -17,6 +17,14 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
+# CSRF Trusted Origins - Required for forms to work with specific domains/IPs
+CSRF_TRUSTED_ORIGINS = [
+    'http://72.61.36.89:8080',
+    'http://72.61.36.89',
+    'http://localhost:8080',
+    'http://127.0.0.1:8080',
+]
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
