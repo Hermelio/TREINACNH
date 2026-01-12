@@ -271,29 +271,40 @@ def city_students_view(request, state_code, city_name):
     # Mask sensitive data for non-verified users
     students_data = []
     for student in students:
-        # Mask name (show only first name + initial)
-        name_parts = student.name.split()
-        if is_verified_instructor:
-            masked_name = student.name
-        else:
-            masked_name = f"{name_parts[0]} {name_parts[1][0]}." if len(name_parts) > 1 else name_parts[0]
-        
-        # Mask phone (show only last 4 digits)
-        if is_verified_instructor:
-            masked_phone = student.phone
-        else:
-            masked_phone = f"(XX) XXXXX-{student.phone[-4:]}" if student.phone else "Não informado"
-        
-        students_data.append({
-            'id': student.id,
-            'name': masked_name,
-            'phone': masked_phone,
-            'category': student.get_category_display(),
-            'category_code': student.category,
-            'has_theory': student.has_theory,
-            'created_at': student.created_at,
-            'can_view_full': is_verified_instructor
-        })
+        try:
+            # Mask name (show only first name + initial)
+            name_parts = student.name.split() if student.name else ['Aluno']
+            if is_verified_instructor:
+                masked_name = student.name or 'Nome não informado'
+            else:
+                if len(name_parts) > 1:
+                    masked_name = f"{name_parts[0]} {name_parts[1][0]}."
+                else:
+                    masked_name = name_parts[0] if name_parts else 'Aluno'
+            
+            # Mask phone (show only last 4 digits)
+            if is_verified_instructor:
+                masked_phone = student.phone or 'Não informado'
+            else:
+                if student.phone and len(student.phone) >= 4:
+                    masked_phone = f"(XX) XXXXX-{student.phone[-4:]}"
+                else:
+                    masked_phone = "Não informado"
+            
+            students_data.append({
+                'id': student.id,
+                'name': masked_name,
+                'phone': masked_phone,
+                'category': student.get_category_display() if hasattr(student, 'get_category_display') else student.category,
+                'category_code': student.category,
+                'has_theory': student.has_theory,
+                'created_at': student.created_at,
+                'can_view_full': is_verified_instructor
+            })
+        except Exception as e:
+            # Log error but continue processing other students
+            print(f"Erro ao processar aluno {student.id}: {str(e)}")
+            continue
     
     context = {
         'city_name': city_name,
