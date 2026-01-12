@@ -700,12 +700,154 @@
             font-size: 1.5rem;
         }
     }
+    
+    /* Floating Stat Bubble - estilo tooltip saindo do rosto */
+    .stat-bubble {
+        position: absolute;
+        top: 28%;
+        right: 25%;
+        background: #ffffff;
+        border-radius: 50px;
+        padding: 12px 20px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        z-index: 150;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: floatBubble 3s ease-in-out infinite;
+    }
+    
+    @keyframes floatBubble {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-6px); }
+    }
+    
+    /* Tail/pontinha apontando para o rosto */
+    .stat-bubble::after {
+        content: '';
+        position: absolute;
+        right: -8px;
+        top: 50%;
+        transform: translateY(-50%) rotate(45deg);
+        width: 16px;
+        height: 16px;
+        background: #ffffff;
+        box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.05);
+        z-index: -1;
+    }
+    
+    .stat-bubble:hover {
+        transform: scale(1.02);
+        box-shadow: 0 10px 32px rgba(0, 0, 0, 0.15);
+    }
+    
+    .stat-bubble .avatar-ring {
+        width: 44px;
+        height: 44px;
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #ffffff;
+        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.25);
+        flex-shrink: 0;
+    }
+    
+    .stat-bubble .avatar-ring i {
+        font-size: 20px;
+        color: #ffffff;
+    }
+    
+    .stat-bubble .bubble-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    .stat-bubble .bubble-number {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        line-height: 1;
+    }
+    
+    .stat-bubble .bubble-label {
+        font-size: 0.7rem;
+        color: #6c757d;
+        font-weight: 500;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+    
+    /* Responsivo - reposicionar bubble */
+    @media (max-width: 1200px) {
+        .stat-bubble {
+            top: 25%;
+            right: 20%;
+            padding: 10px 16px;
+            gap: 10px;
+        }
+        .stat-bubble .avatar-ring {
+            width: 38px;
+            height: 38px;
+        }
+        .stat-bubble .bubble-number {
+            font-size: 1.3rem;
+        }
+        .stat-bubble .bubble-label {
+            font-size: 0.65rem;
+        }
+    }
+    
+    @media (max-width: 992px) {
+        .stat-bubble {
+            top: 22%;
+            right: 15%;
+            padding: 8px 14px;
+            gap: 8px;
+        }
+        .stat-bubble .avatar-ring {
+            width: 34px;
+            height: 34px;
+        }
+        .stat-bubble .avatar-ring i {
+            font-size: 16px;
+        }
+        .stat-bubble .bubble-number {
+            font-size: 1.15rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .stat-bubble {
+            position: relative;
+            top: auto;
+            right: auto;
+            margin: 15px 0 0 0;
+            width: fit-content;
+        }
+        .stat-bubble::after {
+            display: none;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <!-- Hero Section com Background Image - Estilo Uber -->
 <section class="hero-dark">
+    <!-- Floating Stat Bubble - tooltip saindo do rosto -->
+    <div class="stat-bubble">
+        <div class="avatar-ring">
+            <i class="bi bi-graph-up-arrow"></i>
+        </div>
+        <div class="bubble-content">
+            <div class="bubble-number">+75</div>
+            <div class="bubble-label">Novos alunos hoje</div>
+        </div>
+    </div>
+    
     <!-- Caixa flutuante de alunos cadastrados -->
     <div class="floating-stats-box">
         <div class="icon-wrapper">
