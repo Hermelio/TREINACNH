@@ -280,8 +280,8 @@
     .stats-bar {
         position: absolute;
         left: 50%;
-        transform: translateX(-50%) translateY(35%);
-        bottom: 0;
+        transform: translateX(-50%);
+        bottom: -46px;
         background: rgba(20, 20, 20, 0.55);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
@@ -296,7 +296,7 @@
         width: min(1100px, calc(100% - 64px));
         height: 92px;
         margin: 0;
-        z-index: 100;
+        z-index: 999;
     }
     
     .stats-bar-item {
