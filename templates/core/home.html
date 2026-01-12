@@ -657,7 +657,7 @@
     
     /* Mapa */
     #homeMap {
-        height: 500px;
+        height: 650px;
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
@@ -1170,9 +1170,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize map centered on Brazil with bounds
     const map = L.map('homeMap', {
         center: [-14.235, -51.925],
-        zoom: 4,
+        zoom: 5,
         minZoom: 4,
-        maxZoom: 10,
+        maxZoom: 15,
         maxBounds: brazilBounds,
         maxBoundsViscosity: 1.0
     });
@@ -1248,34 +1248,80 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Add student markers (verde)
+    // Group students by city for better visualization
+    const studentsByCity = {};
     studentsData.forEach(function(student) {
         if (student.latitude && student.longitude) {
-            const studentMarker = L.marker([student.latitude, student.longitude], {
-                icon: L.divIcon({
-                    className: 'custom-student-marker',
-                    html: '<div style="background-color: #28a745; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"><i class="bi bi-person-fill" style="font-size: 11px;"></i></div>',
-                    iconSize: [20, 20]
-                })
-            }).addTo(map);
-            
-            const categoryText = student.category === 'A' ? 'Categoria A (Moto)' : 
-                               student.category === 'B' ? 'Categoria B (Carro)' :
-                               student.category === 'AB' ? 'Categorias A e B' : student.category;
-            const theoryText = student.has_theory ? 'JÃ¡ fez teÃ³rica' : 'Precisa de teÃ³rica';
-            
-            studentMarker.bindPopup(`
-                <div class="text-center">
-                    <h6 class="mb-2"><i class="bi bi-person-check-fill text-success me-1"></i>Aluno Aguardando</h6>
-                    <p class="mb-1 small"><i class="bi bi-geo-alt-fill me-1"></i>${student.city_name} - ${student.state_code}</p>
-                    <p class="mb-1 small"><i class="bi bi-car-front-fill me-1"></i>${categoryText}</p>
-                    <p class="mb-1 small"><i class="bi bi-book-fill me-1"></i>${theoryText}</p>
-                    <a href="/contas/registro/" class="btn btn-sm btn-success mt-2">
-                        Cadastrar para Atender
-                    </a>
-                </div>
-            `);
+            const key = `${student.city_name}-${student.state_code}`;
+            if (!studentsByCity[key]) {
+                studentsByCity[key] = {
+                    city: student.city_name,
+                    state: student.state_code,
+                    lat: student.latitude,
+                    lng: student.longitude,
+                    count: 0,
+                    students: []
+                };
+            }
+            studentsByCity[key].count++;
+            studentsByCity[key].students.push(student);
         }
+    });
+    
+    // Add city markers with student count (verde)
+    Object.values(studentsByCity).forEach(function(cityData) {
+        const markerSize = Math.max(24, Math.min(50, cityData.count * 3));
+        
+        const studentMarker = L.circleMarker([cityData.lat, cityData.lng], {
+            radius: markerSize / 2,
+            fillColor: '#22c55e',
+            color: '#fff',
+            weight: 3,
+            opacity: 1,
+            fillOpacity: 0.75
+        }).addTo(map);
+        
+        const categoryA = cityData.students.filter(s => s.category === 'A' || s.category === 'AB').length;
+        const categoryB = cityData.students.filter(s => s.category === 'B' || s.category === 'AB').length;
+        const withTheory = cityData.students.filter(s => s.has_theory).length;
+        
+        const popupContent = `
+            <div class="text-center" style="min-width: 200px;">
+                <h6 class="mb-2" style="color: #22c55e; font-weight: 700;">
+                    <i class="bi bi-people-fill me-1"></i>${cityData.count} ${cityData.count === 1 ? 'Aluno' : 'Alunos'}
+                </h6>
+                <p class="mb-2" style="font-size: 0.9rem; color: #333;">
+                    <i class="bi bi-geo-alt-fill me-1"></i><strong>${cityData.city} - ${cityData.state}</strong>
+                </p>
+                <hr style="margin: 10px 0;">
+                <p class="mb-1 small" style="color: #666;">
+                    <i class="bi bi-car-front-fill me-1"></i>Categoria A: ${categoryA} | B: ${categoryB}
+                </p>
+                <p class="mb-2 small" style="color: #666;">
+                    <i class="bi bi-book-fill me-1"></i>Com teoria: ${withTheory}
+                </p>
+                <a href="/contas/registro/" class="btn btn-sm btn-success mt-2" style="width: 100%;">
+                    <i class="bi bi-person-plus-fill me-1"></i>Cadastrar para Atender
+                </a>
+            </div>
+        `;
+        
+        studentMarker.bindPopup(popupContent);
+        
+        // Hover effects
+        studentMarker.on('mouseover', function() {
+            this.setStyle({
+                fillOpacity: 1,
+                radius: this.options.radius * 1.15
+            });
+        });
+        
+        studentMarker.on('mouseout', function() {
+            this.setStyle({
+                fillOpacity: 0.75,
+                radius: this.options.radius / 1.15
+            });
+        });
     });
     
     // Add instructor markers (vermelho)
