@@ -10,6 +10,14 @@
         margin: 0;
     }
     
+    /* Background para seções abaixo do HERO */
+    section:not(.hero-dark) {
+        background-image: url('{% static "images/background-site.png" %}');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }
+    
     /* Hero Section com Background Image - Estilo Uber */
     .hero-dark {
         position: relative;
