@@ -498,12 +498,90 @@
         border-radius: 50%;
         background-color: #0d6efd;
     }
+    
+    /* Caixa flutuante de alunos cadastrados */
+    .floating-stats-box {
+        position: absolute;
+        top: 50%;
+        right: 8%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: 20px;
+        padding: 24px 28px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        z-index: 100;
+        min-width: 200px;
+        text-align: center;
+    }
+    
+    .floating-stats-box .icon-wrapper {
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 12px;
+    }
+    
+    .floating-stats-box .icon-wrapper i {
+        font-size: 24px;
+        color: white;
+    }
+    
+    .floating-stats-box .number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+    
+    .floating-stats-box .label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    @media (max-width: 992px) {
+        .floating-stats-box {
+            right: 5%;
+            padding: 20px 24px;
+            min-width: 180px;
+        }
+        .floating-stats-box .number {
+            font-size: 2rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .floating-stats-box {
+            position: relative;
+            top: auto;
+            right: auto;
+            transform: none;
+            margin: 20px auto 0;
+            max-width: 200px;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <!-- Hero Section com Background Image - Estilo Uber -->
 <section class="hero-dark">
+    <!-- Caixa flutuante de alunos cadastrados -->
+    <div class="floating-stats-box">
+        <div class="icon-wrapper">
+            <i class="bi bi-people-fill"></i>
+        </div>
+        <div class="number">{{ total_students|default:"200+" }}</div>
+        <div class="label">Alunos cadastrados</div>
+    </div>
+    
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-7 col-xl-6 hero-content">
