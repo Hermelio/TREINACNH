@@ -124,6 +124,42 @@
                         </div>
                         
                         <hr>
+                        <h6 class="mb-3">Informações de Contato</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.cpf.label }} *</label>
+                            {{ form.cpf }}
+                            {% if form.cpf.errors %}
+                                <div class="text-danger small">{{ form.cpf.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">{{ form.cpf.help_text }}</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.whatsapp_number.label }} *</label>
+                            {{ form.whatsapp_number }}
+                            {% if form.whatsapp_number.errors %}
+                                <div class="text-danger small">{{ form.whatsapp_number.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">{{ form.whatsapp_number.help_text }}</small>
+                        </div>
+                        
+                        <div class="mb-3 form-check" id="hasCarField" style="display: none;">
+                            {{ form.has_own_car }}
+                            <label class="form-check-label" for="id_has_own_car">
+                                {{ form.has_own_car.label }}
+                            </label>
+                            <small class="form-text text-muted d-block">{{ form.has_own_car.help_text }}</small>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            {{ form.accept_whatsapp_messages }}
+                            <label class="form-check-label" for="id_accept_whatsapp_messages">
+                                {{ form.accept_whatsapp_messages.label }}
+                            </label>
+                        </div>
+                        
+                        <hr>
                         <p class="text-muted mb-3">Crie uma senha segura:</p>
                         
                         <div class="mb-3">
@@ -145,6 +181,31 @@
                         {% if form.non_field_errors %}
                             <div class="alert alert-danger">{{ form.non_field_errors }}</div>
                         {% endif %}
+                        
+                        <hr>
+                        <h6 class="mb-3">Termos e Condições</h6>
+                        
+                        <div class="mb-3 form-check">
+                            {{ form.accept_terms }}
+                            <label class="form-check-label" for="id_accept_terms">
+                                {{ form.accept_terms.label }}
+                                <a href="{% url 'core:static_page' slug='termos' %}" target="_blank" class="text-decoration-none">(ler termos)</a>
+                            </label>
+                            {% if form.accept_terms.errors %}
+                                <div class="text-danger small">{{ form.accept_terms.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            {{ form.accept_privacy }}
+                            <label class="form-check-label" for="id_accept_privacy">
+                                {{ form.accept_privacy.label }}
+                                <a href="{% url 'core:static_page' slug='privacidade' %}" target="_blank" class="text-decoration-none">(ler política)</a>
+                            </label>
+                            {% if form.accept_privacy.errors %}
+                                <div class="text-danger small">{{ form.accept_privacy.errors }}</div>
+                            {% endif %}
+                        </div>
                         
                         <button type="submit" class="btn btn-primary btn-lg w-100">Criar Conta</button>
                     </form>
@@ -170,11 +231,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function toggleFormFields() {
         const isInstructor = instructorRadio && instructorRadio.checked;
         const instructorFields = document.getElementById('instructorOnlyFields');
+        const hasCarField = document.getElementById('hasCarField');
         const cityHelpStudent = document.getElementById('cityHelpStudent');
         const cityHelpInstructor = document.getElementById('cityHelpInstructor');
         
         if (instructorFields) {
             instructorFields.style.display = isInstructor ? 'block' : 'none';
+        }
+        
+        if (hasCarField) {
+            hasCarField.style.display = isInstructor ? 'block' : 'none';
         }
         
         if (cityHelpStudent && cityHelpInstructor) {
