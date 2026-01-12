@@ -198,6 +198,45 @@ class InstructorProfile(models.Model):
         help_text='Instrutor com documentos aprovados'
     )
     
+    # Trial Period (14 days free)
+    trial_start_date = models.DateTimeField(
+        'Data de Início do Trial',
+        null=True,
+        blank=True,
+        help_text='Data em que o trial de 14 dias começou'
+    )
+    trial_end_date = models.DateTimeField(
+        'Data de Fim do Trial',
+        null=True,
+        blank=True,
+        help_text='Data em que o trial de 14 dias termina'
+    )
+    is_trial_active = models.BooleanField(
+        'Trial Ativo',
+        default=False,
+        help_text='Instrutor está no período de trial gratuito'
+    )
+    trial_expiration_notified_7d = models.BooleanField(
+        'Notificado 7 dias antes',
+        default=False,
+        help_text='E-mail de aviso 7 dias antes enviado'
+    )
+    trial_expiration_notified_3d = models.BooleanField(
+        'Notificado 3 dias antes',
+        default=False,
+        help_text='E-mail de aviso 3 dias antes enviado'
+    )
+    trial_expiration_notified_1d = models.BooleanField(
+        'Notificado 1 dia antes',
+        default=False,
+        help_text='E-mail de aviso 1 dia antes enviado'
+    )
+    trial_blocked_notified = models.BooleanField(
+        'Notificado ao Bloquear',
+        default=False,
+        help_text='E-mail de bloqueio enviado'
+    )
+    
     # Metadata
     created_at = models.DateTimeField('Criado em', auto_now_add=True)
     updated_at = models.DateTimeField('Atualizado em', auto_now=True)
@@ -218,6 +257,33 @@ class InstructorProfile(models.Model):
     def get_absolute_url(self):
         """URL for instructor detail page"""
         return reverse('marketplace:instructor_detail', kwargs={'pk': self.pk})
+    
+    def activate_trial(self):
+        """Activate 14-day free trial"""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        if not self.trial_start_date:
+            self.trial_start_date = timezone.now()
+            self.trial_end_date = self.trial_start_date + timedelta(days=14)
+            self.is_trial_active = True
+            self.is_visible = True
+            self.save()
+    
+    def days_until_trial_end(self):
+        """Calculate days remaining in trial"""
+        if not self.trial_end_date:
+            return None
+        from django.utils import timezone
+        delta = self.trial_end_date - timezone.now()
+        return delta.days
+    
+    def is_trial_expired(self):
+        """Check if trial period has expired"""
+        if not self.trial_end_date or not self.is_trial_active:
+            return False
+        from django.utils import timezone
+        return timezone.now() > self.trial_end_date
     
     @property
     def profile_completion_score(self):
