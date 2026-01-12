@@ -53,25 +53,26 @@ def home_view(request):
         total=Count('id')
     ).order_by('-total')[:10]
     
-    # Get all students with city coordinates for map
+    # Get all students with state coordinates for map
+    # StudentLead.city is CharField, so we use state coordinates
     students_with_location = StudentLead.objects.filter(
-        city__latitude__isnull=False,
-        city__longitude__isnull=False
-    ).select_related('city', 'state')
+        state__latitude__isnull=False,
+        state__longitude__isnull=False
+    ).select_related('state')
     
-    # Convert students to list with coordinates
+    # Convert students to list with state coordinates
     students_data = []
     for student in students_with_location:
         students_data.append({
             'id': student.id,
             'name': student.name,
-            'city_name': student.city.name,
+            'city_name': student.city,  # city is CharField
             'state_code': student.state.code,
             'state_name': student.state.name,
             'category': student.category,
             'has_theory': student.has_theory,
-            'latitude': float(student.city.latitude),
-            'longitude': float(student.city.longitude),
+            'latitude': float(student.state.latitude),
+            'longitude': float(student.state.longitude),
         })
     
     # Banners
