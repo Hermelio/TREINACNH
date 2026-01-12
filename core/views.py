@@ -53,6 +53,27 @@ def home_view(request):
         total=Count('id')
     ).order_by('-total')[:10]
     
+    # Get all students with city coordinates for map
+    students_with_location = StudentLead.objects.filter(
+        city__latitude__isnull=False,
+        city__longitude__isnull=False
+    ).select_related('city', 'state')
+    
+    # Convert students to list with coordinates
+    students_data = []
+    for student in students_with_location:
+        students_data.append({
+            'id': student.id,
+            'name': student.name,
+            'city_name': student.city.name,
+            'state_code': student.state.code,
+            'state_name': student.state.name,
+            'category': student.category,
+            'has_theory': student.has_theory,
+            'latitude': float(student.city.latitude),
+            'longitude': float(student.city.longitude),
+        })
+    
     # Banners
     banners = HomeBanner.objects.filter(is_active=True).order_by('order')[:3]
     
@@ -96,6 +117,7 @@ def home_view(request):
         'states': states,
         'states_json': json.dumps(states_data),
         'instructors_json': json.dumps(instructors_data),
+        'students_json': json.dumps(students_data),
         'featured_instructors': featured_instructors,
         'total_instructors': total_instructors,
         'total_students': total_students,

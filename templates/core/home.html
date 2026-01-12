@@ -509,8 +509,8 @@
 <section class="py-5 bg-light">
     <div class="container">
         <div class="text-center mb-4">
-            <h2><i class="bi bi-map me-2"></i>Encontre Instrutores no Mapa</h2>
-            <p class="text-muted">Veja onde estão os instrutores cadastrados em todo o Brasil</p>
+            <h2><i class="bi bi-map me-2"></i>Alunos Aguardando Instrutores</h2>
+            <p class="text-muted">Veja onde estão os alunos esperando por você em todo o Brasil</p>
         </div>
         
         <div class="card">
@@ -519,25 +519,21 @@
             </div>
             <div class="card-footer bg-light">
                 <div class="row text-center">
-                    <div class="col-md-3 mb-2 mb-md-0">
-                        <div style="display: inline-block; width: 20px; height: 20px; background: #e8f4f8; border: 1px solid #ddd; border-radius: 3px; vertical-align: middle;"></div>
-                        <small class="ms-2">0 instrutores</small>
+                    <div class="col-md-4 mb-2 mb-md-0">
+                        <div style="display: inline-block; width: 20px; height: 20px; background: #28a745; border: 2px solid #fff; border-radius: 50%; vertical-align: middle;"></div>
+                        <small class="ms-2">Alunos aguardando</small>
                     </div>
-                    <div class="col-md-3 mb-2 mb-md-0">
-                        <div style="display: inline-block; width: 20px; height: 20px; background: #90cdf4; border: 1px solid #ddd; border-radius: 3px; vertical-align: middle;"></div>
-                        <small class="ms-2">1-5 instrutores</small>
+                    <div class="col-md-4 mb-2 mb-md-0">
+                        <div style="display: inline-block; width: 20px; height: 20px; background: #ffc107; border: 2px solid #fff; border-radius: 3px; vertical-align: middle;"></div>
+                        <small class="ms-2">Estados (por alunos)</small>
                     </div>
-                    <div class="col-md-3 mb-2 mb-md-0">
-                        <div style="display: inline-block; width: 20px; height: 20px; background: #4299e1; border: 1px solid #ddd; border-radius: 3px; vertical-align: middle;"></div>
-                        <small class="ms-2">6-10 instrutores</small>
-                    </div>
-                    <div class="col-md-3">
-                        <div style="display: inline-block; width: 20px; height: 20px; background: #2b6cb0; border: 1px solid #ddd; border-radius: 3px; vertical-align: middle;"></div>
-                        <small class="ms-2">11+ instrutores</small>
+                    <div class="col-md-4">
+                        <div style="display: inline-block; width: 20px; height: 20px; background: #dc3545; border: 2px solid #fff; border-radius: 50%; vertical-align: middle;"></div>
+                        <small class="ms-2">Instrutores disponíveis</small>
                     </div>
                 </div>
                 <div class="text-center mt-2">
-                    <small class="text-muted"><i class="bi bi-cursor me-1"></i>Passe o mouse sobre os estados para ver detalhes</small>
+                    <small class="text-muted"><i class="bi bi-cursor me-1"></i>Clique nos marcadores para ver detalhes</small>
                 </div>
             </div>
         </div>
@@ -625,35 +621,38 @@ document.addEventListener('DOMContentLoaded', function() {
     // Parse states data
     const statesData = {{ states_json|safe }};
     const instructorsData = {{ instructors_json|safe }};
+    const studentsData = {{ students_json|safe }};
     
-    // Color scale based on instructor count
-    function getColor(instructorCount) {
-        if (instructorCount === 0) return '#e8f4f8';
-        if (instructorCount <= 5) return '#90cdf4';
-        if (instructorCount <= 10) return '#4299e1';
-        return '#2b6cb0';
+    // Color scale based on student count (amarelo/laranja para demanda)
+    function getColor(studentCount) {
+        if (studentCount === 0) return '#e8f4f8';
+        if (studentCount <= 10) return '#fff3cd';
+        if (studentCount <= 30) return '#ffc107';
+        if (studentCount <= 50) return '#ff9800';
+        return '#ff6b00';
     }
     
     // Add state markers with tooltips
     statesData.forEach(function(state) {
         if (state.coordinates) {
-            const color = getColor(state.instructors);
+            const color = getColor(state.students);
             
-            // Create circle marker for state
+            // Create circle marker for state - tamanho baseado em alunos
             const marker = L.circleMarker([state.coordinates[0], state.coordinates[1]], {
-                radius: Math.max(10, Math.min(30, state.instructors * 2)),
+                radius: Math.max(15, Math.min(40, state.students * 0.5)),
                 fillColor: color,
                 color: '#fff',
                 weight: 2,
                 opacity: 1,
-                fillOpacity: 0.7
+                fillOpacity: 0.6
             }).addTo(map);
             
             // Tooltip content
             const tooltipContent = `
                 <div class="state-info-tooltip">
                     <h6>${state.name} (${state.code})</h6>
-                    <p><i class="bi bi-people-fill me-1"></i>${state.instructors} instrutores</p>
+                    <p><i class="bi bi-people-fill text-success me-1"></i>${state.students} alunos aguardando</p>
+                    <p><i class="bi bi-person-fill text-danger me-1"></i>${state.instructors} instrutores</p>
                 </div>
             `;
             
@@ -667,25 +666,55 @@ document.addEventListener('DOMContentLoaded', function() {
             marker.on('mouseover', function() {
                 this.setStyle({
                     fillOpacity: 0.9,
-                    radius: this.options.radius * 1.2
+                    radius: this.options.radius * 1.1
                 });
             });
             
             marker.on('mouseout', function() {
                 this.setStyle({
-                    fillOpacity: 0.7,
-                    radius: this.options.radius / 1.2
+                    fillOpacity: 0.6,
+                    radius: this.options.radius / 1.1
                 });
             });
             
-            // Click to navigate to state
+            // Click to register
             marker.on('click', function() {
-                window.location.href = '/instrutores/cidades/#' + state.code;
+                window.location.href = '/contas/registro/';
             });
         }
     });
     
-    // Add instructor markers
+    // Add student markers (verde)
+    studentsData.forEach(function(student) {
+        if (student.latitude && student.longitude) {
+            const studentMarker = L.marker([student.latitude, student.longitude], {
+                icon: L.divIcon({
+                    className: 'custom-student-marker',
+                    html: '<div style="background-color: #28a745; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"><i class="bi bi-person-fill" style="font-size: 11px;"></i></div>',
+                    iconSize: [20, 20]
+                })
+            }).addTo(map);
+            
+            const categoryText = student.category === 'A' ? 'Categoria A (Moto)' : 
+                               student.category === 'B' ? 'Categoria B (Carro)' :
+                               student.category === 'AB' ? 'Categorias A e B' : student.category;
+            const theoryText = student.has_theory ? 'Já fez teórica' : 'Precisa de teórica';
+            
+            studentMarker.bindPopup(`
+                <div class="text-center">
+                    <h6 class="mb-2"><i class="bi bi-person-check-fill text-success me-1"></i>Aluno Aguardando</h6>
+                    <p class="mb-1 small"><i class="bi bi-geo-alt-fill me-1"></i>${student.city_name} - ${student.state_code}</p>
+                    <p class="mb-1 small"><i class="bi bi-car-front-fill me-1"></i>${categoryText}</p>
+                    <p class="mb-1 small"><i class="bi bi-book-fill me-1"></i>${theoryText}</p>
+                    <a href="/contas/registro/" class="btn btn-sm btn-success mt-2">
+                        Cadastrar para Atender
+                    </a>
+                </div>
+            `);
+        }
+    });
+    
+    // Add instructor markers (vermelho)
     instructorsData.forEach(function(instructor) {
         if (instructor.latitude && instructor.longitude) {
             const instructorMarker = L.marker([instructor.latitude, instructor.longitude], {
