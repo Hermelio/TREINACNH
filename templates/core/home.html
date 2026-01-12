@@ -14,25 +14,13 @@
     .hero-dark {
         position: relative;
         width: 100%;
-        min-height: 100vh;
-        min-height: 100svh;
-        min-height: 100dvh;
-        height: calc(100vh - 60px);
-        height: calc(100svh - 60px);
-        height: calc(100dvh - 60px);
-        background-image:
-            linear-gradient(90deg,
-                rgba(0,0,0,0.95) 0%,
-                rgba(0,0,0,0.85) 40%,
-                rgba(0,0,0,0.60) 65%,
-                rgba(0,0,0,0.30) 85%,
-                rgba(0,0,0,0.10) 100%
-            ),
-            url('{% static "images/logohome.png" %}');
-        background-size: contain;
-        background-position: right center;
+        height: 100vh;
+        height: 100svh;
+        height: 100dvh;
+        background-image: url('{% static "images/logohome2.png" %}');
         background-repeat: no-repeat;
-        background-color: #0a0a0a;
+        background-position: center;
+        background-size: cover;
         color: #fff;
         display: flex;
         align-items: center;
@@ -42,13 +30,11 @@
     }
     
     .hero-dark .container {
-        height: 100%;
         position: relative;
-        z-index: 1;
+        z-index: 10;
     }
     
     .hero-dark .row {
-        height: 100%;
         margin: 0;
     }
     
@@ -101,20 +87,10 @@
     
     @media (max-width: 768px) {
         .hero-dark {
-            height: calc(100vh - 56px);
-            height: calc(100svh - 56px);
-            height: calc(100dvh - 56px);
-            background-image:
-                linear-gradient(90deg,
-                    rgba(0,0,0,0.95) 0%,
-                    rgba(0,0,0,0.85) 40%,
-                    rgba(0,0,0,0.60) 65%,
-                    rgba(0,0,0,0.30) 85%,
-                    rgba(0,0,0,0.10) 100%
-                ),
-                url('{% static "images/logohome.png" %}');
-            background-size: contain;
-            background-position: center center;
+            height: 100vh;
+            height: 100svh;
+            height: 100dvh;
+            background-position: center;
         }
         .hero-dark h1 {
             font-size: 2.25rem;
