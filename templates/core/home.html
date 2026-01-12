@@ -1118,35 +1118,41 @@
 </section>
 
 <!-- CTA Final -->
-<section class="py-5" style="padding-top: 5rem !important; padding-bottom: 5rem !important;">
+<section class="py-5" style="padding-top: 5rem !important; padding-bottom: 3rem !important;">
     <div class="container text-center py-5">
         <h2 class="section-title mb-4" style="text-align: center;">Pronto para começar?</h2>
         <p class="lead mb-4" style="color: rgba(255, 255, 255, 0.70); max-width: 700px; margin-left: auto; margin-right: auto; font-size: 1rem; line-height: 1.6; font-weight: 400; text-align: center;">Cadastre-se gratuitamente e comece a dar aulas hoje mesmo!</p>
-        <a href="{% url 'accounts:register' %}" class="btn btn-success btn-success-custom" style="padding: 16px 40px; font-size: 1.05rem;">
-            <i class="bi bi-person-plus-fill me-2"></i> Criar Conta Grátis
-        </a>
-    </div>
-</section>
-
-<!-- Bonus Banner -->
-<section class="py-5" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); position: relative; overflow: hidden;">
-    <div style="position: absolute; top: -50%; left: -10%; width: 300px; height: 300px; background: rgba(255, 255, 255, 0.1); border-radius: 50%; filter: blur(60px);"></div>
-    <div style="position: absolute; bottom: -50%; right: -10%; width: 400px; height: 400px; background: rgba(255, 255, 255, 0.1); border-radius: 50%; filter: blur(80px);"></div>
-    
-    <div class="container text-center py-4" style="position: relative; z-index: 2;">
-        <div style="display: inline-block; background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(10px); border-radius: 20px; padding: 36px 48px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); border: 2px solid rgba(255, 255, 255, 0.3);">
-            <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; background: rgba(255, 255, 255, 0.95); border-radius: 50%; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
-                <i class="bi bi-gift-fill" style="font-size: 2rem; color: #ff9800;"></i>
+        
+        <!-- Bonus Badge -->
+        <div style="display: inline-block; background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); border-radius: 50px; padding: 12px 28px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(255, 152, 0, 0.4); animation: pulse-glow 2s ease-in-out infinite;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="bi bi-gift-fill" style="font-size: 1.3rem; color: #fff;"></i>
+                <span style="font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 600; color: #1a1a1a;">
+                    🎉 Instrutores Pioneiros: <strong>14 dias grátis!</strong>
+                </span>
             </div>
-            <h3 style="font-family: 'Inter', sans-serif; font-size: 2rem; font-weight: 700; color: #1a1a1a; margin-bottom: 12px; text-shadow: 0 2px 4px rgba(255, 255, 255, 0.5);">
-                🎉 Instrutores Pioneiros ganham 14 dias grátis!
-            </h3>
-            <p style="font-family: 'Inter', sans-serif; font-size: 1.1rem; color: rgba(0, 0, 0, 0.75); font-weight: 500; margin: 0;">
-                Seja um dos primeiros e aproveite benefícios exclusivos
-            </p>
+        </div>
+        
+        <div>
+            <a href="{% url 'accounts:register' %}" class="btn btn-success btn-success-custom" style="padding: 16px 40px; font-size: 1.05rem;">
+                <i class="bi bi-person-plus-fill me-2"></i> Criar Conta Grátis
+            </a>
         </div>
     </div>
 </section>
+
+<style>
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 4px 16px rgba(255, 152, 0, 0.4);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 4px 24px rgba(255, 152, 0, 0.6);
+        transform: scale(1.02);
+    }
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}
