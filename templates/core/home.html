@@ -280,8 +280,8 @@
     .stats-bar {
         position: absolute;
         left: 50%;
-        transform: translateX(-50%);
-        bottom: 28px;
+        transform: translateX(-50%) translateY(50%);
+        bottom: 0;
         background: rgba(20, 20, 20, 0.55);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
@@ -296,7 +296,7 @@
         width: min(1100px, calc(100% - 64px));
         height: 92px;
         margin: 0;
-        z-index: 20;
+        z-index: 100;
     }
     
     .stats-bar-item {
@@ -979,7 +979,7 @@
 </section>
 
 <!-- Como Funciona -->
-<section class="py-5" style="padding-top: 5rem !important; padding-bottom: 5rem !important;">
+<section class="py-5" style="padding-top: 8rem !important; padding-bottom: 5rem !important;">
     <div class="container">
         <h2 class="section-title mb-4">Treinar com a TreinaCNH é fácil:</h2>
         <p class="lead" style="color: rgba(255, 255, 255, 0.70); max-width: 600px; margin-bottom: 3rem; font-size: 1rem; line-height: 1.6; font-weight: 400;">Comece a dar aulas em três passos simples</p>
