@@ -7,8 +7,8 @@ from django.contrib import messages
 from django.db.models import Q, Count, Prefetch
 from django.core.paginator import Paginator
 from django.views.decorators.http import require_http_methods
-from .models import State, City, InstructorProfile, Lead, CategoryCNH
-from .forms import InstructorProfileForm, LeadForm, InstructorSearchForm
+from .models import State, City, InstructorProfile, Lead, CategoryCNH, StudentLead
+from .forms import InstructorProfileForm, LeadForm, InstructorSearchForm, StudentRegistrationForm
 
 
 def cities_list_view(request):
@@ -336,3 +336,61 @@ def lead_update_status_view(request, lead_pk):
         messages.error(request, 'Status inválido.')
     
     return redirect('marketplace:my_leads')
+
+
+def student_register_view(request):
+    """Student registration form"""
+    if request.method == 'POST':
+        form = StudentRegistrationForm(request.POST, request.FILES)
+        if form.is_valid():
+            student = form.save(commit=False)
+            
+            # Get selected categories before saving
+            categories = form.cleaned_data.get('categories')
+            
+            # Save student
+            student.save()
+            
+            # Add categories (ManyToMany relationship)
+            if categories:
+                student.categories.set(categories)
+            
+            # Success message
+            messages.success(
+                request, 
+                f'Cadastro realizado com sucesso, {student.name.split()[0]}! '
+                'Entraremos em contato em breve quando houver instrutores disponíveis na sua região.'
+            )
+            
+            # Redirect to success page or home
+            return redirect('core:home')
+        else:
+            # Show form errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    else:
+        form = StudentRegistrationForm()
+    
+    # Get all states for the form
+    states = State.objects.all().order_by('code')
+    categories = CategoryCNH.objects.all().order_by('code')
+    
+    context = {
+        'form': form,
+        'states': states,
+        'categories': categories,
+    }
+    return render(request, 'marketplace/student_register.html', context)
+
+
+def get_cities_by_state(request):
+    """AJAX endpoint to get cities for a given state"""
+    from django.http import JsonResponse
+    
+    state_id = request.GET.get('state_id')
+    if not state_id:
+        return JsonResponse({'cities': []})
+    
+    cities = City.objects.filter(state_id=state_id, is_active=True).values('id', 'name').order_by('name')
+    return JsonResponse({'cities': list(cities)})

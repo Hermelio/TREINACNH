@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Cadastro de Aluno{% endblock %}
+
+{% block content %}
+<style>
+    .student-register-container {
+        padding-top: 7rem !important;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .register-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        padding: 2.5rem;
+        margin: 2rem auto;
+        max-width: 800px;
+    }
+    
+    .register-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .register-header h1 {
+        color: #667eea;
+        font-weight: 700;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .register-header p {
+        color: #6c757d;
+        font-size: 1.1rem;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #000000;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control, .form-select {
+        border-radius: 10px;
+        border: 2px solid #e0e0e0;
+        padding: 0.75rem 1rem;
+        color: #000000;
+        background-color: #ffffff;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .form-check-input {
+        width: 1.25rem;
+        height: 1.25rem;
+        margin-top: 0.125rem;
+        border: 2px solid #667eea;
+    }
+    
+    .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+    
+    .form-check-label {
+        color: #000000;
+        font-weight: 500;
+        margin-left: 0.5rem;
+    }
+    
+    .btn-success {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 1rem 2rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(17, 153, 142, 0.3);
+    }
+    
+    .category-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .category-item {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        border: 2px solid #e0e0e0;
+        transition: all 0.2s;
+    }
+    
+    .category-item:has(input:checked) {
+        background: #e7f0ff;
+        border-color: #667eea;
+    }
+    
+    .category-item label {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        margin: 0;
+        color: #000000;
+    }
+    
+    h5 {
+        color: #667eea;
+        font-weight: 700;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #667eea;
+    }
+    
+    .alert {
+        border-radius: 10px;
+        border: none;
+    }
+    
+    .help-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+</style>
+
+<div class="student-register-container">
+    <div class="container">
+        <div class="register-card">
+            <div class="register-header">
+                <h1><i class="bi bi-person-plus-fill"></i> Cadastro de Aluno</h1>
+                <p>Preencha seus dados e encontraremos o instrutor ideal para você!</p>
+            </div>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post" enctype="multipart/form-data" id="studentRegisterForm">
+                {% csrf_token %}
+                
+                <h5><i class="bi bi-person-circle"></i> Dados Pessoais</h5>
+                
+                <div class="mb-3">
+                    <label for="{{ form.photo.id_for_label }}" class="form-label">{{ form.photo.label }}</label>
+                    {{ form.photo }}
+                    <div class="help-text">A foto é opcional, mas ajuda os instrutores a conhecerem você melhor.</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }} <span class="text-danger">*</span></label>
+                    {{ form.name }}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.phone.id_for_label }}" class="form-label">{{ form.phone.label }} <span class="text-danger">*</span></label>
+                    {{ form.phone }}
+                    <div class="help-text">Digite seu número de WhatsApp para contato.</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.email.id_for_label }}" class="form-label">{{ form.email.label }} <span class="text-danger">*</span></label>
+                    {{ form.email }}
+                </div>
+                
+                <h5><i class="bi bi-geo-alt-fill"></i> Localização</h5>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.state.id_for_label }}" class="form-label">{{ form.state.label }} <span class="text-danger">*</span></label>
+                        {{ form.state }}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.city.id_for_label }}" class="form-label">{{ form.city.label }} <span class="text-danger">*</span></label>
+                        {{ form.city }}
+                    </div>
+                </div>
+                
+                <h5><i class="bi bi-card-list"></i> Informações sobre a CNH</h5>
+                
+                <div class="mb-3">
+                    <label class="form-label">{{ form.categories.label }} <span class="text-danger">*</span></label>
+                    <div class="category-grid">
+                        {% for choice in form.categories %}
+                            <div class="category-item">
+                                {{ choice.tag }}
+                                <label for="{{ choice.id_for_label }}">
+                                    {{ choice.choice_label }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="form-check mb-3">
+                    {{ form.has_theory }}
+                    <label class="form-check-label" for="{{ form.has_theory.id_for_label }}">
+                        {{ form.has_theory.label }}
+                    </label>
+                </div>
+                
+                <h5><i class="bi bi-chat-dots-fill"></i> Preferências de Contato</h5>
+                
+                <div class="form-check mb-2">
+                    {{ form.accept_whatsapp }}
+                    <label class="form-check-label" for="{{ form.accept_whatsapp.id_for_label }}">
+                        {{ form.accept_whatsapp.label }}
+                    </label>
+                </div>
+                
+                <div class="form-check mb-3">
+                    {{ form.accept_email }}
+                    <label class="form-check-label" for="{{ form.accept_email.id_for_label }}">
+                        {{ form.accept_email.label }}
+                    </label>
+                </div>
+                
+                <hr class="my-4">
+                
+                <div class="form-check mb-4">
+                    {{ form.accept_terms }}
+                    <label class="form-check-label" for="{{ form.accept_terms.id_for_label }}">
+                        {{ form.accept_terms.label }} <span class="text-danger">*</span>
+                    </label>
+                    <div class="help-text">
+                        Ao se cadastrar, você concorda com nossos 
+                        <a href="{% url 'core:terms' %}" target="_blank">Termos de Uso</a> e 
+                        <a href="{% url 'core:privacy' %}" target="_blank">Política de Privacidade</a>.
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-success btn-lg w-100">
+                    <i class="bi bi-check-circle-fill"></i> Cadastrar
+                </button>
+            </form>
+            
+            <div class="text-center mt-4">
+                <p class="text-muted">
+                    Já é instrutor? <a href="{% url 'accounts:register' %}" class="text-decoration-none fw-bold" style="color: #667eea;">Cadastre-se aqui</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const stateSelect = document.getElementById('id_state');
+    const citySelect = document.getElementById('id_city');
+    
+    // When state changes, load cities
+    stateSelect.addEventListener('change', function() {
+        const stateId = this.value;
+        
+        if (!stateId) {
+            citySelect.innerHTML = '<option value="">Selecione uma cidade</option>';
+            citySelect.disabled = true;
+            return;
+        }
+        
+        // Fetch cities for selected state
+        fetch(`/marketplace/api/cities-by-state/?state_id=${stateId}`)
+            .then(response => response.json())
+            .then(data => {
+                citySelect.innerHTML = '<option value="">Selecione uma cidade</option>';
+                
+                if (data.cities && data.cities.length > 0) {
+                    data.cities.forEach(city => {
+                        const option = document.createElement('option');
+                        option.value = city.id;
+                        option.textContent = city.name;
+                        citySelect.appendChild(option);
+                    });
+                    citySelect.disabled = false;
+                } else {
+                    citySelect.innerHTML = '<option value="">Nenhuma cidade disponível</option>';
+                    citySelect.disabled = true;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading cities:', error);
+                citySelect.innerHTML = '<option value="">Erro ao carregar cidades</option>';
+                citySelect.disabled = true;
+            });
+    });
+    
+    // Format phone number as user types
+    const phoneInput = document.getElementById('id_phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            
+            if (value.length > 11) {
+                value = value.substring(0, 11);
+            }
+            
+            if (value.length > 6) {
+                value = value.replace(/^(\d{2})(\d{5})(\d{0,4}).*/, '($1) $2-$3');
+            } else if (value.length > 2) {
+                value = value.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+            } else if (value.length > 0) {
+                value = value.replace(/^(\d*)/, '($1');
+            }
+            
+            e.target.value = value;
+        });
+    }
+});
+</script>
+{% endblock %}

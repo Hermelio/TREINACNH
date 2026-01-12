@@ -4,7 +4,7 @@ Forms for marketplace app.
 from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Row, Column, Field, HTML, Div
-from .models import InstructorProfile, Lead, City, CategoryCNH
+from .models import InstructorProfile, Lead, City, CategoryCNH, State, StudentLead
 
 
 class InstructorProfileForm(forms.ModelForm):
@@ -167,3 +167,144 @@ class InstructorSearchForm(forms.Form):
         required=False,
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
+
+
+class StudentRegistrationForm(forms.ModelForm):
+    """Form for student registration"""
+    
+    class Meta:
+        model = StudentLead
+        fields = [
+            'photo', 'name', 'phone', 'email', 'state', 'city',
+            'categories', 'has_theory', 'accept_whatsapp', 
+            'accept_email', 'accept_terms'
+        ]
+        widgets = {
+            'photo': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            }),
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nome completo'
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '(11) 99999-9999'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'seu@email.com'
+            }),
+            'state': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'id_state'
+            }),
+            'city': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'id_city'
+            }),
+            'categories': forms.CheckboxSelectMultiple(attrs={
+                'class': 'form-check-input'
+            }),
+            'has_theory': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'accept_whatsapp': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'accept_email': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'accept_terms': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'photo': 'Foto (Opcional)',
+            'name': 'Nome Completo',
+            'phone': 'WhatsApp',
+            'email': 'E-mail',
+            'state': 'Estado',
+            'city': 'Cidade',
+            'categories': 'Categorias Desejadas',
+            'has_theory': 'Já concluí a parte teórica',
+            'accept_whatsapp': 'Aceito receber mensagens via WhatsApp',
+            'accept_email': 'Aceito receber mensagens via e-mail',
+            'accept_terms': 'Li e aceito os Termos de Uso',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Make photo optional
+        self.fields['photo'].required = False
+        
+        # Make city initially empty (will be populated by JS based on state)
+        self.fields['city'].queryset = City.objects.none()
+        self.fields['city'].required = False
+        
+        # Set default values for consents
+        self.fields['accept_whatsapp'].initial = True
+        self.fields['accept_email'].initial = True
+        
+        # Make accept_terms required
+        self.fields['accept_terms'].required = True
+        
+        self.helper = FormHelper()
+        self.helper.form_method = 'post'
+        self.helper.form_enctype = 'multipart/form-data'
+        self.helper.layout = Layout(
+            HTML('<h5 class="mb-3">Dados Pessoais</h5>'),
+            Field('photo', css_class='mb-3'),
+            Field('name', css_class='mb-3'),
+            Field('phone', css_class='mb-3'),
+            Field('email', css_class='mb-3'),
+            
+            HTML('<h5 class="mb-3 mt-4">Localização</h5>'),
+            Row(
+                Column('state', css_class='form-group col-md-6 mb-3'),
+                Column('city', css_class='form-group col-md-6 mb-3'),
+            ),
+            
+            HTML('<h5 class="mb-3 mt-4">Informações sobre a CNH</h5>'),
+            Field('categories', css_class='mb-3'),
+            Div(
+                Field('has_theory', wrapper_class='form-check'),
+                css_class='mb-3'
+            ),
+            
+            HTML('<h5 class="mb-3 mt-4">Preferências de Contato</h5>'),
+            Div(
+                Field('accept_whatsapp', wrapper_class='form-check'),
+                Field('accept_email', wrapper_class='form-check'),
+                css_class='mb-3'
+            ),
+            
+            HTML('<hr class="my-4">'),
+            Div(
+                Field('accept_terms', wrapper_class='form-check'),
+                HTML('<small class="form-text text-muted d-block mt-2">Ao se cadastrar, você concorda com nossos <a href="/termos-de-uso" target="_blank">Termos de Uso</a> e <a href="/politica-de-privacidade" target="_blank">Política de Privacidade</a>.</small>'),
+                css_class='mb-4'
+            ),
+            
+            Submit('submit', 'Cadastrar', css_class='btn btn-success btn-lg w-100')
+        )
+    
+    def clean_phone(self):
+        """Clean and validate phone number"""
+        phone = self.cleaned_data.get('phone')
+        # Remove non-digits
+        phone = ''.join(filter(str.isdigit, phone))
+        
+        if len(phone) < 10:
+            raise forms.ValidationError('Telefone inválido. Digite um número válido.')
+        
+        return phone
+    
+    def clean_accept_terms(self):
+        """Ensure terms are accepted"""
+        accept_terms = self.cleaned_data.get('accept_terms')
+        if not accept_terms:
+            raise forms.ValidationError('Você deve aceitar os Termos de Uso para se cadastrar.')
+        return accept_terms

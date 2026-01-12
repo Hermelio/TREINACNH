@@ -11,6 +11,10 @@ app_name = 'marketplace'
 urlpatterns = [
     # API endpoints (must come first)
     path('api/cidades/<str:state_code>/', get_cities_by_state, name='api_cities_by_state'),
+    path('api/cities-by-state/', views.get_cities_by_state, name='get_cities_by_state'),
+    
+    # Student registration
+    path('cadastro-aluno/', views.student_register_view, name='student_register'),
     
     # Instructor management (authenticated) - must come before dynamic routes
     path('meu-perfil/editar/', views.instructor_profile_edit_view, name='instructor_profile_edit'),

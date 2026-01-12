@@ -469,32 +469,44 @@ class StudentLead(models.Model):
     These are potential students registered before instructors are available.
     """
     # Original data from CSV
-    external_id = models.CharField('ID Externo', max_length=100, unique=True, help_text='ID original do lead')
-    name = models.CharField('Nome', max_length=200)
-    phone = models.CharField('Telefone', max_length=20)
-    email = models.EmailField('Email', blank=True)
-    city = models.CharField('Cidade', max_length=100)
+    external_id = models.CharField('ID Externo', max_length=100, unique=True, null=True, blank=True, help_text='ID original do lead')
     
-    # State relation
+    # Personal info
+    name = models.CharField('Nome', max_length=200)
+    photo = models.ImageField('Foto', upload_to='students/', null=True, blank=True, help_text='Foto do aluno (opcional)')
+    phone = models.CharField('WhatsApp', max_length=20)
+    email = models.EmailField('Email')
+    email_verified = models.BooleanField('Email Verificado', default=False)
+    
+    # Location
     state = models.ForeignKey(
         State,
         on_delete=models.CASCADE,
         related_name='student_leads',
         verbose_name='Estado'
     )
+    city = models.ForeignKey(
+        City,
+        on_delete=models.CASCADE,
+        related_name='student_leads',
+        verbose_name='Cidade',
+        null=True,
+        blank=True
+    )
     
     # CNH info
-    category = models.CharField(
-        'Categoria CNH',
-        max_length=3,
-        help_text='Categoria desejada: A, B, AB, etc.'
+    categories = models.ManyToManyField(
+        CategoryCNH,
+        verbose_name='Categorias Desejadas',
+        related_name='student_leads',
+        help_text='Categorias de CNH que deseja obter'
     )
-    has_theory = models.BooleanField('Tem teoria', default=False, help_text='Já possui parte teórica')
+    has_theory = models.BooleanField('Concluiu Parte Teórica', default=False, help_text='Já concluiu a parte teórica')
     
-    # Marketing preferences
-    accept_marketing = models.BooleanField('Aceita marketing', default=False)
-    accept_whatsapp = models.BooleanField('Aceita WhatsApp', default=False)
-    accept_terms = models.BooleanField('Aceitou termos', default=False)
+    # Marketing preferences and LGPD consents
+    accept_whatsapp = models.BooleanField('Aceita WhatsApp', default=True, help_text='Aceita receber mensagens via WhatsApp')
+    accept_email = models.BooleanField('Aceita Email', default=True, help_text='Aceita receber mensagens via email')
+    accept_terms = models.BooleanField('Aceitou Termos', default=False, help_text='Aceitou os termos de uso')
     
     # Contact status
     is_contacted = models.BooleanField('Foi contatado', default=False)
@@ -526,7 +538,9 @@ class StudentLead(models.Model):
         ]
     
     def __str__(self):
-        return f"{self.name} - {self.city}/{self.state.code} - Cat. {self.category}"
+        categories_str = ', '.join([cat.code for cat in self.categories.all()]) if self.categories.exists() else 'N/A'
+        city_name = self.city.name if self.city else 'N/A'
+        return f"{self.name} - {city_name}/{self.state.code} - Cat. {categories_str}"
     
     @property
     def has_instructor_in_state(self):
