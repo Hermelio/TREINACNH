@@ -454,6 +454,28 @@
         font-size: 0.95rem;
     }
     
+    /* Setas entre os cards */
+    .feature-cards-container {
+        position: relative;
+    }
+    
+    .feature-cards-container .col-md-4:not(:last-child)::after {
+        content: '\2192';
+        position: absolute;
+        right: -20px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 2.5rem;
+        color: rgba(40, 167, 69, 0.3);
+        z-index: 1;
+    }
+    
+    @media (max-width: 768px) {
+        .feature-cards-container .col-md-4:not(:last-child)::after {
+            display: none;
+        }
+    }
+    
     .feature-icon {
         width: 64px;
         height: 64px;
@@ -950,14 +972,14 @@
         <h2 class="section-title mb-4">Treinar com a TreinaCNH é fácil:</h2>
         <p class="lead" style="color: rgba(0,0,0,0.65); max-width: 600px; margin-bottom: 3rem; font-size: 1.1rem; line-height: 1.6;">Comece a dar aulas em três passos simples</p>
         
-        <div class="row g-4">
+        <div class="row g-4 feature-cards-container position-relative">
             <div class="col-md-4">
                 <div class="feature-card">
                     <div class="feature-icon green">
                         <i class="bi bi-person-plus-fill"></i>
                     </div>
                     <h3>Registre-se como instrutor</h3>
-                    <p>Cadastre-se GRATIS e crie seu perfil em poucos minutos.</p>
+                    <p>Cadastre-se grátis e crie seu perfil em poucos minutos.</p>
                 </div>
             </div>
             
@@ -966,8 +988,8 @@
                     <div class="feature-icon blue">
                         <i class="bi bi-chat-dots-fill"></i>
                     </div>
-                    <h3>Receba solicitaÃ§Ãµes de alunos</h3>
-                    <p>Aceite solicitaÃ§Ãµes de alunos na sua regiÃ£o, diretamente pelo nosso app.</p>
+                    <h3>Receba solicitações de alunos</h3>
+                    <p>Aceite solicitações de alunos na sua região, diretamente pelo nosso app.</p>
                 </div>
             </div>
             
