@@ -704,8 +704,8 @@
     /* Floating Stat Bubble - estilo tooltip saindo do rosto */
     .stat-bubble {
         position: absolute;
-        top: 28%;
-        right: 25%;
+        top: 32%;
+        right: 28%;
         background: #ffffff;
         border-radius: 50px;
         padding: 12px 20px;
@@ -722,18 +722,19 @@
         50% { transform: translateY(-6px); }
     }
     
-    /* Tail/pontinha apontando para o rosto */
+    /* Tail/pontinha apontando para o rosto - lado direito inferior */
     .stat-bubble::after {
         content: '';
         position: absolute;
-        right: -8px;
-        top: 50%;
-        transform: translateY(-50%) rotate(45deg);
-        width: 16px;
-        height: 16px;
+        right: -6px;
+        bottom: 30%;
+        transform: rotate(45deg);
+        width: 18px;
+        height: 18px;
         background: #ffffff;
-        box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.05);
+        box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.08);
         z-index: -1;
+        border-radius: 2px;
     }
     
     .stat-bubble:hover {
@@ -783,10 +784,16 @@
     /* Responsivo - reposicionar bubble */
     @media (max-width: 1200px) {
         .stat-bubble {
-            top: 25%;
-            right: 20%;
+            top: 30%;
+            right: 24%;
             padding: 10px 16px;
             gap: 10px;
+        }
+        .stat-bubble::after {
+            right: -5px;
+            bottom: 28%;
+            width: 16px;
+            height: 16px;
         }
         .stat-bubble .avatar-ring {
             width: 38px;
@@ -802,10 +809,16 @@
     
     @media (max-width: 992px) {
         .stat-bubble {
-            top: 22%;
-            right: 15%;
+            top: 28%;
+            right: 20%;
             padding: 8px 14px;
             gap: 8px;
+        }
+        .stat-bubble::after {
+            right: -4px;
+            bottom: 25%;
+            width: 14px;
+            height: 14px;
         }
         .stat-bubble .avatar-ring {
             width: 34px;
