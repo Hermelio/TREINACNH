@@ -4,22 +4,29 @@
 {% block extra_css %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
+    /* Garantir html/body 100% */
+    html, body {
+        height: 100%;
+        margin: 0;
+    }
+    
     /* Hero Section com Background Image - Estilo Uber */
     .hero-dark {
         position: relative;
-        height: 100vh;
-        height: 100svh;
-        height: 100dvh;
         width: 100%;
-        background-image: url('{% static "images/logohome.png" %}');
-        background-size: cover;
-        background-position: right center;
-        background-repeat: no-repeat;
+        height: calc(100vh - 60px) !important;
+        height: calc(100svh - 60px) !important;
+        height: calc(100dvh - 60px) !important;
+        background-image: url('{% static "images/logohome.png" %}') !important;
+        background-size: cover !important;
+        background-position: right center !important;
+        background-repeat: no-repeat !important;
         color: #fff;
         display: flex;
         align-items: center;
         padding: 0;
         margin: 0;
+        overflow: hidden;
     }
     
     .hero-dark .container {
@@ -95,10 +102,10 @@
     
     @media (max-width: 768px) {
         .hero-dark {
-            height: 100vh;
-            height: 100svh;
-            height: 100dvh;
-            background-position: 75% center;
+            height: calc(100vh - 56px) !important;
+            height: calc(100svh - 56px) !important;
+            height: calc(100dvh - 56px) !important;
+            background-position: 75% center !important;
         }
         .hero-dark h1 {
             font-size: 2.25rem;
