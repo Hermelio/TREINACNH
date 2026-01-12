@@ -3,7 +3,8 @@ Admin configuration for marketplace app.
 """
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import State, City, CategoryCNH, InstructorProfile, Lead
+from django.db.models import Count
+from .models import State, City, CategoryCNH, InstructorProfile, Lead, StudentLead
 
 
 @admin.register(State)
@@ -165,3 +166,117 @@ class LeadAdmin(admin.ModelAdmin):
         updated = queryset.update(status='SPAM')
         self.message_user(request, f'{updated} lead(s) marcado(s) como spam.')
     mark_as_spam.short_description = 'Marcar como spam'
+
+
+@admin.register(StudentLead)
+class StudentLeadAdmin(admin.ModelAdmin):
+    """Admin for StudentLead model"""
+    list_display = (
+        'name', 'city', 'state', 'category', 'phone',
+        'has_theory', 'is_contacted', 'notified_about_instructor',
+        'has_instructor_badge', 'created_at'
+    )
+    list_filter = (
+        'state', 'category', 'has_theory',
+        'is_contacted', 'notified_about_instructor',
+        'accept_marketing', 'accept_whatsapp'
+    )
+    search_fields = ('name', 'phone', 'email', 'city', 'external_id')
+    readonly_fields = ('external_id', 'created_at', 'updated_at', 'has_instructor_in_state', 'whatsapp_link')
+    
+    fieldsets = (
+        ('Informações Básicas', {
+            'fields': ('external_id', 'name', 'phone', 'email', 'city', 'state')
+        }),
+        ('CNH', {
+            'fields': ('category', 'has_theory')
+        }),
+        ('Preferências', {
+            'fields': ('accept_marketing', 'accept_whatsapp', 'accept_terms')
+        }),
+        ('Status de Contato', {
+            'fields': ('is_contacted', 'contacted_at', 'notified_about_instructor', 'notified_at')
+        }),
+        ('Instrutor Disponível', {
+            'fields': ('has_instructor_in_state', 'whatsapp_link'),
+            'classes': ('collapse',)
+        }),
+        ('Dados Adicionais', {
+            'fields': ('metadata', 'notes'),
+            'classes': ('collapse',)
+        }),
+        ('Metadados', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def has_instructor_badge(self, obj):
+        """Display if state has instructors available"""
+        if obj.has_instructor_in_state:
+            return format_html(
+                '<span style="color: green; font-weight: bold;">✓ Sim</span>'
+            )
+        return format_html(
+            '<span style="color: red;">✗ Não</span>'
+        )
+    has_instructor_badge.short_description = 'Instrutor Disponível'
+    
+    def whatsapp_link(self, obj):
+        """Display WhatsApp link for easy contact"""
+        if obj.phone and obj.accept_whatsapp:
+            link = obj.get_whatsapp_link()
+            return format_html(
+                '<a href="{}" target="_blank" style="background: #25D366; color: white; padding: 5px 10px; text-decoration: none; border-radius: 5px;">📱 Enviar WhatsApp</a>',
+                link
+            )
+        return '-'
+    whatsapp_link.short_description = 'WhatsApp'
+    
+    actions = ['notify_about_instructors', 'mark_as_contacted', 'export_phones']
+    
+    def notify_about_instructors(self, request, queryset):
+        """Notify students that have instructors in their state"""
+        from django.utils import timezone
+        
+        # Filter only students with instructors available and not yet notified
+        students_to_notify = queryset.filter(
+            notified_about_instructor=False
+        )
+        
+        count = 0
+        for student in students_to_notify:
+            if student.has_instructor_in_state:
+                student.notified_about_instructor = True
+                student.notified_at = timezone.now()
+                student.save(update_fields=['notified_about_instructor', 'notified_at'])
+                count += 1
+        
+        self.message_user(
+            request,
+            f'{count} aluno(s) marcado(s) como notificado(s). Use o link do WhatsApp para enviar mensagem.'
+        )
+    notify_about_instructors.short_description = 'Marcar como notificado sobre instrutores'
+    
+    def mark_as_contacted(self, request, queryset):
+        """Mark students as contacted"""
+        from django.utils import timezone
+        
+        updated = queryset.update(
+            is_contacted=True,
+            contacted_at=timezone.now()
+        )
+        self.message_user(request, f'{updated} aluno(s) marcado(s) como contatado.')
+    mark_as_contacted.short_description = 'Marcar como contatado'
+    
+    def export_phones(self, request, queryset):
+        """Export phone numbers for bulk messaging"""
+        phones = [lead.phone for lead in queryset if lead.phone]
+        phones_text = '\n'.join(phones)
+        
+        self.message_user(
+            request,
+            f'Telefones exportados ({len(phones)} números): {phones_text[:100]}...'
+        )
+    export_phones.short_description = 'Exportar telefones'
+

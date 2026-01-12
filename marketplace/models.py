@@ -395,3 +395,92 @@ class Lead(models.Model):
     
     def __str__(self):
         return f"{self.contact_name} → {self.instructor.user.get_full_name()} ({self.get_status_display()})"
+
+
+class StudentLead(models.Model):
+    """
+    Student leads waiting for instructors in their state.
+    These are potential students registered before instructors are available.
+    """
+    # Original data from CSV
+    external_id = models.CharField('ID Externo', max_length=100, unique=True, help_text='ID original do lead')
+    name = models.CharField('Nome', max_length=200)
+    phone = models.CharField('Telefone', max_length=20)
+    email = models.EmailField('Email', blank=True)
+    city = models.CharField('Cidade', max_length=100)
+    
+    # State relation
+    state = models.ForeignKey(
+        State,
+        on_delete=models.CASCADE,
+        related_name='student_leads',
+        verbose_name='Estado'
+    )
+    
+    # CNH info
+    category = models.CharField(
+        'Categoria CNH',
+        max_length=3,
+        help_text='Categoria desejada: A, B, AB, etc.'
+    )
+    has_theory = models.BooleanField('Tem teoria', default=False, help_text='Já possui parte teórica')
+    
+    # Marketing preferences
+    accept_marketing = models.BooleanField('Aceita marketing', default=False)
+    accept_whatsapp = models.BooleanField('Aceita WhatsApp', default=False)
+    accept_terms = models.BooleanField('Aceitou termos', default=False)
+    
+    # Contact status
+    is_contacted = models.BooleanField('Foi contatado', default=False)
+    contacted_at = models.DateTimeField('Data do contato', null=True, blank=True)
+    
+    # Notification status
+    notified_about_instructor = models.BooleanField(
+        'Notificado sobre instrutor',
+        default=False,
+        help_text='Já foi notificado que há instrutor disponível no estado'
+    )
+    notified_at = models.DateTimeField('Data da notificação', null=True, blank=True)
+    
+    # Metadata
+    metadata = models.JSONField('Metadados', default=dict, blank=True, help_text='Dados adicionais do CSV')
+    notes = models.TextField('Observações', blank=True)
+    
+    created_at = models.DateTimeField('Criado em', auto_now_add=True)
+    updated_at = models.DateTimeField('Atualizado em', auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Lead de Aluno'
+        verbose_name_plural = 'Leads de Alunos'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['state', 'notified_about_instructor']),
+            models.Index(fields=['is_contacted']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} - {self.city}/{self.state.code} - Cat. {self.category}"
+    
+    @property
+    def has_instructor_in_state(self):
+        """Check if there are verified instructors in the same state"""
+        return InstructorProfile.objects.filter(
+            city__state=self.state,
+            is_visible=True,
+            is_verified=True
+        ).exists()
+    
+    def get_whatsapp_link(self, message=None):
+        """Generate WhatsApp link for contact"""
+        # Clean phone number (remove non-digits)
+        phone = ''.join(filter(str.isdigit, self.phone))
+        
+        if not message:
+            message = f"Olá {self.name.split()[0]}! Boas notícias! Agora temos instrutores disponíveis em {self.state.code}. Confira em https://treinacnh.com.br/mapa"
+        
+        # URL encode message
+        from urllib.parse import quote
+        encoded_message = quote(message)
+        
+        return f"https://wa.me/55{phone}?text={encoded_message}"
