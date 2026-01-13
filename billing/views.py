@@ -24,19 +24,9 @@ def plans_view(request):
     """Public page showing available plans"""
     plans = Plan.objects.filter(is_active=True).order_by('order', 'price_monthly')
     
-    # Check if user is instructor with active subscription
-    has_subscription = False
-    if request.user.is_authenticated and hasattr(request.user, 'profile') and request.user.profile.is_instructor:
-        try:
-            instructor_profile = InstructorProfile.objects.get(user=request.user)
-            has_subscription = instructor_profile.subscriptions.filter(status='ACTIVE').exists()
-        except InstructorProfile.DoesNotExist:
-            pass
-    
     context = {
         'plans': plans,
         'page_title': 'Planos para Instrutores',
-        'has_subscription': has_subscription,
     }
     return render(request, 'billing/plans.html', context)
 

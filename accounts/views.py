@@ -105,9 +105,13 @@ def dashboard_view(request):
     """
     User dashboard - different content based on role.
     For students: redirect to map filtered by their preferred city's state
-    For instructors: show dashboard
+    For instructors: redirect to Meus Leads (contacts page)
     """
     profile = request.user.profile
+    
+    # If instructor, redirect to Meus Leads
+    if profile.is_instructor:
+        return redirect('marketplace:my_leads')
     
     # If student with preferred city, redirect to map
     if profile.is_student and profile.preferred_city:
@@ -121,30 +125,8 @@ def dashboard_view(request):
     if profile.is_student:
         return redirect('marketplace:instructors_map')
     
-    context = {
-        'profile': profile,
-    }
-    
-    # Add role-specific context for instructors
-    if profile.is_instructor:
-        # Import here to avoid circular imports
-        from marketplace.models import InstructorProfile, Lead
-        try:
-            instructor_profile = InstructorProfile.objects.get(user=request.user)
-            recent_leads = Lead.objects.filter(instructor=instructor_profile).order_by('-created_at')[:5]
-            context.update({
-                'instructor_profile': instructor_profile,
-                'recent_leads': recent_leads,
-            })
-        except InstructorProfile.DoesNotExist:
-            context['needs_instructor_profile'] = True
-    
-    elif profile.is_student:
-        from marketplace.models import Lead
-        my_leads = Lead.objects.filter(student_user=request.user).order_by('-created_at')[:5]
-        context['my_leads'] = my_leads
-    
-    return render(request, 'accounts/dashboard.html', context)
+    # Fallback
+    return render(request, 'accounts/dashboard.html', {'profile': profile})
 
 
 @login_required
