@@ -74,6 +74,16 @@
         contain: layout;
     }
     
+    /* Mobile: hero mais compacto */
+    @media (max-width: 768px) {
+        .hero-dark {
+            height: 85vh;
+            min-height: 600px;
+            max-height: 900px;
+            padding: 80px 0 200px;
+        }
+    }
+    
     .hero-dark picture {
         position: absolute;
         top: 0;
@@ -95,6 +105,14 @@
         aspect-ratio: 3/2;
     }
     
+    /* Mobile: cover para melhor aproveitamento */
+    @media (max-width: 768px) {
+        .hero-dark img {
+            object-fit: cover;
+            object-position: center center;
+        }
+    }
+    
     .hero-dark .container {
         position: relative;
         z-index: 10;
@@ -112,6 +130,14 @@
     .hero-content {
         position: relative;
         z-index: 1;
+        max-width: 600px;
+    }
+    
+    @media (max-width: 768px) {
+        .hero-content {
+            max-width: 100%;
+            min-height: 380px;
+        }
     }
     
     .badge-success-custom {
@@ -124,7 +150,21 @@
         align-items: center;
         gap: 6px;
         font-size: 13px;
-        backdrop-filter: blur(8px);
+        line-height: 1.4;
+        height: 29px;
+        white-space: nowrap;
+    }
+    
+    @media (max-width: 768px) {
+        .badge-success-custom {
+            font-size: 11px;
+            padding: 5px 12px;
+            height: 26px;
+            gap: 4px;
+        }
+        .badge-success-custom i {
+            font-size: 10px;
+        }
     }
     
     .hero-dark h1 {
@@ -173,13 +213,12 @@
     
     @media (max-width: 768px) {
         .hero-dark {
-            height: auto;
-            min-height: 100vh;
-            min-height: 100svh;
-            min-height: 100dvh;
+            height: 85vh;
+            min-height: 600px;
+            max-height: 900px;
             background-position: center;
-            background-size: contain;
-            padding: 60px 0 180px 0;
+            background-size: cover;
+            padding: 80px 0 200px 0;
         }
         .hero-dark h1 {
             font-size: 1.75rem;
@@ -243,7 +282,8 @@
         background: #28a745;
         border: none;
         padding: 16px 28px;
-        height: auto;
+        height: 56px;
+        min-width: 200px;
         font-size: 1rem;
         font-weight: 600;
         border-radius: 12px;
@@ -251,7 +291,18 @@
         box-shadow: 0 4px 14px rgba(40, 167, 69, 0.30);
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
+    }
+    
+    @media (max-width: 768px) {
+        .btn-success-custom {
+            padding: 14px 24px;
+            font-size: 0.95rem;
+            height: 52px;
+            min-width: 100%;
+            width: 100%;
+        }
     }
     
     .btn-success-custom:hover {
@@ -475,7 +526,8 @@
             width: 100%;
             padding: 12px 10px;
             justify-content: flex-start;
-            height: auto;
+            height: 68px;
+            min-height: 68px;
         }
         .stats-bar-item:not(:last-child)::after {
             display: none;
@@ -522,6 +574,16 @@
         box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
         display: flex;
         flex-direction: column;
+    }
+    
+    /* Mobile: reduzir blur para melhorar performance */
+    @media (max-width: 768px) {
+        .feature-card,
+        .benefit-card,
+        .stats-bar {
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
     }
     
     .feature-card:hover {
