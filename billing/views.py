@@ -60,6 +60,7 @@ def my_subscription_view(request):
 def checkout_view(request, subscription_id):
     """
     Create Mercado Pago preference and show checkout page.
+    Accepts either subscription_id or plan_id (will create subscription if needed).
     """
     # Verify instructor
     if not request.user.profile.is_instructor:
@@ -72,12 +73,28 @@ def checkout_view(request, subscription_id):
         messages.error(request, 'Perfil de instrutor não encontrado.')
         return redirect('accounts:dashboard')
     
-    # Get subscription
-    subscription = get_object_or_404(
-        Subscription,
-        id=subscription_id,
-        instructor=instructor_profile
-    )
+    # Try to get subscription, if not found, assume subscription_id is actually plan_id
+    try:
+        subscription = Subscription.objects.get(
+            id=subscription_id,
+            instructor=instructor_profile
+        )
+    except Subscription.DoesNotExist:
+        # Assume it's a plan_id, create new subscription
+        try:
+            plan = Plan.objects.get(id=subscription_id)
+            from datetime import date, timedelta
+            subscription = Subscription.objects.create(
+                instructor=instructor_profile,
+                plan=plan,
+                status='ACTIVE',
+                start_date=date.today(),
+                end_date=date.today() + timedelta(days=30)
+            )
+            messages.success(request, f'Assinatura do {plan.name} criada! Complete o pagamento.')
+        except Plan.DoesNotExist:
+            messages.error(request, 'Plano não encontrado.')
+            return redirect('billing:plans')
     
     # Check if already has pending payment
     pending_payment = subscription.payments.filter(
