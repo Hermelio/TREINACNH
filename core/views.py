@@ -63,13 +63,16 @@ def home_view(request):
     # Convert students to list with state coordinates
     students_data = []
     for student in students_with_location:
+        # Get categories as comma-separated string
+        categories_str = ', '.join([cat.code for cat in student.categories.all()]) if student.categories.exists() else 'N/A'
+        
         students_data.append({
             'id': student.id,
             'name': student.name,
-            'city_name': student.city,  # city is CharField
+            'city_name': student.city.name if student.city else 'N/A',
             'state_code': student.state.code,
             'state_name': student.state.name,
-            'category': student.category,
+            'category': categories_str,
             'has_theory': student.has_theory,
             'latitude': float(student.state.latitude),
             'longitude': float(student.state.longitude),
