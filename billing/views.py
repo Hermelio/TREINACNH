@@ -136,6 +136,16 @@ def checkout_view(request, subscription_id):
             }
             
             preference_response = sdk.preference().create(preference_data)
+            
+            # Log the response for debugging
+            logger.info(f"Mercado Pago response status: {preference_response.get('status')}")
+            logger.info(f"Mercado Pago response: {preference_response}")
+            
+            # Check if request was successful
+            if preference_response["status"] != 201:
+                error_msg = preference_response.get("response", {}).get("message", "Erro desconhecido")
+                raise Exception(f"Mercado Pago retornou status {preference_response['status']}: {error_msg}")
+            
             preference = preference_response["response"]
             preference_id = preference["id"]
             
