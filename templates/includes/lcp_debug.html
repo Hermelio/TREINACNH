@@ -1,0 +1,73 @@
+<!-- LCP Debug Script - Remove após diagnóstico -->
+<script>
+(function() {
+  // Capture LCP element
+  const observer = new PerformanceObserver((list) => {
+    const entries = list.getEntries();
+    const lastEntry = entries[entries.length - 1];
+    
+    console.group('🎯 LCP DEBUG');
+    console.log('LCP Time:', lastEntry.renderTime || lastEntry.loadTime, 'ms');
+    console.log('LCP Element:', lastEntry.element);
+    console.log('Element Tag:', lastEntry.element?.tagName);
+    console.log('Element Classes:', lastEntry.element?.className);
+    console.log('Element ID:', lastEntry.element?.id);
+    
+    if (lastEntry.element?.tagName === 'IMG' || lastEntry.element?.tagName === 'PICTURE') {
+      console.log('Image Source:', lastEntry.element?.currentSrc || lastEntry.element?.src);
+      console.log('Image Natural Size:', lastEntry.element?.naturalWidth, 'x', lastEntry.element?.naturalHeight);
+      console.log('Image Display Size:', lastEntry.element?.width, 'x', lastEntry.element?.height);
+    }
+    
+    console.log('Entry Type:', lastEntry.entryType);
+    console.log('Start Time:', lastEntry.startTime);
+    console.log('Full Entry:', lastEntry);
+    console.groupEnd();
+    
+    // Highlight LCP element
+    if (lastEntry.element) {
+      lastEntry.element.style.outline = '5px solid red';
+      lastEntry.element.style.outlineOffset = '5px';
+      setTimeout(() => {
+        lastEntry.element.style.outline = '';
+        lastEntry.element.style.outlineOffset = '';
+      }, 5000);
+    }
+  });
+  
+  observer.observe({ type: 'largest-contentful-paint', buffered: true });
+  
+  // Log all images loading
+  console.group('🖼️ IMAGES LOADING');
+  window.addEventListener('load', () => {
+    const images = document.querySelectorAll('img');
+    images.forEach((img, i) => {
+      console.log(`Image ${i}:`, {
+        src: img.currentSrc || img.src,
+        naturalSize: `${img.naturalWidth}x${img.naturalHeight}`,
+        displaySize: `${img.width}x${img.height}`,
+        loading: img.loading,
+        fetchpriority: img.fetchPriority,
+        decoded: img.decode ? 'supported' : 'not supported'
+      });
+    });
+    console.groupEnd();
+  });
+  
+  // Log TTFB and FCP
+  window.addEventListener('load', () => {
+    const perfData = performance.getEntriesByType('navigation')[0];
+    const paintEntries = performance.getEntriesByType('paint');
+    
+    console.group('⚡ TIMING METRICS');
+    console.log('TTFB:', perfData.responseStart - perfData.requestStart, 'ms');
+    console.log('DOM Content Loaded:', perfData.domContentLoadedEventEnd - perfData.domContentLoadedEventStart, 'ms');
+    console.log('Load Complete:', perfData.loadEventEnd - perfData.loadEventStart, 'ms');
+    
+    paintEntries.forEach(entry => {
+      console.log(`${entry.name}:`, entry.startTime, 'ms');
+    });
+    console.groupEnd();
+  });
+})();
+</script>
