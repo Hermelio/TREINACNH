@@ -92,6 +92,7 @@
         object-fit: contain;
         object-position: center;
         z-index: 0;
+        aspect-ratio: 3/2;
     }
     
     .hero-dark .container {
@@ -377,6 +378,7 @@
         gap: 0;
         width: min(1100px, calc(100% - 64px));
         height: 92px;
+        min-height: 92px;
         margin: 0;
         z-index: 9999;
     }
@@ -464,7 +466,7 @@
             flex-direction: column;
             padding: 14px 16px;
             gap: 0;
-            height: auto;
+            min-height: 210px;
             bottom: 16px;
             width: calc(100% - 32px);
             border-radius: 12px;
@@ -514,7 +516,7 @@
         border-radius: 20px;
         padding: 36px 28px;
         height: 100%;
-        min-height: 280px;
+        min-height: 320px;
         transition: all 0.3s ease;
         border: 1px solid rgba(255, 255, 255, 0.08);
         box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
@@ -626,7 +628,7 @@
         border-radius: 20px;
         padding: 36px 28px;
         height: 100%;
-        min-height: 280px;
+        min-height: 320px;
         transition: all 0.3s ease;
         border: 1px solid rgba(0, 0, 0, 0.06);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
@@ -712,8 +714,11 @@
     /* Mapa */
     #homeMap {
         height: 650px;
+        width: 100%;
+        min-height: 650px;
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        background: rgba(20, 20, 20, 0.3);
     }
     
     .state-info-tooltip {
@@ -786,7 +791,8 @@
         }
         
         #homeMap {
-            height: 350px;
+            height: 400px;
+            min-height: 400px;
         }
     }
         height: 64px;
@@ -1315,11 +1321,26 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
+// Lazy load Leaflet quando mapa entrar no viewport
+const mapObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+            script.onload = initMap;
+            document.head.appendChild(script);
+            mapObserver.disconnect();
+        }
+    });
+}, { rootMargin: '100px' });
+
+const mapElement = document.getElementById('homeMap');
+if (mapElement) {
+    mapObserver.observe(mapElement);
+}
+
+function initMap() {
     // Brazil bounds (southwest and northeast corners)
     const brazilBounds = [
         [-33.75, -73.99], // Southwest
@@ -1532,7 +1553,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     `;
     document.head.appendChild(style);
-});
+}
 </script>
 {% endblock %}
 
