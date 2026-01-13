@@ -15,8 +15,8 @@
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" media="print" onload="this.media='all'" />
-<noscript><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" /></noscript>
+<!-- Leaflet carrega normal mas após conteúdo crítico -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
     /* Garantir html/body 100% */
     html, body {
@@ -54,6 +54,7 @@
         padding: 0;
         margin: 0;
         overflow: hidden;
+        contain: layout;
     }
     
     .hero-dark picture {
@@ -879,6 +880,8 @@
         position: absolute;
         top: 32%;
         right: 28%;
+        width: 280px;
+        height: 68px;
         background: #ffffff;
         border-radius: 50px;
         padding: 12px 20px;
@@ -888,6 +891,7 @@
         align-items: center;
         gap: 12px;
         animation: floatBubble 3s ease-in-out infinite;
+        will-change: transform;
     }
     
     @keyframes floatBubble {
@@ -911,7 +915,6 @@
     }
     
     .stat-bubble:hover {
-        transform: scale(1.02);
         box-shadow: 0 10px 32px rgba(0, 0, 0, 0.15);
     }
     
