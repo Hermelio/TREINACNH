@@ -109,6 +109,9 @@ def checkout_view(request, subscription_id):
         try:
             sdk = mercadopago.SDK(settings.MERCADOPAGO_ACCESS_TOKEN)
             
+            # Ensure user has email
+            user_email = request.user.email or f"{request.user.username}@treinacnh.com.br"
+            
             preference_data = {
                 "items": [
                     {
@@ -120,14 +123,14 @@ def checkout_view(request, subscription_id):
                     }
                 ],
                 "payer": {
-                    "name": request.user.first_name,
-                    "surname": request.user.last_name,
-                    "email": request.user.email,
+                    "name": request.user.first_name or "Instrutor",
+                    "surname": request.user.last_name or "TreinaCNH",
+                    "email": user_email,
                 },
                 "back_urls": {
-                    "success": f"{settings.SITE_URL}/pagamento/sucesso/",
-                    "failure": f"{settings.SITE_URL}/pagamento/falha/",
-                    "pending": f"{settings.SITE_URL}/pagamento/pendente/"
+                    "success": f"{settings.SITE_URL}/billing/pagamento/sucesso/",
+                    "failure": f"{settings.SITE_URL}/billing/pagamento/falha/",
+                    "pending": f"{settings.SITE_URL}/billing/pagamento/pendente/"
                 },
                 "auto_return": "approved",
                 "notification_url": f"{settings.SITE_URL}/webhook/mercadopago/",
