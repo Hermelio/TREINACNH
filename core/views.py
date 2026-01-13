@@ -250,75 +250,50 @@ def news_detail_view(request, slug):
 
 def city_students_view(request, state_code, city_name):
     """
-    Mostra alunos de uma cidade específica.
-    Dados sensíveis mascarados para não cadastrados (LGPD).
-    WhatsApp completo apenas para instrutores verificados.
+    NOVO MODELO: Alunos veem instrutores (não o contrário).
+    Esta view agora mostra INSTRUTORES para ALUNOS contatarem.
     """
-    from marketplace.models import StudentLead
+    from marketplace.models import InstructorProfile, City, State
+    from django.contrib import messages
     
-    # Get students from the city
-    students = StudentLead.objects.filter(
-        state__code=state_code,
-        city__iexact=city_name
-    ).select_related('state').order_by('-created_at')
-    
-    # Check if user is verified instructor
-    is_verified_instructor = False
+    # Bloquear acesso de instrutores
     if request.user.is_authenticated:
         try:
             instructor_profile = request.user.instructor_profile
-            is_verified_instructor = instructor_profile.is_verified and instructor_profile.is_visible
+            messages.error(request, 'Instrutores não podem visualizar esta página. Aguarde os alunos entrarem em contato com você.')
+            return redirect('marketplace:cities_list')
         except:
-            pass
+            pass  # User is not an instructor, continue
     
-    # Mask sensitive data for non-verified users
-    students_data = []
-    for student in students:
-        try:
-            # Mask name (show only first name + initial)
-            name_parts = student.name.split() if student.name else ['Aluno']
-            if is_verified_instructor:
-                masked_name = student.name or 'Nome não informado'
-            else:
-                if len(name_parts) > 1:
-                    masked_name = f"{name_parts[0]} {name_parts[1][0]}."
-                else:
-                    masked_name = name_parts[0] if name_parts else 'Aluno'
-            
-            # Mask phone (show only last 4 digits)
-            if is_verified_instructor:
-                masked_phone = student.phone or 'Não informado'
-            else:
-                if student.phone and len(student.phone) >= 4:
-                    masked_phone = f"(XX) XXXXX-{student.phone[-4:]}"
-                else:
-                    masked_phone = "Não informado"
-            
-            students_data.append({
-                'id': student.id,
-                'name': masked_name,
-                'phone': masked_phone,
-                'category': student.get_category_display() if hasattr(student, 'get_category_display') else student.category,
-                'category_code': student.category,
-                'has_theory': student.has_theory,
-                'created_at': student.created_at,
-                'can_view_full': is_verified_instructor
-            })
-        except Exception as e:
-            # Log error but continue processing other students
-            print(f"Erro ao processar aluno {student.id}: {str(e)}")
-            continue
+    # Get city
+    try:
+        state = State.objects.get(code=state_code.upper())
+        city = City.objects.get(name__iexact=city_name, state=state)
+    except (State.DoesNotExist, City.DoesNotExist):
+        messages.error(request, 'Cidade não encontrada.')
+        return redirect('core:home')
+    
+    # Get instructors from the city (VISIBLE and VERIFIED only for students)
+    instructors = InstructorProfile.objects.filter(
+        city=city,
+        is_visible=True,
+        is_verified=True
+    ).select_related('user', 'user__profile', 'city', 'city__state').order_by('-created_at')
+    
+    # Check if user is logged in student
+    is_student = request.user.is_authenticated and not hasattr(request.user, 'instructor_profile')
     
     context = {
-        'city_name': city_name,
-        'state_code': state_code,
-        'students': students_data,
-        'total_students': students.count(),
-        'is_verified_instructor': is_verified_instructor,
+        'city': city,
+        'state': state,
+        'instructors': instructors,
+        'total_instructors': instructors.count(),
+        'is_student': is_student,
         'is_authenticated': request.user.is_authenticated,
+        'page_title': f'Instrutores em {city.name} - {state.code}',
     }
     
-    return render(request, 'core/city_students.html', context)
+    return render(request, 'core/city_instructors.html', context)
 
 
 def lcp_test_view(request):

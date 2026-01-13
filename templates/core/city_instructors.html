@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Início</a></li>
+                    <li class="breadcrumb-item active">{{ city.name }} - {{ state.code }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-3" style="color: #000000;">
+                <i class="bi bi-geo-alt-fill me-2" style="color: #22c55e;"></i>
+                Instrutores em {{ city.name }} - {{ state.code }}
+            </h1>
+            <p class="lead">{{ total_instructors }} instrutor{{ total_instructors|pluralize:"es" }} disponível{{ total_instructors|pluralize:"eis" }}</p>
+        </div>
+    </div>
+
+    {% if not is_authenticated %}
+        <div class="alert alert-info mb-4">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <strong>Quer entrar em contato?</strong> 
+            <a href="{% url 'accounts:login' %}" class="alert-link">Faça login</a> ou 
+            <a href="{% url 'accounts:register' %}" class="alert-link">cadastre-se</a> para contatar os instrutores.
+        </div>
+    {% endif %}
+
+    {% if instructors %}
+        <div class="row">
+            {% for instructor in instructors %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; flex-shrink: 0;">
+                                    {% if instructor.user.profile.profile_picture %}
+                                        <img src="{{ instructor.user.profile.profile_picture.url }}" alt="{{ instructor.user.get_full_name }}" class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover;">
+                                    {% else %}
+                                        <i class="bi bi-person-fill fs-3"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="ms-3 flex-grow-1">
+                                    <h5 class="card-title mb-1">{{ instructor.user.get_full_name }}</h5>
+                                    {% if instructor.is_verified %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-patch-check-fill me-1"></i>Verificado
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-geo-alt-fill me-1"></i>{{ instructor.city.name }} - {{ instructor.city.state.code }}
+                                </small>
+                            </div>
+
+                            {% if instructor.years_experience %}
+                                <div class="mb-2">
+                                    <small>
+                                        <i class="bi bi-briefcase-fill me-1 text-primary"></i>
+                                        {{ instructor.years_experience }} anos de experiência
+                                    </small>
+                                </div>
+                            {% endif %}
+
+                            {% if instructor.categories.all %}
+                                <div class="mb-3">
+                                    <small class="text-muted d-block mb-1">Categorias:</small>
+                                    {% for category in instructor.categories.all %}
+                                        <span class="badge bg-secondary me-1">{{ category.code }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            {% if instructor.bio %}
+                                <p class="card-text small mb-3" style="max-height: 60px; overflow: hidden;">
+                                    {{ instructor.bio|truncatewords:15 }}
+                                </p>
+                            {% endif %}
+
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'marketplace:instructor_detail' instructor.id %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-eye-fill me-1"></i>Ver Perfil Completo
+                                </a>
+                                
+                                {% if is_student %}
+                                    {% if instructor.whatsapp_number %}
+                                        <a href="https://wa.me/55{{ instructor.whatsapp_number }}?text=Olá! Vi seu perfil no TreinaCNH e gostaria de saber mais sobre suas aulas." 
+                                           class="btn btn-success btn-sm" target="_blank">
+                                            <i class="bi bi-whatsapp me-1"></i>Contatar via WhatsApp
+                                        </a>
+                                    {% endif %}
+                                {% else %}
+                                    <button class="btn btn-secondary btn-sm" disabled>
+                                        <i class="bi bi-lock-fill me-1"></i>Faça login para contatar
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if instructor.average_rating %}
+                            <div class="card-footer bg-transparent border-top-0">
+                                <small class="text-warning">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= instructor.average_rating %}
+                                            <i class="bi bi-star-fill"></i>
+                                        {% else %}
+                                            <i class="bi bi-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="text-muted">({{ instructor.reviews.count }} avaliações)</span>
+                                </small>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-warning text-center">
+            <i class="bi bi-inbox fs-1 d-block mb-3 text-muted"></i>
+            <h5>Nenhum instrutor disponível em {{ city.name }}</h5>
+            <p class="mb-3">Não encontramos instrutores verificados nesta cidade no momento.</p>
+            <a href="{% url 'marketplace:cities_list' %}" class="btn btn-primary">
+                <i class="bi bi-arrow-left me-2"></i>Ver Outras Cidades
+            </a>
+        </div>
+    {% endif %}
+
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="{% url 'core:home' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Voltar ao Mapa
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
