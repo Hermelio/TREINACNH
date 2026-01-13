@@ -139,7 +139,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Site Configuration
-SITE_NAME = 'TREINACNH'
+SITE_NAME = 'TreinaCNH'
 SITE_LOGO = 'images/logotipoTreinaCNH.png'  # Path relativo a STATIC_URL
 SITE_URL = config('SITE_URL', default='http://localhost:8000')
 
