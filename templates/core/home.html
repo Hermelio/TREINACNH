@@ -1118,7 +1118,7 @@
                 media="(min-width: 769px)"
                 srcset="{% static 'images/hero/logohome3-1280w.avif' %} 1280w,
                         {% static 'images/hero/logohome3-1920w.avif' %} 1920w"
-                sizes="100vw">
+                sizes="(min-width: 1920px) 1920px, 100vw">
         
         <!-- MOBILE: WebP fallback -->
         <source type="image/webp"
@@ -1132,13 +1132,14 @@
                 media="(min-width: 769px)"
                 srcset="{% static 'images/hero/logohome3-1280w.webp' %} 1280w,
                         {% static 'images/hero/logohome3-1920w.webp' %} 1920w"
-                sizes="100vw">
+                sizes="(min-width: 1920px) 1920px, 100vw">
         
         <!-- Fallback PNG (mobile-first) -->
         <img src="{% static 'images/hero/logohome3-640w.png' %}"
              alt="TreinaCNH - Plataforma para Instrutores de Direção"
-             width="640"
-             height="427"
+             width="1920"
+             height="1280"
+             style="aspect-ratio: 3/2"
              fetchpriority="high"
              loading="eager"
              decoding="async">
