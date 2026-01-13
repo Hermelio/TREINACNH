@@ -13,3 +13,4 @@ urlpatterns = [
     path('pagamento/sucesso/', views.payment_success_view, name='payment_success'),
     path('pagamento/falha/', views.payment_failure_view, name='payment_failure'),
     path('pagamento/pendente/', views.payment_pending_view, name='payment_pending'),
+]
