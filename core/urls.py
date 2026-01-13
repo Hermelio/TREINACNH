@@ -16,4 +16,6 @@ urlpatterns = [
     path('healthcheck/', views.healthcheck_view, name='healthcheck'),
     path('pagina/<slug:slug>/', views.static_page_view, name='static_page'),
     path('alunos/<str:state_code>/<str:city_name>/', views.city_students_view, name='city_students'),
+    path('lcp-test/', views.lcp_test_view, name='lcp_test'),
+    path('mobile-lcp-test/', views.mobile_lcp_test_view, name='mobile_lcp_test'),
 ]

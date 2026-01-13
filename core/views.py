@@ -316,3 +316,13 @@ def city_students_view(request, state_code, city_name):
     }
     
     return render(request, 'core/city_students.html', context)
+
+
+def lcp_test_view(request):
+    """Simple LCP test page without Bootstrap or external CSS"""
+    return render(request, 'lcp_test.html')
+
+
+def mobile_lcp_test_view(request):
+    """Mobile LCP test page with optimized srcset"""
+    return render(request, 'mobile_lcp_test.html')

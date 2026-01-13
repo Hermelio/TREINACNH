@@ -2,21 +2,21 @@
 {% load static %}
 
 {% block preload %}
-<!-- Preload LCP Image - Hero Background -->
+<!-- Preload LCP Image - Hero Background (Mobile-optimized) -->
 <link rel="preload" 
       as="image" 
-      href="{% static 'images/hero/logohome3-1920w.avif' %}"
+      href="{% static 'images/hero/logohome3-960w.avif' %}"
       imagesrcset="{% static 'images/hero/logohome3-640w.avif' %} 640w,
                    {% static 'images/hero/logohome3-960w.avif' %} 960w,
                    {% static 'images/hero/logohome3-1280w.avif' %} 1280w,
-                   {% static 'images/hero/logohome3-1920w.avif' %} 1920w,
-                   {% static 'images/hero/logohome3-2560w.avif' %} 2560w"
-      imagesizes="100vw"
+                   {% static 'images/hero/logohome3-1920w.avif' %} 1920w"
+      imagesizes="(max-width: 640px) 640px, (max-width: 960px) 960px, (max-width: 1280px) 1280px, 1920px"
       fetchpriority="high">
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" media="print" onload="this.media='all'" />
+<noscript><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" /></noscript>
 <style>
     /* Garantir html/body 100% */
     html, body {
@@ -1016,29 +1016,26 @@
 {% block content %}
 <!-- Hero Section com Background Image - Estilo Uber -->
 <section class="hero-dark">
-    <!-- Hero Image with modern formats and responsive srcset -->
+    <!-- Hero Image with modern formats and responsive srcset (Mobile-optimized) -->
     <picture>
         <source type="image/avif" 
                 srcset="{% static 'images/hero/logohome3-640w.avif' %} 640w,
                         {% static 'images/hero/logohome3-960w.avif' %} 960w,
                         {% static 'images/hero/logohome3-1280w.avif' %} 1280w,
-                        {% static 'images/hero/logohome3-1920w.avif' %} 1920w,
-                        {% static 'images/hero/logohome3-2560w.avif' %} 2560w"
-                sizes="100vw">
+                        {% static 'images/hero/logohome3-1920w.avif' %} 1920w"
+                sizes="(max-width: 640px) 640px, (max-width: 960px) 960px, (max-width: 1280px) 1280px, 1920px">
         <source type="image/webp" 
                 srcset="{% static 'images/hero/logohome3-640w.webp' %} 640w,
                         {% static 'images/hero/logohome3-960w.webp' %} 960w,
                         {% static 'images/hero/logohome3-1280w.webp' %} 1280w,
-                        {% static 'images/hero/logohome3-1920w.webp' %} 1920w,
-                        {% static 'images/hero/logohome3-2560w.webp' %} 2560w"
-                sizes="100vw">
-        <img src="{% static 'images/hero/logohome3-1920w.png' %}" 
+                        {% static 'images/hero/logohome3-1920w.webp' %} 1920w"
+                sizes="(max-width: 640px) 640px, (max-width: 960px) 960px, (max-width: 1280px) 1280px, 1920px">
+        <img src="{% static 'images/hero/logohome3-960w.png' %}" 
              srcset="{% static 'images/hero/logohome3-640w.png' %} 640w,
                      {% static 'images/hero/logohome3-960w.png' %} 960w,
                      {% static 'images/hero/logohome3-1280w.png' %} 1280w,
-                     {% static 'images/hero/logohome3-1920w.png' %} 1920w,
-                     {% static 'images/hero/logohome3-2560w.png' %} 2560w"
-             sizes="100vw"
+                     {% static 'images/hero/logohome3-1920w.png' %} 1920w"
+             sizes="(max-width: 640px) 640px, (max-width: 960px) 960px, (max-width: 1280px) 1280px, 1920px"
              alt="TREINACNH - Plataforma para Instrutores de Direção"
              width="1920"
              height="1280"
