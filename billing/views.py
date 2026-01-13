@@ -102,9 +102,22 @@ def checkout_view(request, subscription_id):
     ).first()
     
     if pending_payment and pending_payment.preference_id:
-        # Reuse existing preference
+        # Reuse existing preference - need to get init_point from MP
         preference_id = pending_payment.preference_id
-    else:
+        try:
+            sdk = mercadopago.SDK(settings.MERCADOPAGO_ACCESS_TOKEN)
+            preference_response = sdk.preference().get(preference_id)
+            if preference_response["status"] == 200:
+                init_point = preference_response["response"]["init_point"]
+            else:
+                # If can't get old preference, create new one
+                pending_payment = None
+                preference_id = None
+        except:
+            pending_payment = None
+            preference_id = None
+    
+    if not pending_payment or not preference_id:
         # Create new Mercado Pago preference
         try:
             sdk = mercadopago.SDK(settings.MERCADOPAGO_ACCESS_TOKEN)
@@ -150,6 +163,7 @@ def checkout_view(request, subscription_id):
             
             preference = preference_response["response"]
             preference_id = preference["id"]
+            init_point = preference["init_point"]  # Get redirect URL
             
             # Create or update payment record
             if pending_payment:
@@ -177,6 +191,7 @@ def checkout_view(request, subscription_id):
     context = {
         'subscription': subscription,
         'preference_id': preference_id,
+        'init_point': init_point,
         'public_key': settings.MERCADOPAGO_PUBLIC_KEY,
         'page_title': 'Renovar Assinatura',
     }

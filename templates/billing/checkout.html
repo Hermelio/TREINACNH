@@ -1,10 +1,5 @@
 {% extends 'base.html' %}
 
-{% block extra_head %}
-<!-- Mercado Pago SDK -->
-<script src="https://sdk.mercadopago.com/js/v2"></script>
-{% endblock %}
-
 {% block content %}
 <div class="container py-5">
     <div class="row justify-content-center">
@@ -39,16 +34,12 @@
                         Escolha a forma de pagamento
                     </h5>
                 </div>
-                <div class="card-body">
-                    <div id="mercadopago-button"></div>
-                    
-                    <!-- Loading State -->
-                    <div id="loading" class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Carregando...</span>
-                        </div>
-                        <p class="mt-2 text-muted">Carregando opções de pagamento...</p>
-                    </div>
+                <div class="card-body text-center py-5">
+                    <p class="mb-4">Você será redirecionado para o ambiente seguro do Mercado Pago</p>
+                    <a href="{{ init_point }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-credit-card me-2"></i>
+                        Ir para Pagamento
+                    </a>
                 </div>
             </div>
 
@@ -94,50 +85,12 @@
 
             <!-- Back Button -->
             <div class="text-center">
-                <a href="{% url 'billing:my_subscription' %}" class="btn btn-outline-secondary">
+                <a href="{% url 'billing:plans' %}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-2"></i>
-                    Voltar para Minha Assinatura
+                    Voltar para Planos
                 </a>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-    // Initialize Mercado Pago
-    const mp = new MercadoPago('{{ public_key }}', {
-        locale: 'pt-BR'
-    });
-    
-    // Create checkout button
-    const bricksBuilder = mp.bricks();
-    
-    // Render Wallet Brick (Payment Methods)
-    bricksBuilder.create('wallet', 'mercadopago-button', {
-        initialization: {
-            preferenceId: '{{ preference_id }}',
-        },
-        customization: {
-            texts: {
-                action: 'pay',
-                valueProp: 'security_safety',
-            },
-        },
-        callbacks: {
-            onReady: () => {
-                // Hide loading when ready
-                document.getElementById('loading').style.display = 'none';
-            },
-            onError: (error) => {
-                console.error('Mercado Pago Error:', error);
-                document.getElementById('loading').innerHTML = `
-                    <div class="alert alert-danger">
-                        <strong>Erro ao carregar pagamento</strong><br>
-                        ${error.message || 'Tente novamente em alguns instantes'}
-                    </div>
-                `;
-            },
-        },
-    });
-</script>
 {% endblock %}
