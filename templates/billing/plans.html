@@ -6,12 +6,28 @@
         <div class="col-lg-10">
             <h1 class="mb-4 text-center" style="color: #000000;"><i class="bi bi-credit-card me-2"></i>Planos para Instrutores</h1>
     
-            <div class="alert alert-info d-flex align-items-start">
-                <i class="bi bi-info-circle-fill me-2" style="font-size: 1.2rem; margin-top: 2px;"></i>
-                <div>
-                    <strong>Cadastro básico é gratuito!</strong> Escolha um plano para ter benefícios extras.
+            {% if has_subscription %}
+                <!-- Instrutor já tem assinatura ativa -->
+                <div class="alert alert-success d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-check-circle-fill me-3" style="font-size: 1.5rem;"></i>
+                        <div>
+                            <strong>Você já possui uma assinatura ativa!</strong>
+                            <p class="mb-0 mt-1">Gerencie sua assinatura, veja os detalhes e renove quando necessário.</p>
+                        </div>
+                    </div>
+                    <a href="{% url 'billing:my_subscription' %}" class="btn btn-success">
+                        Ver Minha Assinatura
+                    </a>
                 </div>
-            </div>
+            {% else %}
+                <div class="alert alert-info d-flex align-items-start">
+                    <i class="bi bi-info-circle-fill me-2" style="font-size: 1.2rem; margin-top: 2px;"></i>
+                    <div>
+                        <strong>Cadastro básico é gratuito!</strong> Escolha um plano para ter benefícios extras.
+                    </div>
+                </div>
+            {% endif %}
     
             {% if plans %}
                 <div class="row">
@@ -40,9 +56,13 @@
                                     </ul>
                                 </div>
                                 <div class="card-footer bg-transparent">
-                                    {% if user.is_authenticated and user.profile.is_instructor %}
-                                        <a href="{% url 'billing:my_subscription' %}" class="btn btn-{% if forloop.counter == 2 %}primary{% else %}outline-primary{% endif %} w-100">
-                                            Solicitar Plano
+                                    {% if has_subscription %}
+                                        <a href="{% url 'billing:my_subscription' %}" class="btn btn-success w-100">
+                                            <i class="bi bi-check-circle me-2"></i>Plano Ativo
+                                        </a>
+                                    {% elif user.is_authenticated and user.profile.is_instructor %}
+                                        <a href="{% url 'core:contact' %}" class="btn btn-{% if forloop.counter == 2 %}primary{% else %}outline-primary{% endif %} w-100">
+                                            Contratar Plano
                                         </a>
                                     {% else %}
                                         <a href="{% url 'accounts:register' %}" class="btn btn-outline-primary w-100">
