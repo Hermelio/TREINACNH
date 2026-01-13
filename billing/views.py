@@ -132,7 +132,6 @@ def checkout_view(request, subscription_id):
                     "failure": f"{settings.SITE_URL}/billing/pagamento/falha/",
                     "pending": f"{settings.SITE_URL}/billing/pagamento/pendente/"
                 },
-                "auto_return": "approved",
                 "notification_url": f"{settings.SITE_URL}/webhook/mercadopago/",
                 "external_reference": f"subscription_{subscription.id}",
                 "statement_descriptor": "TREINACNH",
