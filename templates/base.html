@@ -631,7 +631,7 @@
                     {% load static %}
                     <div class="d-flex align-items-center mb-3">
                         {% if site_logo %}
-                            <img src="{% static site_logo %}" alt="{{ site_name }}" width="120" height="30" style="height: 30px; width: 120px; margin-right: 10px;" onerror="this.style.display='none';">
+                            <img src="{% static site_logo %}" alt="{{ site_name }}" width="144" height="36" style="height: 36px; width: 144px; object-fit: contain; margin-right: 10px;" onerror="this.style.display='none';">
                         {% endif %}
                         <h5 class="fw-bold mb-0">{{ site_name|default:"TreinaCNH" }}</h5>
                     </div>
