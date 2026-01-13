@@ -50,85 +50,176 @@
                 
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h5 class="card-title">Informações Básicas</h5>
+                        <h5 class="card-title mb-4"><i class="bi bi-geo-alt me-2"></i>Localização</h5>
                         
-                        {% for field in form %}
-                            {% if field.name in 'city,bio,gender,age,years_experience' %}
-                                <div class="mb-3">
-                                    <label class="form-label">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
-                                    {{ field }}
-                                    {% if field.help_text %}
-                                        <small class="form-text text-muted d-block">{{ field.help_text }}</small>
-                                    {% endif %}
-                                    {% if field.errors %}
-                                        <div class="text-danger small">{{ field.errors }}</div>
-                                    {% endif %}
-                                </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.city.label }}{% if form.city.field.required %} *{% endif %}</label>
+                            {{ form.city }}
+                            {% if form.city.help_text %}
+                                <small class="form-text text-muted d-block">{{ form.city.help_text }}</small>
                             {% endif %}
-                        {% endfor %}
+                            {% if form.city.errors %}
+                                <div class="text-danger small">{{ form.city.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.neighborhoods_text.label }}</label>
+                            {{ form.neighborhoods_text }}
+                            <small class="form-text text-muted d-block">Separe bairros por vírgula. Ex: Centro, Jardins, Vila Nova</small>
+                            {% if form.neighborhoods_text.errors %}
+                                <div class="text-danger small">{{ form.neighborhoods_text.errors }}</div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h5 class="card-title">Localização</h5>
+                        <h5 class="card-title mb-4"><i class="bi bi-person me-2"></i>Sobre Você</h5>
                         
-                        {% for field in form %}
-                            {% if field.name in 'address_street,address_neighborhood,address_zip,latitude,longitude' %}
-                                <div class="mb-3">
-                                    <label class="form-label">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
-                                    {{ field }}
-                                    {% if field.help_text %}
-                                        <small class="form-text text-muted d-block">{{ field.help_text }}</small>
-                                    {% endif %}
-                                    {% if field.errors %}
-                                        <div class="text-danger small">{{ field.errors }}</div>
-                                    {% endif %}
-                                </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.bio.label }}</label>
+                            {{ form.bio }}
+                            <small class="form-text text-muted d-block">Fale sobre sua experiência, metodologia e o que te diferencia</small>
+                            {% if form.bio.errors %}
+                                <div class="text-danger small">{{ form.bio.errors }}</div>
                             {% endif %}
-                        {% endfor %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.gender.label }}</label>
+                                {{ form.gender }}
+                                {% if form.gender.errors %}
+                                    <div class="text-danger small">{{ form.gender.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.age.label }}</label>
+                                {{ form.age }}
+                                {% if form.age.errors %}
+                                    <div class="text-danger small">{{ form.age.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.years_experience.label }}</label>
+                                {{ form.years_experience }}
+                                {% if form.years_experience.errors %}
+                                    <div class="text-danger small">{{ form.years_experience.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h5 class="card-title">Veículo e Categorias</h5>
+                        <h5 class="card-title mb-4"><i class="bi bi-car-front me-2"></i>Veículo</h5>
                         
-                        {% for field in form %}
-                            {% if field.name in 'has_own_car,car_model,categories' %}
-                                <div class="mb-3">
-                                    <label class="form-label">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
-                                    {{ field }}
-                                    {% if field.help_text %}
-                                        <small class="form-text text-muted d-block">{{ field.help_text }}</small>
-                                    {% endif %}
-                                    {% if field.errors %}
-                                        <div class="text-danger small">{{ field.errors }}</div>
-                                    {% endif %}
-                                </div>
+                        <div class="form-check mb-3">
+                            {{ form.has_own_car }}
+                            <label class="form-check-label">{{ form.has_own_car.label }}</label>
+                            {% if form.has_own_car.errors %}
+                                <div class="text-danger small">{{ form.has_own_car.errors }}</div>
                             {% endif %}
-                        {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.car_model.label }}</label>
+                            {{ form.car_model }}
+                            <small class="form-text text-muted d-block">Ex: Fiat Argo 2023, Volkswagen Gol 2022</small>
+                            {% if form.car_model.errors %}
+                                <div class="text-danger small">{{ form.car_model.errors }}</div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h5 class="card-title">Disponibilidade e Valores</h5>
+                        <h5 class="card-title mb-4"><i class="bi bi-card-list me-2"></i>Categorias que Ensina</h5>
                         
-                        {% for field in form %}
-                            {% if field.name in 'available_morning,available_afternoon,available_evening,base_price_per_hour,price_notes' %}
-                                <div class="mb-3">
-                                    <label class="form-label">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
-                                    {{ field }}
-                                    {% if field.help_text %}
-                                        <small class="form-text text-muted d-block">{{ field.help_text }}</small>
-                                    {% endif %}
-                                    {% if field.errors %}
-                                        <div class="text-danger small">{{ field.errors }}</div>
-                                    {% endif %}
-                                </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.categories.label }}{% if form.categories.field.required %} *{% endif %}</label>
+                            <div class="row">
+                                {% for choice in form.categories %}
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            {{ choice }}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.categories.errors %}
+                                <div class="text-danger small">{{ form.categories.errors }}</div>
                             {% endif %}
-                        {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4"><i class="bi bi-clock me-2"></i>Disponibilidade de Horários</h5>
+                        
+                        <div class="mb-3">
+                            <label class="form-label d-block mb-2">Períodos disponíveis</label>
+                            <div class="form-check">
+                                {{ form.available_morning }}
+                                <label class="form-check-label">{{ form.available_morning.label }}</label>
+                            </div>
+                            <div class="form-check">
+                                {{ form.available_afternoon }}
+                                <label class="form-check-label">{{ form.available_afternoon.label }}</label>
+                            </div>
+                            <div class="form-check">
+                                {{ form.available_evening }}
+                                <label class="form-check-label">{{ form.available_evening.label }}</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4"><i class="bi bi-currency-dollar me-2"></i>Valores (Opcional)</h5>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.base_price_per_hour.label }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                {{ form.base_price_per_hour }}
+                                <span class="input-group-text">/hora</span>
+                            </div>
+                            <small class="form-text text-muted d-block">Deixe em branco se preferir negociar diretamente</small>
+                            {% if form.base_price_per_hour.errors %}
+                                <div class="text-danger small">{{ form.base_price_per_hour.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.price_notes.label }}</label>
+                            {{ form.price_notes }}
+                            <small class="form-text text-muted d-block">Ex: Pacotes disponíveis, descontos para mais de 10 aulas</small>
+                            {% if form.price_notes.errors %}
+                                <div class="text-danger small">{{ form.price_notes.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4"><i class="bi bi-eye me-2"></i>Visibilidade</h5>
+                        
+                        <div class="form-check form-switch">
+                            {{ form.is_visible }}
+                            <label class="form-check-label">{{ form.is_visible.label }}</label>
+                            <small class="form-text text-muted d-block mt-1">Quando ativado, seu perfil aparece nos resultados de busca</small>
+                            {% if form.is_visible.errors %}
+                                <div class="text-danger small">{{ form.is_visible.errors }}</div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 
