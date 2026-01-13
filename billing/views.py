@@ -156,9 +156,11 @@ def checkout_view(request, subscription_id):
             logger.info(f"Preference created: {preference_id} for subscription {subscription.id}")
             
         except Exception as e:
-            logger.error(f"Error creating Mercado Pago preference: {str(e)}")
-            messages.error(request, 'Erro ao criar pagamento. Tente novamente.')
-            return redirect('billing:my_subscription')
+            import traceback
+            error_details = traceback.format_exc()
+            logger.error(f"Error creating Mercado Pago preference: {str(e)}\n{error_details}")
+            messages.error(request, f'Erro ao criar pagamento: {str(e)}')
+            return redirect('billing:plans')
     
     context = {
         'subscription': subscription,
