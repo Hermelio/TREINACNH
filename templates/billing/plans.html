@@ -1,12 +1,16 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container py-5">
-    <h1 class="mb-4"><i class="bi bi-credit-card me-2"></i>Planos para Instrutores</h1>
+<div class="container py-5" style="min-height: 80vh;">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h1 class="mb-4" style="color: #000000;"><i class="bi bi-credit-card me-2"></i>Planos para Instrutores</h1>
     
-    <div class="alert alert-info">
-        <i class="bi bi-info-circle me-2"></i>
-        <strong>Cadastro básico é gratuito!</strong> Escolha um plano para ter benefícios extras.
+    <div class="alert alert-info d-flex align-items-start">
+        <i class="bi bi-info-circle-fill me-2" style="font-size: 1.2rem; margin-top: 2px;"></i>
+        <div>
+            <strong>Cadastro básico é gratuito!</strong> Escolha um plano para ter benefícios extras.
+        </div>
     </div>
     
     {% if plans %}
@@ -51,17 +55,20 @@
             {% endfor %}
         </div>
     {% else %}
-        <div class="alert alert-warning">
-            Nenhum plano disponível no momento.
+        <div class="alert alert-warning d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill me-2" style="font-size: 1.2rem;"></i>
+            <div>Nenhum plano disponível no momento.</div>
         </div>
     {% endif %}
-    
-    <div class="card mt-5">
-        <div class="card-body text-center">
-            <h4>Dúvidas sobre os planos?</h4>
-            <p class="text-muted">Entre em contato conosco para mais informações.</p>
+     shadow-sm">
+        <div class="card-body text-center py-4">
+            <h4 class="mb-3">Dúvidas sobre os planos?</h4>
+            <p class="text-muted mb-4">Entre em contato conosco para mais informações.</p>
             <a href="{% url 'core:contact' %}" class="btn btn-primary">
                 <i class="bi bi-envelope-fill me-2"></i>Falar Conosco
+            </a>
+        </div>
+    </div <i class="bi bi-envelope-fill me-2"></i>Falar Conosco
             </a>
         </div>
     </div>
