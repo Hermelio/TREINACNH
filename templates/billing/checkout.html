@@ -105,22 +105,39 @@
 
 <script>
     // Initialize Mercado Pago
-    const mp = new MercadoPago('{{ public_key }}');
-    
-    // Create checkout
-    mp.checkout({
-        preference: {
-            id: '{{ preference_id }}'
-        },
-        render: {
-            container: '#mercadopago-button',
-            label: 'Pagar com Mercado Pago',
-        },
+    const mp = new MercadoPago('{{ public_key }}', {
+        locale: 'pt-BR'
     });
     
-    // Hide loading after SDK loads
-    setTimeout(() => {
-        document.getElementById('loading').style.display = 'none';
-    }, 1000);
+    // Create checkout button
+    const bricksBuilder = mp.bricks();
+    
+    // Render Wallet Brick (Payment Methods)
+    bricksBuilder.create('wallet', 'mercadopago-button', {
+        initialization: {
+            preferenceId: '{{ preference_id }}',
+        },
+        customization: {
+            texts: {
+                action: 'pay',
+                valueProp: 'security_safety',
+            },
+        },
+        callbacks: {
+            onReady: () => {
+                // Hide loading when ready
+                document.getElementById('loading').style.display = 'none';
+            },
+            onError: (error) => {
+                console.error('Mercado Pago Error:', error);
+                document.getElementById('loading').innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Erro ao carregar pagamento</strong><br>
+                        ${error.message || 'Tente novamente em alguns instantes'}
+                    </div>
+                `;
+            },
+        },
+    });
 </script>
 {% endblock %}
