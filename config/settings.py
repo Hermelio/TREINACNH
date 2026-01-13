@@ -143,6 +143,10 @@ SITE_NAME = 'TreinaCNH'
 SITE_LOGO = 'images/logos/logotipoTreinaCNH-640w.avif'  # Path relativo a STATIC_URL
 SITE_URL = config('SITE_URL', default='http://localhost:8000')
 
+# Mercado Pago Configuration
+MERCADOPAGO_PUBLIC_KEY = config('MERCADOPAGO_PUBLIC_KEY', default='')
+MERCADOPAGO_ACCESS_TOKEN = config('MERCADOPAGO_ACCESS_TOKEN', default='')
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

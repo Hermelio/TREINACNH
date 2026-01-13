@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block extra_head %}
+<!-- Mercado Pago SDK -->
+<script src="https://sdk.mercadopago.com/js/v2"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Page Header -->
+            <div class="text-center mb-5">
+                <h1 class="display-4 mb-3">Renovar Assinatura</h1>
+                <p class="lead text-muted">Complete o pagamento para continuar aproveitando os benefícios</p>
+            </div>
+
+            <!-- Subscription Info -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-box-seam me-2"></i>
+                        {{ subscription.plan.name }}
+                    </h5>
+                    <p class="card-text text-muted mb-3">{{ subscription.plan.description }}</p>
+                    
+                    <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                        <span class="text-muted">Valor mensal:</span>
+                        <h4 class="mb-0 text-success">R$ {{ subscription.plan.price_monthly }}</h4>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Methods -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-credit-card me-2"></i>
+                        Escolha a forma de pagamento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="mercadopago-button"></div>
+                    
+                    <!-- Loading State -->
+                    <div id="loading" class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Carregando opções de pagamento...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Info -->
+            <div class="alert alert-info d-flex align-items-start">
+                <i class="bi bi-shield-check fs-4 me-3"></i>
+                <div>
+                    <strong>Pagamento 100% Seguro</strong>
+                    <p class="mb-0 small">Seus dados são protegidos pelo Mercado Pago. Não armazenamos informações de cartão.</p>
+                </div>
+            </div>
+
+            <!-- Payment Methods Info -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 bg-light">
+                        <div class="card-body text-center">
+                            <i class="bi bi-qr-code fs-1 text-primary mb-2"></i>
+                            <h6>PIX</h6>
+                            <small class="text-muted">Aprovação instantânea</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 bg-light">
+                        <div class="card-body text-center">
+                            <i class="bi bi-credit-card fs-1 text-success mb-2"></i>
+                            <h6>Cartão</h6>
+                            <small class="text-muted">Crédito ou débito</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 bg-light">
+                        <div class="card-body text-center">
+                            <i class="bi bi-file-earmark-text fs-1 text-warning mb-2"></i>
+                            <h6>Boleto</h6>
+                            <small class="text-muted">Até 3 dias úteis</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Back Button -->
+            <div class="text-center">
+                <a href="{% url 'billing:my_subscription' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>
+                    Voltar para Minha Assinatura
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Mercado Pago
+    const mp = new MercadoPago('{{ public_key }}');
+    
+    // Create checkout
+    mp.checkout({
+        preference: {
+            id: '{{ preference_id }}'
+        },
+        render: {
+            container: '#mercadopago-button',
+            label: 'Pagar com Mercado Pago',
+        },
+    });
+    
+    // Hide loading after SDK loads
+    setTimeout(() => {
+        document.getElementById('loading').style.display = 'none';
+    }, 1000);
+</script>
+{% endblock %}

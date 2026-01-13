@@ -5,6 +5,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from billing import views as billing_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -14,6 +15,8 @@ urlpatterns = [
     path('verificacao/', include('verification.urls')),
     path('avaliacoes/', include('reviews.urls')),
     path('planos/', include('billing.urls')),
+    # Webhook (outside billing app for clean URL)
+    path('webhook/mercadopago/', billing_views.mercadopago_webhook, name='mercadopago_webhook'),
 ]
 
 # Serve media files in development

@@ -37,6 +37,7 @@ db.sqlite3-journal
 .env
 .venv
 *.env
+.env.mercadopago
 
 # IDEs
 .vscode/

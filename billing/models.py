@@ -1,5 +1,5 @@
 """
-Models for billing app - Plans, Subscriptions, and Highlights (no real payment processing).
+Models for billing app - Plans, Subscriptions, Payments and Highlights.
 """
 from django.db import models
 from django.utils import timezone
@@ -37,8 +37,7 @@ class SubscriptionStatusChoices(models.TextChoices):
 
 class Subscription(models.Model):
     """
-    Instructor subscriptions (manually managed by admin).
-    No real payment processing - just tracking.
+    Instructor subscriptions with automatic payment integration.
     """
     instructor = models.ForeignKey(
         InstructorProfile,
@@ -87,6 +86,98 @@ class Subscription(models.Model):
             return False
         
         return True
+
+
+class PaymentMethodChoices(models.TextChoices):
+    """Payment method options"""
+    PIX = 'PIX', 'PIX'
+    BOLETO = 'BOLETO', 'Boleto Bancário'
+    CREDIT_CARD = 'CREDIT_CARD', 'Cartão de Crédito'
+    DEBIT_CARD = 'DEBIT_CARD', 'Cartão de Débito'
+
+
+class PaymentStatusChoices(models.TextChoices):
+    """Payment status options"""
+    PENDING = 'PENDING', 'Pendente'
+    APPROVED = 'APPROVED', 'Aprovado'
+    REJECTED = 'REJECTED', 'Rejeitado'
+    CANCELLED = 'CANCELLED', 'Cancelado'
+    REFUNDED = 'REFUNDED', 'Reembolsado'
+
+
+class Payment(models.Model):
+    """
+    Payment records for subscriptions using Mercado Pago.
+    """
+    subscription = models.ForeignKey(
+        Subscription,
+        on_delete=models.CASCADE,
+        related_name='payments',
+        verbose_name='Assinatura'
+    )
+    
+    amount = models.DecimalField('Valor', max_digits=10, decimal_places=2)
+    
+    payment_method = models.CharField(
+        'Método de Pagamento',
+        max_length=20,
+        choices=PaymentMethodChoices.choices,
+        default=PaymentMethodChoices.PIX
+    )
+    
+    status = models.CharField(
+        'Status',
+        max_length=20,
+        choices=PaymentStatusChoices.choices,
+        default=PaymentStatusChoices.PENDING
+    )
+    
+    # Mercado Pago IDs
+    external_id = models.CharField(
+        'ID Externo (MP)',
+        max_length=255,
+        unique=True,
+        help_text='ID do pagamento no Mercado Pago'
+    )
+    preference_id = models.CharField(
+        'ID da Preferência',
+        max_length=255,
+        blank=True,
+        help_text='ID da preferência criada no Mercado Pago'
+    )
+    
+    # Timestamps
+    paid_at = models.DateTimeField('Pago em', null=True, blank=True)
+    created_at = models.DateTimeField('Criado em', auto_now_add=True)
+    updated_at = models.DateTimeField('Atualizado em', auto_now=True)
+    
+    # Additional info
+    payment_details = models.JSONField(
+        'Detalhes do Pagamento',
+        default=dict,
+        blank=True,
+        help_text='JSON com informações completas do Mercado Pago'
+    )
+    
+    notes = models.TextField('Observações', blank=True)
+    
+    class Meta:
+        verbose_name = 'Pagamento'
+        verbose_name_plural = 'Pagamentos'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['subscription', '-created_at']),
+            models.Index(fields=['external_id']),
+            models.Index(fields=['status', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"Pagamento {self.external_id} - {self.get_status_display()} - R$ {self.amount}"
+    
+    @property
+    def is_paid(self):
+        """Check if payment is approved and paid"""
+        return self.status == PaymentStatusChoices.APPROVED and self.paid_at is not None
 
 
 class Highlight(models.Model):

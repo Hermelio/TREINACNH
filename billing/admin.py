@@ -4,7 +4,7 @@ Admin configuration for billing app.
 from django.contrib import admin
 from django.utils.html import format_html
 from django.utils import timezone
-from .models import Plan, Subscription, Highlight
+from .models import Plan, Subscription, Payment, Highlight
 
 
 @admin.register(Plan)
@@ -65,6 +65,38 @@ class SubscriptionAdmin(admin.ModelAdmin):
         updated = queryset.update(status='PAUSED')
         self.message_user(request, f'{updated} assinatura(s) pausada(s).')
     pause_subscriptions.short_description = 'Pausar assinaturas'
+
+
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    """Admin for Payment model"""
+    list_display = ('external_id', 'subscription_instructor', 'amount', 'payment_method', 'status', 'paid_at', 'created_at')
+    list_filter = ('status', 'payment_method', 'created_at')
+    search_fields = ('external_id', 'subscription__instructor__user__username', 'preference_id')
+    readonly_fields = ('created_at', 'updated_at', 'external_id', 'preference_id', 'payment_details')
+    
+    fieldsets = (
+        ('Pagamento', {
+            'fields': ('subscription', 'amount', 'payment_method', 'status')
+        }),
+        ('Mercado Pago', {
+            'fields': ('external_id', 'preference_id', 'payment_details'),
+        }),
+        ('Datas', {
+            'fields': ('paid_at', 'created_at', 'updated_at')
+        }),
+        ('Observações', {
+            'fields': ('notes',)
+        }),
+    )
+    
+    def subscription_instructor(self, obj):
+        return obj.subscription.instructor.user.get_full_name()
+    subscription_instructor.short_description = 'Instrutor'
+    
+    def has_add_permission(self, request):
+        # Payments are created automatically
+        return False
 
 
 @admin.register(Highlight)
