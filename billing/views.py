@@ -22,11 +22,24 @@ logger = logging.getLogger(__name__)
 
 
 def plans_view(request):
-    """Public page showing available plans"""
+    """Public page showing available plans with user's active subscription status"""
     plans = Plan.objects.filter(is_active=True).order_by('order', 'price_monthly')
+    
+    # Check if user has active subscription and is instructor
+    active_subscription = None
+    if request.user.is_authenticated and hasattr(request.user, 'profile') and request.user.profile.is_instructor:
+        try:
+            # Get instructor's active subscription
+            active_subscription = Subscription.objects.filter(
+                instructor__user=request.user,
+                status=SubscriptionStatusChoices.ACTIVE
+            ).select_related('plan').first()
+        except Exception as e:
+            logger.error(f"Error fetching subscription for user {request.user.id}: {str(e)}")
     
     context = {
         'plans': plans,
+        'active_subscription': active_subscription,
         'page_title': 'Planos para Instrutores',
     }
     return render(request, 'billing/plans.html', context)
