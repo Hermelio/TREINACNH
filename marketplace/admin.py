@@ -4,7 +4,10 @@ Admin configuration for marketplace app.
 from django.contrib import admin
 from django.utils.html import format_html
 from django.db.models import Count
-from .models import State, City, CategoryCNH, InstructorProfile, Lead, StudentLead
+from .models import (
+    State, City, CategoryCNH, InstructorProfile, Lead, StudentLead,
+    InstructorAvailability, Appointment
+)
 
 
 @admin.register(State)
@@ -293,4 +296,94 @@ class StudentLeadAdmin(admin.ModelAdmin):
             f'Telefones exportados ({len(phones)} números): {phones_text[:100]}...'
         )
     export_phones.short_description = 'Exportar telefones'
+
+
+@admin.register(InstructorAvailability)
+class InstructorAvailabilityAdmin(admin.ModelAdmin):
+    """Admin for InstructorAvailability model"""
+    list_display = ('instructor_name', 'weekday_display', 'start_time', 'end_time', 'is_active')
+    list_filter = ('weekday', 'is_active', 'instructor__city__state')
+    search_fields = ('instructor__user__first_name', 'instructor__user__last_name')
+    readonly_fields = ('created_at', 'updated_at')
+    
+    def instructor_name(self, obj):
+        return obj.instructor.user.get_full_name()
+    instructor_name.short_description = 'Instrutor'
+    
+    def weekday_display(self, obj):
+        return obj.get_weekday_display()
+    weekday_display.short_description = 'Dia da Semana'
+
+
+@admin.register(Appointment)
+class AppointmentAdmin(admin.ModelAdmin):
+    """Admin for Appointment model"""
+    list_display = (
+        'appointment_date', 'start_time', 'instructor_name', 'student_name',
+        'duration_hours', 'status_badge', 'created_at'
+    )
+    list_filter = ('is_confirmed', 'is_completed', 'is_cancelled', 'appointment_date', 'instructor__city__state')
+    search_fields = (
+        'instructor__user__first_name', 'instructor__user__last_name',
+        'student_user__first_name', 'student_user__last_name',
+        'lead__contact_name'
+    )
+    readonly_fields = ('created_at', 'updated_at', 'status_display')
+    date_hierarchy = 'appointment_date'
+    
+    fieldsets = (
+        ('Informações Básicas', {
+            'fields': ('lead', 'instructor', 'student_user')
+        }),
+        ('Data e Horário', {
+            'fields': ('appointment_date', 'start_time', 'end_time', 'duration_hours')
+        }),
+        ('Status', {
+            'fields': ('is_confirmed', 'is_completed', 'is_cancelled', 'cancellation_reason', 'status_display')
+        }),
+        ('Observações', {
+            'fields': ('notes',)
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def instructor_name(self, obj):
+        return obj.instructor.user.get_full_name()
+    instructor_name.short_description = 'Instrutor'
+    
+    def student_name(self, obj):
+        if obj.student_user:
+            return obj.student_user.get_full_name()
+        return obj.lead.contact_name
+    student_name.short_description = 'Aluno'
+    
+    def status_badge(self, obj):
+        if obj.is_cancelled:
+            return format_html('<span style="color: red;">❌ Cancelado</span>')
+        if obj.is_completed:
+            return format_html('<span style="color: green;">✅ Concluído</span>')
+        if obj.is_confirmed:
+            return format_html('<span style="color: blue;">📅 Confirmado</span>')
+        return format_html('<span style="color: orange;">⏳ Pendente</span>')
+    status_badge.short_description = 'Status'
+    
+    actions = ['confirm_appointments', 'complete_appointments', 'cancel_appointments']
+    
+    def confirm_appointments(self, request, queryset):
+        updated = queryset.filter(is_cancelled=False).update(is_confirmed=True)
+        self.message_user(request, f'{updated} agendamento(s) confirmado(s).')
+    confirm_appointments.short_description = 'Confirmar agendamentos'
+    
+    def complete_appointments(self, request, queryset):
+        updated = queryset.filter(is_cancelled=False).update(is_completed=True, is_confirmed=True)
+        self.message_user(request, f'{updated} agendamento(s) marcado(s) como concluído.')
+    complete_appointments.short_description = 'Marcar como concluído'
+    
+    def cancel_appointments(self, request, queryset):
+        updated = queryset.update(is_cancelled=True)
+        self.message_user(request, f'{updated} agendamento(s) cancelado(s).')
+    cancel_appointments.short_description = 'Cancelar agendamentos'
 

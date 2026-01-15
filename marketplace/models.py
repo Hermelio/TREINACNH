@@ -442,9 +442,21 @@ class LeadStatusChoices(models.TextChoices):
     """Lead status options"""
     NEW = 'NEW', 'Novo'
     CONTACTED = 'CONTACTED', 'Contatado'
+    SCHEDULED = 'SCHEDULED', 'Agendado'
     COMPLETED = 'COMPLETED', 'Aulas Finalizadas'
     CLOSED = 'CLOSED', 'Fechado'
     SPAM = 'SPAM', 'Spam'
+
+
+class WeekdayChoices(models.IntegerChoices):
+    """Weekday choices (0=Monday, 6=Sunday)"""
+    MONDAY = 0, 'Segunda-feira'
+    TUESDAY = 1, 'Terça-feira'
+    WEDNESDAY = 2, 'Quarta-feira'
+    THURSDAY = 3, 'Quinta-feira'
+    FRIDAY = 4, 'Sexta-feira'
+    SATURDAY = 5, 'Sábado'
+    SUNDAY = 6, 'Domingo'
 
 
 class Lead(models.Model):
@@ -478,6 +490,16 @@ class Lead(models.Model):
     # Contact Info (required even if user is logged in)
     contact_name = models.CharField('Nome', max_length=100)
     contact_phone = models.CharField('Telefone/WhatsApp', max_length=20)
+    
+    # CNH Category
+    category = models.ForeignKey(
+        CategoryCNH,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='leads',
+        verbose_name='Categoria CNH Desejada'
+    )
     
     # Request Details
     preferred_schedule = models.CharField(
@@ -615,3 +637,147 @@ class StudentLead(models.Model):
         encoded_message = quote(message)
         
         return f"https://wa.me/55{phone}?text={encoded_message}"
+
+
+class InstructorAvailability(models.Model):
+    """
+    Weekly availability schedule for instructors.
+    Defines which days and time slots the instructor is available.
+    """
+    instructor = models.ForeignKey(
+        InstructorProfile,
+        on_delete=models.CASCADE,
+        related_name='availabilities',
+        verbose_name='Instrutor'
+    )
+    weekday = models.IntegerField(
+        'Dia da Semana',
+        choices=WeekdayChoices.choices,
+        help_text='0=Segunda, 6=Domingo'
+    )
+    start_time = models.TimeField('Horário Inicial')
+    end_time = models.TimeField('Horário Final')
+    is_active = models.BooleanField('Ativo', default=True)
+    
+    created_at = models.DateTimeField('Criado em', auto_now_add=True)
+    updated_at = models.DateTimeField('Atualizado em', auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Disponibilidade do Instrutor'
+        verbose_name_plural = 'Disponibilidades dos Instrutores'
+        ordering = ['weekday', 'start_time']
+        unique_together = ['instructor', 'weekday', 'start_time']
+        indexes = [
+            models.Index(fields=['instructor', 'weekday', 'is_active']),
+        ]
+    
+    def __str__(self):
+        return f"{self.instructor.user.get_full_name()} - {self.get_weekday_display()} {self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')}"
+    
+    def clean(self):
+        """Validate that start_time is before end_time"""
+        from django.core.exceptions import ValidationError
+        if self.start_time and self.end_time and self.start_time >= self.end_time:
+            raise ValidationError('Horário inicial deve ser anterior ao horário final.')
+
+
+class Appointment(models.Model):
+    """
+    Scheduled appointment/lesson between student and instructor.
+    Blocks specific time slots in instructor's schedule.
+    """
+    # Relations
+    lead = models.ForeignKey(
+        Lead,
+        on_delete=models.CASCADE,
+        related_name='appointments',
+        verbose_name='Lead'
+    )
+    instructor = models.ForeignKey(
+        InstructorProfile,
+        on_delete=models.CASCADE,
+        related_name='appointments',
+        verbose_name='Instrutor'
+    )
+    student_user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='appointments',
+        verbose_name='Aluno'
+    )
+    
+    # Appointment details
+    appointment_date = models.DateField('Data da Aula')
+    start_time = models.TimeField('Horário Inicial')
+    end_time = models.TimeField('Horário Final')
+    duration_hours = models.DecimalField(
+        'Duração (horas)',
+        max_digits=3,
+        decimal_places=1,
+        default=1.0,
+        help_text='Duração da aula em horas'
+    )
+    
+    # Status
+    is_confirmed = models.BooleanField('Confirmado', default=False)
+    is_completed = models.BooleanField('Concluído', default=False)
+    is_cancelled = models.BooleanField('Cancelado', default=False)
+    cancellation_reason = models.TextField('Motivo do Cancelamento', blank=True)
+    
+    # Notes
+    notes = models.TextField('Observações', blank=True, help_text='Observações sobre a aula')
+    
+    # Metadata
+    created_at = models.DateTimeField('Criado em', auto_now_add=True)
+    updated_at = models.DateTimeField('Atualizado em', auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Agendamento'
+        verbose_name_plural = 'Agendamentos'
+        ordering = ['appointment_date', 'start_time']
+        indexes = [
+            models.Index(fields=['instructor', 'appointment_date']),
+            models.Index(fields=['student_user', 'appointment_date']),
+            models.Index(fields=['is_confirmed', 'is_cancelled']),
+        ]
+    
+    def __str__(self):
+        student_name = self.student_user.get_full_name() if self.student_user else self.lead.contact_name
+        return f"{student_name} → {self.instructor.user.get_full_name()} - {self.appointment_date} {self.start_time.strftime('%H:%M')}"
+    
+    def clean(self):
+        """Validate appointment"""
+        from django.core.exceptions import ValidationError
+        
+        # Validate time range
+        if self.start_time and self.end_time and self.start_time >= self.end_time:
+            raise ValidationError('Horário inicial deve ser anterior ao horário final.')
+        
+        # Check for overlapping appointments (only if not cancelled)
+        if not self.is_cancelled and self.instructor and self.appointment_date:
+            overlapping = Appointment.objects.filter(
+                instructor=self.instructor,
+                appointment_date=self.appointment_date,
+                is_cancelled=False
+            ).exclude(pk=self.pk)
+            
+            for appt in overlapping:
+                # Check if times overlap
+                if (self.start_time < appt.end_time and self.end_time > appt.start_time):
+                    raise ValidationError(
+                        f'Este horário conflita com outro agendamento: '
+                        f'{appt.start_time.strftime("%H:%M")}-{appt.end_time.strftime("%H:%M")}'
+                    )
+    
+    @property
+    def status_display(self):
+        """Human-readable status"""
+        if self.is_cancelled:
+            return 'Cancelado'
+        if self.is_completed:
+            return 'Concluído'
+        if self.is_confirmed:
+            return 'Confirmado'
+        return 'Pendente'

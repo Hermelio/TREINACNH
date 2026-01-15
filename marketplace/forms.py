@@ -97,10 +97,11 @@ class LeadForm(forms.ModelForm):
     
     class Meta:
         model = Lead
-        fields = ['contact_name', 'contact_phone', 'preferred_schedule', 'message']
+        fields = ['contact_name', 'contact_phone', 'category', 'preferred_schedule', 'message']
         widgets = {
             'contact_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Seu nome completo'}),
             'contact_phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+5511999999999'}),
+            'category': forms.Select(attrs={'class': 'form-select'}),
             'preferred_schedule': forms.Select(attrs={'class': 'form-select'}, choices=[
                 ('', 'Selecione...'),
                 ('Manhã', 'Manhã (6h-12h)'),
@@ -113,6 +114,9 @@ class LeadForm(forms.ModelForm):
                 'rows': 3, 
                 'placeholder': 'Conte um pouco sobre o que você precisa (opcional)'
             }),
+        }
+        labels = {
+            'category': 'Categoria CNH Desejada',
         }
     
     def __init__(self, *args, user=None, **kwargs):
@@ -315,6 +319,52 @@ class StudentRegistrationForm(forms.ModelForm):
     def clean_accept_terms(self):
         """Ensure terms are accepted"""
         accept_terms = self.cleaned_data.get('accept_terms')
+        if not accept_terms:
+            raise forms.ValidationError('Você deve aceitar os termos de uso para continuar.')
+        return accept_terms
+
+
+class InstructorAvailabilityForm(forms.ModelForm):
+    """Form for instructors to set their weekly availability"""
+    
+    class Meta:
+        from .models import InstructorAvailability
+        model = InstructorAvailability
+        fields = ['weekday', 'start_time', 'end_time', 'is_active']
+        widgets = {
+            'weekday': forms.Select(attrs={'class': 'form-select'}),
+            'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        labels = {
+            'weekday': 'Dia da Semana',
+            'start_time': 'Horário Inicial',
+            'end_time': 'Horário Final',
+            'is_active': 'Ativo',
+        }
+
+
+class AppointmentForm(forms.ModelForm):
+    """Form for creating/editing appointments"""
+    
+    class Meta:
+        from .models import Appointment
+        model = Appointment
+        fields = ['appointment_date', 'start_time', 'end_time', 'notes']
+        widgets = {
+            'appointment_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+        labels = {
+            'appointment_date': 'Data da Aula',
+            'start_time': 'Horário Inicial',
+            'end_time': 'Horário Final',
+            'notes': 'Observações',
+        }
+
         if not accept_terms:
             raise forms.ValidationError('Você deve aceitar os Termos de Uso para se cadastrar.')
         return accept_terms
