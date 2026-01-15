@@ -256,7 +256,19 @@ def instructor_profile_edit_view(request):
             profile.save()
             form.save_m2m()  # Save many-to-many relationships
             
-            messages.success(request, 'Perfil de instrutor atualizado com sucesso!')
+            # Try to geocode address automatically
+            from .geocoding import geocode_instructor_profile
+            try:
+                if geocode_instructor_profile(profile):
+                    messages.success(request, 'Perfil atualizado com sucesso! Suas coordenadas foram calculadas automaticamente.')
+                else:
+                    messages.success(request, 'Perfil atualizado com sucesso!')
+                    if not profile.latitude or not profile.longitude:
+                        messages.info(request, 'Não foi possível calcular suas coordenadas automaticamente. Verifique seu endereço.')
+            except Exception as e:
+                messages.success(request, 'Perfil atualizado com sucesso!')
+                messages.warning(request, f'Erro ao calcular coordenadas: {str(e)}')
+            
             return redirect('accounts:dashboard')
         else:
             messages.error(request, 'Por favor, corrija os erros abaixo.')

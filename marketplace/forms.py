@@ -13,13 +13,17 @@ class InstructorProfileForm(forms.ModelForm):
     class Meta:
         model = InstructorProfile
         fields = [
-            'city', 'bio', 'neighborhoods_text', 'gender', 'age', 'years_experience',
+            'city', 'address_street', 'address_neighborhood', 'address_zip',
+            'bio', 'neighborhoods_text', 'gender', 'age', 'years_experience',
             'has_own_car', 'car_model', 'categories', 'available_morning',
             'available_afternoon', 'available_evening', 'base_price_per_hour',
             'price_notes', 'is_visible'
         ]
         widgets = {
             'city': forms.Select(attrs={'class': 'form-select'}),
+            'address_street': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Rua e número'}),
+            'address_neighborhood': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nome do bairro'}),
+            'address_zip': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '00000-000'}),
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Conte sobre sua experiência...'}),
             'neighborhoods_text': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Centro, Jardins, etc'}),
             'gender': forms.Select(attrs={'class': 'form-select'}),
@@ -46,7 +50,13 @@ class InstructorProfileForm(forms.ModelForm):
         self.helper.layout = Layout(
             HTML('<h5 class="mb-3">Localização</h5>'),
             Field('city', css_class='mb-3'),
+            Field('address_street', css_class='mb-3'),
+            Row(
+                Column('address_neighborhood', css_class='form-group col-md-6 mb-3'),
+                Column('address_zip', css_class='form-group col-md-6 mb-3'),
+            ),
             Field('neighborhoods_text', css_class='mb-3'),
+            HTML('<p class="text-muted small"><i class="bi bi-info-circle"></i> Suas coordenadas serão calculadas automaticamente com base no endereço para aparecer no mapa.</p>'),
             
             HTML('<h5 class="mb-3 mt-4">Sobre Você</h5>'),
             Field('bio', css_class='mb-3'),
