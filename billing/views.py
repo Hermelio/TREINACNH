@@ -10,6 +10,7 @@ from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from django.conf import settings
 from datetime import timedelta
+from django_ratelimit.decorators import ratelimit
 import mercadopago
 import json
 import logging
@@ -212,10 +213,12 @@ def checkout_view(request, subscription_id):
 
 @csrf_exempt
 @require_POST
+@ratelimit(key='ip', rate='30/m', method='POST', block=False)
 def mercadopago_webhook(request):
     """
     Handle Mercado Pago webhook notifications.
     Implements idempotency, validation and comprehensive error handling.
+    Rate limited to prevent abuse.
     """
     try:
         # Parse webhook data

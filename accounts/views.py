@@ -8,10 +8,12 @@ from django.contrib import messages
 from django.views.generic import CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
+from django_ratelimit.decorators import ratelimit
 from .forms import UserRegistrationForm, CustomLoginForm, ProfileEditForm
 from .models import Profile
 
 
+@ratelimit(key='ip', rate='5/m', method='POST', block=True)
 def register_view(request):
     """
     User registration view.
@@ -63,8 +65,9 @@ def registration_success_view(request):
     return render(request, 'accounts/registration_success.html')
 
 
+@ratelimit(key='ip', rate='10/m', method='POST', block=True)
 def login_view(request):
-    """User login view"""
+    """User login view with rate limiting protection"""
     if request.user.is_authenticated:
         return redirect('accounts:dashboard')
     
