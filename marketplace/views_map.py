@@ -40,10 +40,9 @@ def instructors_map_view(request):
     if gender:
         instructors_qs = instructors_qs.filter(gender=gender)
     
-    # Get instructors with reviews
+    # Get instructors (average_rating and total_reviews are now model fields, not annotations)
     instructors = instructors_qs.annotate(
-        review_count=Count('reviews', filter=Q(reviews__status='PUBLISHED')),
-        average_rating=Avg('reviews__rating', filter=Q(reviews__status='PUBLISHED'))
+        review_count=Count('reviews', filter=Q(reviews__status='PUBLISHED'))
     ).order_by('-created_at')
     
     # Prepare JSON data for map markers
