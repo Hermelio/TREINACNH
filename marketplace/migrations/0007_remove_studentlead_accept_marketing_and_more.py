@@ -19,7 +19,7 @@ def convert_city_to_fk(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('marketplace', '0006_migrate_city_data'),
+        ('marketplace', '0004_studentlead'),
     ]
 
     operations = [
