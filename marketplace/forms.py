@@ -364,7 +364,3 @@ class AppointmentForm(forms.ModelForm):
             'end_time': 'Horário Final',
             'notes': 'Observações',
         }
-
-        if not accept_terms:
-            raise forms.ValidationError('Você deve aceitar os Termos de Uso para se cadastrar.')
-        return accept_terms
