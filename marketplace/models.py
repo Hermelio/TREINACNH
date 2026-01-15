@@ -198,6 +198,26 @@ class InstructorProfile(models.Model):
         help_text='Instrutor com documentos aprovados'
     )
     
+    # Statistics
+    total_students = models.PositiveIntegerField(
+        'Total de Alunos',
+        default=0,
+        help_text='Número de alunos que finalizaram aulas'
+    )
+    average_rating = models.DecimalField(
+        'Média de Avaliações',
+        max_digits=3,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='Média de avaliações (1.00 a 5.00)'
+    )
+    total_reviews = models.PositiveIntegerField(
+        'Total de Avaliações',
+        default=0,
+        help_text='Número total de avaliações recebidas'
+    )
+    
     # Trial Period (14 days free)
     trial_start_date = models.DateTimeField(
         'Data de Início do Trial',
@@ -358,6 +378,36 @@ class InstructorProfile(models.Model):
         
         return badge_list
     
+    def update_statistics(self):
+        """
+        Update instructor statistics (average rating and total students).
+        Should be called after a new review or completed lead.
+        """
+        from reviews.models import Review, ReviewStatusChoices
+        from django.db.models import Avg, Count
+        
+        # Update total students (leads with COMPLETED status)
+        completed_leads = Lead.objects.filter(
+            instructor=self,
+            status=LeadStatusChoices.COMPLETED
+        ).values('student_user').distinct()
+        self.total_students = completed_leads.count()
+        
+        # Update average rating (only published reviews)
+        reviews_stats = Review.objects.filter(
+            instructor=self,
+            status=ReviewStatusChoices.PUBLISHED
+        ).aggregate(
+            avg_rating=Avg('rating'),
+            total=Count('id')
+        )
+        
+        self.average_rating = reviews_stats['avg_rating']
+        self.total_reviews = reviews_stats['total'] or 0
+        
+        self.save(update_fields=['total_students', 'average_rating', 'total_reviews'])
+
+    
     @property
     def availability_text(self):
         """Return human-readable availability"""
@@ -392,6 +442,7 @@ class LeadStatusChoices(models.TextChoices):
     """Lead status options"""
     NEW = 'NEW', 'Novo'
     CONTACTED = 'CONTACTED', 'Contatado'
+    COMPLETED = 'COMPLETED', 'Aulas Finalizadas'
     CLOSED = 'CLOSED', 'Fechado'
     SPAM = 'SPAM', 'Spam'
 

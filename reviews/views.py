@@ -20,6 +20,22 @@ def review_create_view(request, instructor_pk):
         if existing_review:
             messages.warning(request, 'Você já avaliou este instrutor.')
             return redirect('marketplace:instructor_detail', pk=instructor.pk)
+        
+        # Check if user has completed lessons with this instructor
+        from marketplace.models import Lead, LeadStatusChoices
+        has_completed_lessons = Lead.objects.filter(
+            student_user=request.user,
+            instructor=instructor,
+            status=LeadStatusChoices.COMPLETED
+        ).exists()
+        
+        if not has_completed_lessons:
+            messages.error(
+                request,
+                'Você só pode avaliar este instrutor após finalizar aulas com ele. '
+                'Entre em contato com o instrutor e solicite que ele marque suas aulas como finalizadas.'
+            )
+            return redirect('marketplace:instructor_detail', pk=instructor.pk)
     
     if request.method == 'POST':
         form = ReviewForm(request.POST, user=request.user)
@@ -39,10 +55,12 @@ def review_create_view(request, instructor_pk):
             else:
                 review.ip_address = request.META.get('REMOTE_ADDR')
             
-            review.save()
-            
-            messages.success(request, 'Avaliação enviada com sucesso! Ela será publicada após moderação.')
-            return redirect('marketplace:instructor_detail', pk=instructor.pk)
+            try:
+                review.save()
+                messages.success(request, 'Avaliação enviada com sucesso! Ela será publicada após moderação.')
+                return redirect('marketplace:instructor_detail', pk=instructor.pk)
+            except Exception as e:
+                messages.error(request, f'Erro ao salvar avaliação: {str(e)}')
         else:
             messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:

@@ -1,11 +1,11 @@
 """
 Signals for marketplace app.
-Handles automatic notifications when instructors register.
+Handles automatic notifications when instructors register and statistics updates.
 """
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
-from .models import InstructorProfile, StudentLead
+from .models import InstructorProfile, StudentLead, Lead, LeadStatusChoices
 
 
 @receiver(post_save, sender=InstructorProfile)
@@ -54,3 +54,21 @@ def log_instructor_status_change(sender, instance, created, **kwargs):
         
         if student_count > 0:
             print(f"⚠️ ATENÇÃO: {student_count} alunos aguardando em {instance.city.state.code} podem ser notificados!")
+
+
+@receiver(post_save, sender=Lead)
+def update_instructor_stats_on_lead_save(sender, instance, created, **kwargs):
+    """
+    Update instructor statistics when a lead is marked as COMPLETED.
+    """
+    if instance.status == LeadStatusChoices.COMPLETED:
+        instance.instructor.update_statistics()
+
+
+@receiver(post_delete, sender=Lead)
+def update_instructor_stats_on_lead_delete(sender, instance, **kwargs):
+    """
+    Update instructor statistics when a completed lead is deleted.
+    """
+    if instance.status == LeadStatusChoices.COMPLETED:
+        instance.instructor.update_statistics()

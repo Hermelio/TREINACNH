@@ -4,6 +4,7 @@ Models for reviews app - Reviews and Reports.
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
 from marketplace.models import InstructorProfile
 
 
@@ -78,6 +79,41 @@ class Review(models.Model):
     def __str__(self):
         author = self.author_user.get_full_name() if self.author_user else self.author_name
         return f"{author} → {self.instructor.user.get_full_name()} ({self.rating}★)"
+    
+    def clean(self):
+        """
+        Validate that user can only review instructor if they have completed lessons.
+        Anonymous reviews are not validated.
+        """
+        super().clean()
+        
+        # Only validate if author is a logged-in user
+        if self.author_user:
+            from marketplace.models import Lead, LeadStatusChoices
+            
+            # Check if user has at least one completed lead with this instructor
+            has_completed_lessons = Lead.objects.filter(
+                student_user=self.author_user,
+                instructor=self.instructor,
+                status=LeadStatusChoices.COMPLETED
+            ).exists()
+            
+            if not has_completed_lessons:
+                raise ValidationError(
+                    'Você só pode avaliar este instrutor após finalizar aulas com ele. '
+                    'Entre em contato com o instrutor e solicite que ele marque suas aulas como finalizadas.'
+                )
+    
+    def save(self, *args, **kwargs):
+        """Override save to validate and update instructor statistics"""
+        # Run validation
+        self.clean()
+        
+        # Save review
+        super().save(*args, **kwargs)
+        
+        # Update instructor statistics
+        self.instructor.update_statistics()
     
     @property
     def display_name(self):
