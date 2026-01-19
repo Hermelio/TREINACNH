@@ -131,12 +131,14 @@
         position: relative;
         z-index: 1;
         max-width: 600px;
+        padding-bottom: 140px;
     }
     
     @media (max-width: 768px) {
         .hero-content {
             max-width: 100%;
             min-height: 380px;
+            padding-bottom: 260px;
         }
     }
     
@@ -293,6 +295,9 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
+        position: relative;
+        z-index: 50;
+        margin-bottom: 120px;
     }
     
     @media (max-width: 768px) {
@@ -302,6 +307,7 @@
             height: 52px;
             min-width: 100%;
             width: 100%;
+            margin-bottom: 240px;
         }
     }
     
@@ -431,7 +437,8 @@
         height: 92px;
         min-height: 92px;
         margin: 0;
-        z-index: 9999;
+        z-index: 100;
+        pointer-events: auto;
     }
     
     .stats-bar-item {
@@ -499,6 +506,7 @@
             height: auto;
             padding: 18px 20px;
             bottom: 16px;
+            z-index: 100;
         }
         .stats-bar-item {
             padding: 0 12px;
@@ -509,6 +517,12 @@
         }
         .stats-bar-item .label {
             font-size: 12px;
+        }
+        .btn-success-custom {
+            margin-bottom: 140px;
+        }
+        .hero-content {
+            padding-bottom: 160px;
         }
     }
     
