@@ -69,6 +69,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_ratelimit.middleware.RatelimitMiddleware',  # Rate limiting
+    'allauth.account.middleware.AccountMiddleware',  # django-allauth
     'core.middleware.SecurityMiddleware',  # Custom security middleware
 ]
 
