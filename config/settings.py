@@ -34,11 +34,18 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'django.contrib.sites',  # Required for allauth
     
     # Third-party
     'crispy_forms',
     'crispy_bootstrap5',
     'django_extensions',
+    
+    # django-allauth
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
     
     # Local apps
     'accounts.apps.AccountsConfig',
@@ -249,3 +256,56 @@ if DEBUG:
 # Custom settings
 MAX_PROFILE_COMPLETION_SCORE = 100
 WHATSAPP_MESSAGE_TEMPLATE = "Olá! Vi seu perfil no TREINACNH e gostaria de agendar aulas de direção."
+
+# ==========================================
+# DJANGO-ALLAUTH CONFIGURATION
+# ==========================================
+
+SITE_ID = 1
+
+# Authentication Backends
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # Django padrão
+    'allauth.account.auth_backends.AuthenticationBackend',  # Allauth
+]
+
+# Allauth Settings
+ACCOUNT_AUTHENTICATION_METHOD = 'email'  # Login com e-mail
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False  # Não obrigar username
+ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Verificação opcional
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True
+ACCOUNT_SESSION_REMEMBER = True
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
+
+# Redirect URLs
+LOGIN_REDIRECT_URL = '/contas/dashboard/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+SOCIALACCOUNT_LOGIN_ON_GET = True  # Login automático com Google
+
+# Social Account Settings
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'optional'
+SOCIALACCOUNT_QUERY_EMAIL = True
+
+# Google Provider Specific
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'APP': {
+            'client_id': config('GOOGLE_CLIENT_ID', default=''),
+            'secret': config('GOOGLE_CLIENT_SECRET', default=''),
+            'key': ''
+        }
+    }
+}
+
+# Adapter personalizado para criar Profile automaticamente
+SOCIALACCOUNT_ADAPTER = 'accounts.adapters.CustomSocialAccountAdapter'
