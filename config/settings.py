@@ -17,6 +17,10 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
+# Proxy/Port Configuration - Para capturar porta correta via proxy reverso
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+
 # CSRF Trusted Origins - Required for forms to work with specific domains/IPs
 CSRF_TRUSTED_ORIGINS = [
     'http://72.61.36.89:8080',
@@ -279,6 +283,7 @@ ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http'  # Forçar HTTP para o ambiente atual
 
 # Redirect URLs
 LOGIN_REDIRECT_URL = '/contas/dashboard/'
