@@ -1366,7 +1366,7 @@
                         
                         <div class="col-md-4 text-center text-md-end">
                             <a href="{% url 'marketplace:student_register' %}" class="btn btn-lg" style="background: #22c55e; color: #ffffff; font-weight: 600; padding: 16px 36px; border-radius: 16px; border: none; font-size: 1.1rem; box-shadow: 0 8px 24px rgba(34, 197, 94, 0.4); transition: all 0.3s ease; display: inline-block; text-decoration: none;">
-                                <i class="bi bi-person-plus-fill me-2"></i>Cadastrar como Aluno
+                                <i class="bi bi-person-check-fill me-2" style="font-size: 1.3rem;"></i>Cadastrar como Aluno
                             </a>
                             <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.85rem; margin-top: 12px; margin-bottom: 0;">
                                 <i class="bi bi-shield-check me-1"></i>100% gratuito e sem compromisso
@@ -1423,7 +1423,7 @@
         <!-- Bonus Badge -->
         <div style="display: inline-block; background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); border-radius: 50px; padding: 12px 28px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(255, 152, 0, 0.4); animation: pulse-glow 2s ease-in-out infinite;">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <i class="bi bi-gift-fill" style="font-size: 1.3rem; color: #fff;"></i>
+                <i class="bi bi-lightning-charge-fill" style="font-size: 1.5rem; color: #fff; animation: flash 1.5s ease-in-out infinite;"></i>
                 <span style="font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 600; color: #1a1a1a;">
                     🎉 Instrutores Pioneiros: <strong>14 dias grátis!</strong>
                 </span>
@@ -1432,7 +1432,7 @@
         
         <div>
             <a href="{% url 'accounts:register' %}" class="btn btn-success btn-success-custom" style="padding: 16px 40px; font-size: 1.05rem;">
-                <i class="bi bi-person-plus-fill me-2"></i> Criar Conta Grátis
+                <i class="bi bi-star-fill me-2" style="font-size: 1.2rem;"></i> Criar Conta Grátis
             </a>
         </div>
     </div>
@@ -1448,6 +1448,11 @@
         box-shadow: 0 4px 24px rgba(255, 152, 0, 0.6);
         transform: scale(1.02);
     }
+}
+
+@keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
 }
 </style>
 {% endblock %}
@@ -1613,7 +1618,7 @@ function initMap() {
                     <i class="bi bi-book-fill me-1"></i>Com teoria: ${withTheory}
                 </p>
                 <a href="/alunos/${cityData.state}/${encodeURIComponent(cityData.city)}/" class="btn btn-sm btn-success mt-2" style="width: 100%;">
-                    <i class="bi bi-eye-fill me-1"></i>Ver Detalhes dos Alunos
+                    <i class="bi bi-search me-1"></i>Ver Detalhes dos Alunos
                 </a>
             </div>
         `;
