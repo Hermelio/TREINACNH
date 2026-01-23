@@ -76,8 +76,8 @@
         align-items: center;
         padding: 0;
         margin: 0;
-        overflow: hidden;
-        contain: layout;
+        overflow: visible;
+        z-index: 2;
     }
 
     .hero-dark::before {
@@ -87,7 +87,10 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0,0,0,0.45);
+        background: linear-gradient(to bottom, 
+            rgba(0,0,0,0.45) 0%, 
+            rgba(0,0,0,0.45) 70%, 
+            rgba(0,0,0,0) 100%);
         z-index: 1;
     }
     
@@ -1129,6 +1132,21 @@
             display: none;
         }
     }
+
+    /* Seção 2 - Transição contínua sem faixa preta */
+    .section-overlap {
+        position: relative;
+        z-index: 1;
+        margin-top: -180px;
+        padding-top: 180px;
+    }
+
+    @media (max-width: 768px) {
+        .section-overlap {
+            margin-top: -120px;
+            padding-top: 120px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -1239,7 +1257,7 @@
 </section>
 
 <!-- Como Funciona -->
-<section class="py-5" style="padding-top: 6rem !important; padding-bottom: 5rem !important;">
+<section class="py-5 section-overlap" style="padding-bottom: 5rem !important;">
     <div class="container">
         <h2 class="section-title mb-4">Treinar com a TreinaCNH é fácil:</h2>
         <p class="lead" style="color: rgba(255, 255, 255, 0.70); max-width: 600px; margin-bottom: 3rem; font-size: 1rem; line-height: 1.6; font-weight: 400;">Comece a dar aulas em três passos simples</p>
