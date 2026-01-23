@@ -39,6 +39,7 @@
         background-color: #f0f2f5;
         position: relative;
         z-index: 1;
+        background-image: none !important;
     }
     
     /* Desktop: carregar backgrounds pesados */
@@ -77,6 +78,17 @@
         margin: 0;
         overflow: hidden;
         contain: layout;
+    }
+
+    .hero-dark::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.45);
+        z-index: 1;
     }
     
     /* Mobile: hero mais compacto */
