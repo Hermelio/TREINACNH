@@ -312,60 +312,93 @@
         }
     }
 
-    /* Botões CTA Padronizados */
+    /* Botões CTA Padronizados - Design Elegante */
     .btn-cta {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
-        min-height: 56px;
-        padding: 0 28px;
-        border-radius: 14px;
+        gap: 12px;
+        height: 58px;
+        padding: 0 36px;
+        border-radius: 16px;
         font-weight: 600;
-        font-size: 1.0625rem;
+        font-size: 1.063rem;
+        letter-spacing: -0.01em;
         text-decoration: none;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border: none;
         cursor: pointer;
-        line-height: 1;
+        position: relative;
+        overflow: hidden;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .btn-cta::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn-cta:hover::before {
+        left: 100%;
     }
 
     .btn-cta .btn-icon {
-        width: 20px;
-        height: 20px;
-        display: inline-flex;
+        display: flex;
         align-items: center;
         justify-content: center;
-        flex: 0 0 auto;
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+    }
+
+    .btn-cta .btn-icon i {
         font-size: 1.25rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .btn-cta .btn-label {
-        line-height: 1;
-        white-space: nowrap;
+        line-height: 1.2;
+        display: flex;
+        align-items: center;
     }
 
     .btn-cta.btn-green {
-        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         color: #ffffff;
-        box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+        box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35), inset 0 1px 0 rgba(255,255,255,0.1);
     }
 
     .btn-cta.btn-green:hover {
-        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-        transform: translateY(-3px);
-        box-shadow: 0 8px 28px rgba(34, 197, 94, 0.5);
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(16, 185, 129, 0.45), inset 0 1px 0 rgba(255,255,255,0.15);
         color: #ffffff;
+    }
+
+    .btn-cta.btn-green:active {
+        transform: translateY(0);
+        box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255,255,255,0.1);
     }
 
     @media (max-width: 768px) {
         .btn-cta {
-            min-height: 52px;
-            font-size: 0.95rem;
+            height: 54px;
+            font-size: 1rem;
+            padding: 0 28px;
             width: 100%;
+            gap: 10px;
         }
-        .btn-cta .btn-icon {
-            font-size: 1.1rem;
+        .btn-cta .btn-icon i {
+            font-size: 1.15rem;
         }
     }
 
