@@ -315,7 +315,7 @@
     .btn-success-custom {
         background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
         border: none;
-        padding: 18px 32px;
+        padding: 0;
         height: 60px;
         min-width: 240px;
         font-size: 1.0625rem;
@@ -326,26 +326,35 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
+        gap: 8px;
         position: relative;
         z-index: 50;
         margin-bottom: 120px;
         text-decoration: none;
         color: #ffffff;
+        line-height: 1;
+        vertical-align: middle;
     }
 
     .btn-success-custom i {
         font-size: 1.25rem;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
     
     @media (max-width: 768px) {
         .btn-success-custom {
-            padding: 14px 24px;
+            padding: 0;
             font-size: 0.95rem;
             height: 52px;
             min-width: 100%;
             width: 100%;
             margin-bottom: 240px;
+        }
+        .btn-success-custom i {
+            font-size: 1.1rem;
         }
     }
     
