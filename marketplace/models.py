@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.text import slugify
 from django.urls import reverse
+from django.utils import timezone
 
 
 class State(models.Model):
@@ -75,6 +76,56 @@ class City(models.Model):
     def instructor_count(self):
         """Count active and visible instructors in this city"""
         return self.instructors.filter(is_visible=True, is_verified=True).count()
+
+
+class CityGeoCache(models.Model):
+    """Cache for city geocoding to avoid repeated API calls"""
+    city_key = models.CharField(
+        'Chave Cidade',
+        max_length=200,
+        unique=True,
+        db_index=True,
+        help_text='Formato: cidade_normalizada|UF'
+    )
+    city_name = models.CharField('Cidade', max_length=100)
+    state_code = models.CharField('UF', max_length=2)
+    latitude = models.DecimalField('Latitude', max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField('Longitude', max_digits=9, decimal_places=6, null=True, blank=True)
+    provider = models.CharField(
+        'Provedor',
+        max_length=50,
+        blank=True,
+        help_text='API de geocoding usada (nominatim, google, manual, etc.)'
+    )
+    geocoded = models.BooleanField('Geocodificado', default=False)
+    failed = models.BooleanField('Falhou', default=False, help_text='Geocoding falhou')
+    attempts = models.IntegerField('Tentativas', default=0)
+    created_at = models.DateTimeField('Criado em', auto_now_add=True)
+    updated_at = models.DateTimeField('Atualizado em', auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Cache de Geocoding'
+        verbose_name_plural = 'Cache de Geocoding'
+        ordering = ['-updated_at']
+        indexes = [
+            models.Index(fields=['city_key']),
+            models.Index(fields=['state_code', 'city_name']),
+            models.Index(fields=['geocoded']),
+        ]
+    
+    def __str__(self):
+        status = '✓' if self.geocoded else ('✗' if self.failed else '?')
+        return f"{status} {self.city_name}/{self.state_code}"
+    
+    @staticmethod
+    def normalize_city_key(city_name, state_code):
+        """Create normalized key for city"""
+        import unicodedata
+        # Remove accents and lowercase
+        city_clean = unicodedata.normalize('NFKD', city_name).encode('ASCII', 'ignore').decode('ASCII')
+        city_clean = city_clean.strip().lower()
+        state_clean = state_code.strip().upper()
+        return f"{city_clean}|{state_clean}"
 
 
 class CategoryCNH(models.Model):

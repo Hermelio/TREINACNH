@@ -1668,14 +1668,37 @@
 
 {% block extra_js %}
 <script>
-// Lazy load Leaflet quando mapa entrar no viewport
+// Lazy load Leaflet and Markercluster when map enters viewport
 const mapObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
-            const script = document.createElement('script');
-            script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-            script.onload = initMap;
-            document.head.appendChild(script);
+            // Load Leaflet first
+            const leafletCSS = document.createElement('link');
+            leafletCSS.rel = 'stylesheet';
+            leafletCSS.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+            document.head.appendChild(leafletCSS);
+            
+            // Load Markercluster CSS
+            const clusterCSS = document.createElement('link');
+            clusterCSS.rel = 'stylesheet';
+            clusterCSS.href = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css';
+            document.head.appendChild(clusterCSS);
+            
+            const clusterDefaultCSS = document.createElement('link');
+            clusterDefaultCSS.rel = 'stylesheet';
+            clusterDefaultCSS.href = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css';
+            document.head.appendChild(clusterDefaultCSS);
+            
+            const leafletScript = document.createElement('script');
+            leafletScript.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+            leafletScript.onload = function() {
+                // Load Markercluster after Leaflet
+                const clusterScript = document.createElement('script');
+                clusterScript.src = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js';
+                clusterScript.onload = initMap;
+                document.head.appendChild(clusterScript);
+            };
+            document.head.appendChild(leafletScript);
             mapObserver.disconnect();
         }
     });
@@ -1687,149 +1710,161 @@ if (mapElement) {
 }
 
 function initMap() {
-    // Brazil bounds (southwest and northeast corners)
+    console.log('Initializing professional map with city-level precision...');
+    
+    // Brazil bounds
     const brazilBounds = [
         [-33.75, -73.99], // Southwest
         [5.27, -34.79]    // Northeast
     ];
     
-    // Initialize map centered on Brazil with bounds
+    // Initialize map
     const map = L.map('homeMap', {
         center: [-14.235, -51.925],
-        zoom: 5,
+        zoom: 4,
         minZoom: 4,
-        maxZoom: 15,
+        maxZoom: 18,
         maxBounds: brazilBounds,
         maxBoundsViscosity: 1.0
     });
     
-    // Add OpenStreetMap tiles
+    // Add tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: 'Â© OpenStreetMap contributors'
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
     }).addTo(map);
     
-    // Parse data from backend (already grouped by city)
-    const statesData = {{ states_json|safe }};
-    const instructorsData = {{ instructors_json|safe }};
-    const studentsCityData = {{ students_json|safe }}; // Already grouped by city
+    // Show loading indicator
+    const loadingDiv = document.createElement('div');
+    loadingDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000;';
+    loadingDiv.innerHTML = '<i class="bi bi-hourglass-split"></i> Carregando cidades...';
+    mapElement.appendChild(loadingDiv);
     
-    // Group cities by state coordinates to distribute them in a circle
-    const citiesByStateCoord = {};
-    studentsCityData.forEach(function(cityData) {
-        const coordKey = `${cityData.latitude}_${cityData.longitude}`;
-        if (!citiesByStateCoord[coordKey]) {
-            citiesByStateCoord[coordKey] = [];
-        }
-        citiesByStateCoord[coordKey].push(cityData);
-    });
-    
-    // Add city markers with student count (verde - alunos por cidade)
-    studentsCityData.forEach(function(cityData, index) {
-        const markerSize = Math.max(8, Math.min(25, cityData.count * 2));
-        
-        // Base coordinates (from state)
-        let lat = parseFloat(cityData.latitude);
-        let lng = parseFloat(cityData.longitude);
-        
-        // Create a key for the coordinate
-        const coordKey = `${cityData.latitude}_${cityData.longitude}`;
-        const citiesAtThisLocation = citiesByStateCoord[coordKey];
-        
-        // If multiple cities share the same state coordinates, distribute them in a circle
-        if (citiesAtThisLocation.length > 1) {
-            const cityIndex = citiesAtThisLocation.findIndex(c => c.city_name === cityData.city_name);
-            const totalCities = citiesAtThisLocation.length;
-            const angle = (cityIndex * (360 / totalCities)) * (Math.PI / 180);
-            const radius = 0.5; // 0.5 degrees radius
+    // Fetch city data from API
+    fetch('/instrutores/api/map/cities/')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Cities loaded:', data.stats);
+            loadingDiv.remove();
             
-            lat += Math.cos(angle) * radius;
-            lng += Math.sin(angle) * radius;
-        }
-        
-        const studentMarker = L.circleMarker([lat, lng], {
-            radius: markerSize,
-            fillColor: '#22c55e',
-            color: '#fff',
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.75
-        }).addTo(map);
-        
-        // Calculate categories
-        const categoryA = cityData.students.filter(s => s.category && (s.category.includes('A'))).length;
-        const categoryB = cityData.students.filter(s => s.category && (s.category.includes('B'))).length;
-        const withTheory = cityData.students.filter(s => s.has_theory).length;
-        
-        const popupContent = `
-            <div class="text-center" style="min-width: 220px;">
-                <h6 class="mb-2" style="color: #22c55e; font-weight: 700; font-size: 1.1rem;">
-                    <i class="bi bi-people-fill me-1"></i>${cityData.count} ${cityData.count === 1 ? 'Aluno' : 'Alunos'}
-                </h6>
-                <p class="mb-2" style="font-size: 0.95rem; color: #333; font-weight: 600;">
-                    <i class="bi bi-geo-alt-fill me-1" style="color: #22c55e;"></i>${cityData.city_name} - ${cityData.state_code}
-                </p>
-                <hr style="margin: 12px 0; border-color: rgba(34, 197, 94, 0.3);">
-                <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 12px;">
-                    <p class="mb-1 small" style="color: #555;">
-                        <i class="bi bi-award-fill me-1" style="color: #22c55e;"></i>Cat. A: <strong>${categoryA}</strong> | Cat. B: <strong>${categoryB}</strong>
-                    </p>
-                    <p class="mb-0 small" style="color: #555;">
-                        <i class="bi bi-journal-check me-1" style="color: #0d6efd;"></i>Com teoria: <strong>${withTheory}</strong>
-                    </p>
-                </div>
-                <a href="/contas/registro/" class="btn btn-sm btn-success" style="width: 100%; font-weight: 600;">
-                    <i class="bi bi-rocket-takeoff-fill me-1"></i>Cadastrar e Atender
-                </a>
-            </div>
-        `;
-        
-        studentMarker.bindPopup(popupContent);
-        
-        // Tooltip with detailed info
-        studentMarker.bindTooltip(`
-            <div style="text-align: center; padding: 8px;">
-                <strong style="font-size: 1rem; color: #1a1a1a;">${cityData.city_name}</strong><br>
-                <span style="color: #22c55e; font-weight: 700; font-size: 1.1rem;">
-                    <i class="bi bi-people-fill"></i> ${cityData.count} aluno${cityData.count > 1 ? 's' : ''}
-                </span>
-                <hr style="margin: 8px 0; border-color: rgba(34, 197, 94, 0.3);">
-                <div style="font-size: 0.85rem; color: #555;">
-                    <div style="margin: 4px 0;">
-                        <i class="bi bi-award-fill me-1" style="color: #22c55e;"></i>
-                        A: <strong>${categoryA}</strong> | B: <strong>${categoryB}</strong>
-                    </div>
-                    <div style="margin: 4px 0;">
-                        <i class="bi bi-journal-check me-1" style="color: #0d6efd;"></i>
-                        Teoria: <strong>${withTheory}</strong>
-                    </div>
-                </div>
-            </div>
-        `, {
-            permanent: false,
-            direction: 'top',
-            className: 'custom-tooltip',
-            offset: [0, -10]
-        });
-        
-        // Hover effects
-        studentMarker.on('mouseover', function() {
-            this.setStyle({
-                fillOpacity: 1,
-                radius: this.options.radius * 1.2,
-                weight: 3
+            // Create marker cluster group
+            const markers = L.markerClusterGroup({
+                maxClusterRadius: 80,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false,
+                zoomToBoundsOnClick: true,
+                iconCreateFunction: function(cluster) {
+                    const childCount = cluster.getChildCount();
+                    let size = 'small';
+                    if (childCount > 20) size = 'large';
+                    else if (childCount > 10) size = 'medium';
+                    
+                    return L.divIcon({
+                        html: '<div><span>' + childCount + '</span></div>',
+                        className: 'marker-cluster marker-cluster-' + size,
+                        iconSize: L.point(40, 40)
+                    });
+                }
             });
-        });
-        
-        studentMarker.on('mouseout', function() {
-            this.setStyle({
-                fillOpacity: 0.75,
-                radius: markerSize,
-                weight: 2
+            
+            // Add city markers
+            data.cities.forEach(function(cityData) {
+                // Calculate radius based on student count (logarithmic scale)
+                const radius = Math.max(6, Math.min(26, 6 + Math.log(cityData.count + 1) * 4));
+                
+                const marker = L.circleMarker([cityData.lat, cityData.lng], {
+                    radius: radius,
+                    fillColor: '#22c55e',
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                });
+                
+                // Get category counts
+                const catA = cityData.categories.A || 0;
+                const catB = cityData.categories.B || 0;
+                
+                // Popup content
+                const popupContent = `
+                    <div class="text-center" style="min-width: 220px;">
+                        <h6 class="mb-2" style="color: #22c55e; font-weight: 700; font-size: 1.1rem;">
+                            <i class="bi bi-people-fill me-1"></i>${cityData.count} ${cityData.count === 1 ? 'Aluno' : 'Alunos'}
+                        </h6>
+                        <p class="mb-2" style="font-size: 0.95rem; color: #333; font-weight: 600;">
+                            <i class="bi bi-geo-alt-fill me-1" style="color: #22c55e;"></i>${cityData.city} - ${cityData.uf}
+                        </p>
+                        <hr style="margin: 12px 0; border-color: rgba(34, 197, 94, 0.3);">
+                        <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 12px;">
+                            <p class="mb-1 small" style="color: #555;">
+                                <i class="bi bi-award-fill me-1" style="color: #22c55e;"></i>Cat. A: <strong>${catA}</strong> | Cat. B: <strong>${catB}</strong>
+                            </p>
+                            <p class="mb-0 small" style="color: #555;">
+                                <i class="bi bi-journal-check me-1" style="color: #0d6efd;"></i>Com teoria: <strong>${cityData.with_theory}</strong>
+                            </p>
+                        </div>
+                        <a href="/contas/registro/" class="btn btn-sm btn-success" style="width: 100%; font-weight: 600;">
+                            <i class="bi bi-rocket-takeoff-fill me-1"></i>Cadastrar e Atender
+                        </a>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent);
+                
+                // Tooltip
+                marker.bindTooltip(`
+                    <div style="text-align: center; padding: 8px;">
+                        <strong style="font-size: 1rem; color: #1a1a1a;">${cityData.city}</strong><br>
+                        <span style="color: #22c55e; font-weight: 700; font-size: 1.1rem;">
+                            <i class="bi bi-people-fill"></i> ${cityData.count} aluno${cityData.count > 1 ? 's' : ''}
+                        </span>
+                        <hr style="margin: 8px 0; border-color: rgba(34, 197, 94, 0.3);">
+                        <div style="font-size: 0.85rem; color: #555;">
+                            <div style="margin: 4px 0;">
+                                <i class="bi bi-award-fill me-1" style="color: #22c55e;"></i>
+                                A: <strong>${catA}</strong> | B: <strong>${catB}</strong>
+                            </div>
+                            <div style="margin: 4px 0;">
+                                <i class="bi bi-journal-check me-1" style="color: #0d6efd;"></i>
+                                Teoria: <strong>${cityData.with_theory}</strong>
+                            </div>
+                        </div>
+                    </div>
+                `, {
+                    permanent: false,
+                    direction: 'top',
+                    className: 'custom-tooltip',
+                    offset: [0, -10]
+                });
+                
+                // Hover effects
+                marker.on('mouseover', function() {
+                    this.setStyle({ fillOpacity: 1, radius: radius * 1.2, weight: 3 });
+                });
+                marker.on('mouseout', function() {
+                    this.setStyle({ fillOpacity: 0.8, radius: radius, weight: 2 });
+                });
+                
+                markers.addLayer(marker);
             });
+            
+            // Add markers to map
+            map.addLayer(markers);
+            
+            // Show stats in console
+            console.log('📊 Map Statistics:', data.stats);
+            if (data.stats.cities_without_coords > 0) {
+                console.warn(`⚠️ ${data.stats.cities_without_coords} cities without coordinates`);
+            }
+            
+        })
+        .catch(error => {
+            console.error('Error loading map data:', error);
+            loadingDiv.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Erro ao carregar dados';
         });
-    });
     
-    // Add instructor markers (vermelho)
+    // Fetch and add instructor markers (legacy data)
+    const instructorsData = {{ instructors_json|safe }};
     instructorsData.forEach(function(instructor) {
         if (instructor.latitude && instructor.longitude) {
             const instructorMarker = L.marker([instructor.latitude, instructor.longitude], {
@@ -1856,7 +1891,7 @@ function initMap() {
         }
     });
     
-    // Add custom CSS for tooltips
+    // Add custom CSS
     const style = document.createElement('style');
     style.textContent = `
         .custom-tooltip {
@@ -1879,6 +1914,31 @@ function initMap() {
         .custom-instructor-marker {
             background: transparent !important;
             border: none !important;
+        }
+        .marker-cluster {
+            background-color: rgba(34, 197, 94, 0.6);
+            border-radius: 50%;
+        }
+        .marker-cluster div {
+            background-color: rgba(34, 197, 94, 0.8);
+            color: white;
+            font-weight: 700;
+            text-align: center;
+            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .marker-cluster-small div {
+            background-color: rgba(34, 197, 94, 0.7);
+        }
+        .marker-cluster-medium div {
+            background-color: rgba(34, 197, 94, 0.8);
+        }
+        .marker-cluster-large div {
+            background-color: rgba(16, 185, 129, 0.9);
         }
     `;
     document.head.appendChild(style);

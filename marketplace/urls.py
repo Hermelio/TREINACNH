@@ -4,7 +4,7 @@ URL Configuration for marketplace app.
 from django.urls import path
 from . import views
 from .views_map import instructors_map_view
-from .api_views import get_cities_by_state
+from .api_views import get_cities_by_state, get_map_cities
 
 app_name = 'marketplace'
 
@@ -12,6 +12,7 @@ urlpatterns = [
     # API endpoints (must come first)
     path('api/cidades/<str:state_code>/', get_cities_by_state, name='api_cities_by_state'),
     path('api/cities-by-state/', views.get_cities_by_state, name='get_cities_by_state'),
+    path('api/map/cities/', get_map_cities, name='api_map_cities'),
     
     # Student registration
     path('cadastro-aluno/', views.student_register_view, name='student_register'),
