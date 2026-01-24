@@ -1713,29 +1713,37 @@ function initMap() {
     const instructorsData = {{ instructors_json|safe }};
     const studentsCityData = {{ students_json|safe }}; // Already grouped by city
     
-    // Track used coordinates to add offset for cities in same location
-    const usedCoordinates = {};
+    // Group cities by state coordinates to distribute them in a circle
+    const citiesByStateCoord = {};
+    studentsCityData.forEach(function(cityData) {
+        const coordKey = `${cityData.latitude}_${cityData.longitude}`;
+        if (!citiesByStateCoord[coordKey]) {
+            citiesByStateCoord[coordKey] = [];
+        }
+        citiesByStateCoord[coordKey].push(cityData);
+    });
     
     // Add city markers with student count (verde - alunos por cidade)
     studentsCityData.forEach(function(cityData, index) {
         const markerSize = Math.max(8, Math.min(25, cityData.count * 2));
         
-        // Create a key for the coordinate
-        const coordKey = `${cityData.latitude}_${cityData.longitude}`;
-        
-        // If this coordinate was already used, add a small offset
+        // Base coordinates (from state)
         let lat = parseFloat(cityData.latitude);
         let lng = parseFloat(cityData.longitude);
         
-        if (usedCoordinates[coordKey]) {
-            // Add offset based on how many times this coordinate was used
-            const offset = usedCoordinates[coordKey] * 0.3; // 0.3 degrees offset
-            const angle = (usedCoordinates[coordKey] * 60) * (Math.PI / 180); // 60 degrees apart
-            lat += Math.cos(angle) * offset;
-            lng += Math.sin(angle) * offset;
-            usedCoordinates[coordKey]++;
-        } else {
-            usedCoordinates[coordKey] = 1;
+        // Create a key for the coordinate
+        const coordKey = `${cityData.latitude}_${cityData.longitude}`;
+        const citiesAtThisLocation = citiesByStateCoord[coordKey];
+        
+        // If multiple cities share the same state coordinates, distribute them in a circle
+        if (citiesAtThisLocation.length > 1) {
+            const cityIndex = citiesAtThisLocation.findIndex(c => c.city_name === cityData.city_name);
+            const totalCities = citiesAtThisLocation.length;
+            const angle = (cityIndex * (360 / totalCities)) * (Math.PI / 180);
+            const radius = 0.5; // 0.5 degrees radius
+            
+            lat += Math.cos(angle) * radius;
+            lng += Math.sin(angle) * radius;
         }
         
         const studentMarker = L.circleMarker([lat, lng], {
