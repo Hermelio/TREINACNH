@@ -312,27 +312,28 @@
         }
     }
 
-    /* Botão CTA Padronizado - Padrão Oficial */
+    /* Botão CTA Padronizado - Design Premium */
     .btn-cta {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 10px;
-        min-height: 52px;
-        padding: 12px 24px;
-        border-radius: 14px;
+        min-height: 56px;
+        padding: 16px 32px;
+        border-radius: 16px;
         font-weight: 600;
+        font-size: 1.063rem;
         text-decoration: none;
         white-space: nowrap;
         transition: all 0.3s ease;
         border: none;
         cursor: pointer;
-        font-size: 1rem;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
     .btn-cta .btn-icon {
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -340,35 +341,44 @@
     }
 
     .btn-cta .btn-icon i {
-        font-size: 1.1rem;
+        font-size: 1.3rem;
         line-height: 1;
     }
 
     .btn-cta .btn-label {
         line-height: 1;
+        font-size: 1.063rem;
     }
 
     .btn-cta.btn-green {
-        background: #28a745;
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
         color: #ffffff;
-        box-shadow: 0 4px 14px rgba(40, 167, 69, 0.30);
+        box-shadow: 0 8px 24px rgba(34, 197, 94, 0.4);
     }
 
     .btn-cta.btn-green:hover {
-        background: #218838;
+        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.40);
+        box-shadow: 0 12px 32px rgba(34, 197, 94, 0.5);
         color: #ffffff;
+    }
+
+    .btn-cta.btn-green:active {
+        transform: translateY(0);
+        box-shadow: 0 4px 16px rgba(34, 197, 94, 0.35);
     }
 
     @media (max-width: 768px) {
         .btn-cta {
-            min-height: 50px;
-            font-size: 0.95rem;
-            padding: 10px 20px;
+            min-height: 52px;
+            font-size: 1rem;
+            padding: 14px 28px;
             width: 100%;
         }
         .btn-cta .btn-icon i {
+            font-size: 1.2rem;
+        }
+        .btn-cta .btn-label {
             font-size: 1rem;
         }
     }
