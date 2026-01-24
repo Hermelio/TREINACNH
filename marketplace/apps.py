@@ -9,3 +9,4 @@ class MarketplaceConfig(AppConfig):
     def ready(self):
         """Import signals when app is ready"""
         import marketplace.signals  # noqa
+        import marketplace.signals_geocoding  # Auto-geocoding signals

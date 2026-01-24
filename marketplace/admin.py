@@ -4,10 +4,13 @@ Admin configuration for marketplace app.
 from django.contrib import admin
 from django.utils.html import format_html
 from django.db.models import Count
+from django.contrib import messages
 from .models import (
     State, City, CategoryCNH, InstructorProfile, Lead, StudentLead,
-    InstructorAvailability, Appointment
+    InstructorAvailability, Appointment, CityGeoCache
 )
+from .geocoding_service import GeocodingService
+import threading
 
 
 @admin.register(State)
@@ -24,11 +27,75 @@ class StateAdmin(admin.ModelAdmin):
 @admin.register(City)
 class CityAdmin(admin.ModelAdmin):
     """Admin for City model"""
-    list_display = ('name', 'state', 'slug', 'is_active', 'instructor_count', 'created_at')
+    list_display = ('name', 'state', 'slug', 'is_active', 'instructor_count', 'geocoded_status', 'created_at')
     list_filter = ('state', 'is_active')
     search_fields = ('name', 'state__code')
     prepopulated_fields = {'slug': ('name',)}
     readonly_fields = ('created_at',)
+    actions = ['geocode_selected_cities']
+    
+    def geocoded_status(self, obj):
+        """Show if city is geocoded"""
+        city_key = CityGeoCache.normalize_city_key(obj.name, obj.state.code)
+        try:
+            cache = CityGeoCache.objects.get(city_key=city_key)
+            if cache.geocoded:
+                return format_html('<span style="color: green;">✓ Geocodificado</span>')
+            elif cache.failed:
+                return format_html('<span style="color: red;">✗ Falhou</span>')
+            else:
+                return format_html('<span style="color: orange;">? Pendente</span>')
+        except CityGeoCache.DoesNotExist:
+            return format_html('<span style="color: gray;">○ Não processado</span>')
+    geocoded_status.short_description = 'Geocoding'
+    
+    def geocode_selected_cities(self, request, queryset):
+        """Action to geocode selected cities"""
+        def geocode_cities():
+            for city in queryset:
+                GeocodingService.get_city_latlng(city.name, city.state.code)
+        
+        thread = threading.Thread(target=geocode_cities)
+        thread.daemon = True
+        thread.start()
+        
+        self.message_user(
+            request,
+            f"Iniciado geocoding de {queryset.count()} cidades em background.",
+            messages.SUCCESS
+        )
+    geocode_selected_cities.short_description = "Geocodificar cidades selecionadas"
+
+
+@admin.register(CityGeoCache)
+class CityGeoCacheAdmin(admin.ModelAdmin):
+    """Admin for CityGeoCache model"""
+    list_display = ('city_name', 'state_code', 'geocoded', 'failed', 'latitude', 'longitude', 'provider', 'attempts', 'updated_at')
+    list_filter = ('geocoded', 'failed', 'state_code', 'provider')
+    search_fields = ('city_name', 'state_code', 'city_key')
+    readonly_fields = ('city_key', 'created_at', 'updated_at', 'attempts')
+    actions = ['retry_failed_geocoding']
+    
+    def retry_failed_geocoding(self, request, queryset):
+        """Retry geocoding for failed entries"""
+        def retry_geocode():
+            for cache in queryset.filter(failed=True):
+                # Reset failed status
+                cache.failed = False
+                cache.save()
+                # Try again
+                GeocodingService.get_city_latlng(cache.city_name, cache.state_code)
+        
+        thread = threading.Thread(target=retry_geocode)
+        thread.daemon = True
+        thread.start()
+        
+        self.message_user(
+            request,
+            f"Iniciado retry de geocoding para {queryset.filter(failed=True).count()} cidades.",
+            messages.SUCCESS
+        )
+    retry_failed_geocoding.short_description = "Tentar geocodificar novamente"
 
 
 @admin.register(CategoryCNH)
