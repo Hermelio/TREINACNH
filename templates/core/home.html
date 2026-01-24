@@ -313,118 +313,35 @@
         }
     }
 
-    /* ============================================ */
-    /* SISTEMA DE BOTÕES HERO - DESIGN PROFISSIONAL */
-    /* ============================================ */
-    
-    /* Base Hero Button - Componente Reutilizável */
-    .btn-hero {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        height: 52px;
-        padding: 0 32px;
-        border-radius: 14px;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-        font-size: 1rem;
+    /* Botões customizados apenas para ajustes finos no Bootstrap */
+    .btn-hero-custom {
+        font-size: 1.125rem;
+        padding: 0.875rem 2rem;
+        border-radius: 0.5rem;
         font-weight: 600;
-        line-height: 1;
-        text-decoration: none;
-        white-space: nowrap;
-        border: 2px solid transparent;
-        cursor: pointer;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-    }
-    
-    .btn-hero:focus-visible {
-        outline: 3px solid rgba(34, 197, 94, 0.5);
-        outline-offset: 2px;
-    }
-    
-    .btn-hero .btn-icon {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        width: 20px;
-        height: 20px;
-        flex-shrink: 0;
-    }
-    
-    .btn-hero .btn-icon i {
-        font-size: 1.15rem;
-        line-height: 1;
-    }
-    
-    .btn-hero .btn-label {
-        line-height: 1;
-    }
-    
-    /* Primary Variant - Verde Sólido */
-    .btn-hero--primary {
-        background: #22c55e;
-        color: #ffffff;
-        border-color: #22c55e;
-    }
-    
-    .btn-hero--primary:hover {
-        background: #16a34a;
-        border-color: #16a34a;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(34, 197, 94, 0.35);
-        color: #ffffff;
+        gap: 0.75rem;
+        transition: all 0.3s ease;
         text-decoration: none;
+        border: none;
     }
     
-    .btn-hero--primary:active {
-        transform: translateY(0);
-        box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
-    }
-    
-    /* Secondary Variant - Outline */
-    .btn-hero--secondary {
-        background: rgba(255, 255, 255, 0.08);
-        color: #ffffff;
-        border-color: rgba(255, 255, 255, 0.25);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-    }
-    
-    .btn-hero--secondary:hover {
-        background: rgba(255, 255, 255, 0.15);
-        border-color: rgba(255, 255, 255, 0.4);
+    .btn-hero-custom:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(255, 255, 255, 0.15);
-        color: #ffffff;
-        text-decoration: none;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
     }
     
-    .btn-hero--secondary:active {
-        transform: translateY(0);
-        box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+    .btn-hero-custom i {
+        font-size: 1.25rem;
     }
     
-    /* Responsivo */
     @media (max-width: 768px) {
-        .btn-hero {
+        .btn-hero-custom {
             width: 100%;
-            height: 48px;
-            font-size: 0.95rem;
-            padding: 0 24px;
-            gap: 10px;
-        }
-        
-        .btn-hero .btn-icon i {
-            font-size: 1.05rem;
-        }
-    }
-    
-    @media (max-width: 576px) {
-        .btn-hero {
-            height: 46px;
-            font-size: 0.9rem;
-            padding: 0 20px;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
         }
     }
 
@@ -1364,11 +1281,9 @@
                 </p>
                 
                 <div style="margin-bottom: 120px;">
-                    <a href="{% url 'accounts:register' %}" class="btn-hero btn-hero--primary">
-                        <span class="btn-icon">
-                            <i class="bi bi-person-badge-fill"></i>
-                        </span>
-                        <span class="btn-label">Cadastre-se como Instrutor</span>
+                    <a href="{% url 'accounts:register' %}" class="btn btn-success btn-lg btn-hero-custom shadow-lg">
+                        <i class="bi bi-person-badge-fill"></i>
+                        <span>Cadastre-se como Instrutor</span>
                     </a>
                 </div>
             </div>
@@ -1495,11 +1410,9 @@
                         </div>
                         
                         <div class="col-md-4 text-center text-md-end">
-                            <a href="{% url 'marketplace:student_register' %}" class="btn-hero btn-hero--primary">
-                                <span class="btn-icon">
-                                    <i class="bi bi-person-check-fill"></i>
-                                </span>
-                                <span class="btn-label">Cadastrar como Aluno</span>
+                            <a href="{% url 'marketplace:student_register' %}" class="btn btn-success btn-lg btn-hero-custom shadow-lg">
+                                <i class="bi bi-person-check-fill"></i>
+                                <span>Cadastrar como Aluno</span>
                             </a>
                             <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.85rem; margin-top: 12px; margin-bottom: 0;">
                                 <i class="bi bi-shield-check me-1"></i>100% gratuito e sem compromisso
@@ -1564,11 +1477,9 @@
         </div>
         
         <div>
-            <a href="{% url 'accounts:register' %}" class="btn-hero btn-hero--primary">
-                <span class="btn-icon">
-                    <i class="bi bi-star-fill"></i>
-                </span>
-                <span class="btn-label">Criar Conta Grátis</span>
+            <a href="{% url 'accounts:register' %}" class="btn btn-success btn-lg btn-hero-custom shadow-lg">
+                <i class="bi bi-star-fill"></i>
+                <span>Criar Conta Grátis</span>
             </a>
         </div>
     </div>
