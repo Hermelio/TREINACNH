@@ -55,8 +55,7 @@ def home_view(request):
     
     # Get all students with city coordinates for map (grouped by city)
     students_with_location = StudentLead.objects.filter(
-        city__latitude__isnull=False,
-        city__longitude__isnull=False
+        city__isnull=False
     ).select_related('state', 'city').prefetch_related('categories')
     
     # Group students by city and convert to list
@@ -72,6 +71,10 @@ def home_view(request):
     })
     
     for student in students_with_location:
+        # Skip if city doesn't have coordinates
+        if not student.city.latitude or not student.city.longitude:
+            continue
+            
         city_key = f"{student.city.id}"
         city_data = students_by_city[city_key]
         
