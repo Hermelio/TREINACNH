@@ -1604,21 +1604,18 @@
             </div>
             <div style="padding: 20px 16px; background: rgba(0, 0, 0, 0.2); border-radius: 0 0 16px 16px; margin-top: -4px;">
                 <div class="row text-center">
-                    <div class="col-md-4 mb-2 mb-md-0">
-                        <div style="display: inline-block; width: 20px; height: 20px; background: #22c55e; border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%; vertical-align: middle;"></div>
-                        <small class="ms-2" style="color: rgba(255, 255, 255, 0.85);">Alunos aguardando</small>
+                    <div class="col-md-6 mb-2 mb-md-0">
+                        <div style="display: inline-block; width: 24px; height: 24px; background: #22c55e; border: 2px solid rgba(255, 255, 255, 0.6); border-radius: 50%; vertical-align: middle;"></div>
+                        <small class="ms-2" style="color: rgba(255, 255, 255, 0.90); font-weight: 600;">Alunos por Cidade</small>
+                        <small class="d-block ms-0 mt-1" style="color: rgba(255, 255, 255, 0.60); font-size: 0.75rem;">Tamanho = quantidade de alunos</small>
                     </div>
-                    <div class="col-md-4 mb-2 mb-md-0">
-                        <div style="display: inline-block; width: 20px; height: 20px; background: #ffc107; border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 3px; vertical-align: middle;"></div>
-                        <small class="ms-2" style="color: rgba(255, 255, 255, 0.85);">Estados (por alunos)</small>
-                    </div>
-                    <div class="col-md-4">
-                        <div style="display: inline-block; width: 20px; height: 20px; background: #dc3545; border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%; vertical-align: middle;"></div>
-                        <small class="ms-2" style="color: rgba(255, 255, 255, 0.85);">Instrutores disponíveis</small>
+                    <div class="col-md-6">
+                        <div style="display: inline-block; width: 24px; height: 24px; background: #dc3545; border: 2px solid rgba(255, 255, 255, 0.6); border-radius: 50%; vertical-align: middle; display: flex; align-items: center; justify-content: center;"><i class="bi bi-person-fill" style="color: white; font-size: 0.7rem;"></i></div>
+                        <small class="ms-2" style="color: rgba(255, 255, 255, 0.90); font-weight: 600;">Instrutores Cadastrados</small>
                     </div>
                 </div>
-                <div class="text-center mt-2">
-                    <small style="color: rgba(255, 255, 255, 0.60);"><i class="bi bi-cursor me-1"></i>Clique nos marcadores para ver detalhes</small>
+                <div class="text-center mt-3">
+                    <small style="color: rgba(255, 255, 255, 0.70);"><i class="bi bi-cursor me-1"></i>Clique nos marcadores verdes para ver detalhes dos alunos em cada cidade</small>
                 </div>
             </div>
         </div>
@@ -1711,149 +1708,80 @@ function initMap() {
         attribution: 'Â© OpenStreetMap contributors'
     }).addTo(map);
     
-    // Parse states data
+    // Parse data from backend (already grouped by city)
     const statesData = {{ states_json|safe }};
     const instructorsData = {{ instructors_json|safe }};
-    const studentsData = {{ students_json|safe }};
+    const studentsCityData = {{ students_json|safe }}; // Already grouped by city
     
-    // Color scale based on student count (amarelo/laranja para demanda)
-    function getColor(studentCount) {
-        if (studentCount === 0) return '#e8f4f8';
-        if (studentCount <= 10) return '#fff3cd';
-        if (studentCount <= 30) return '#ffc107';
-        if (studentCount <= 50) return '#ff9800';
-        return '#ff6b00';
-    }
-    
-    // Add state markers with tooltips
-    statesData.forEach(function(state) {
-        if (state.coordinates) {
-            const color = getColor(state.students);
-            
-            // Create circle marker for state - tamanho baseado em alunos
-            const marker = L.circleMarker([state.coordinates[0], state.coordinates[1]], {
-                radius: Math.max(15, Math.min(40, state.students * 0.5)),
-                fillColor: color,
-                color: '#fff',
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 0.6
-            }).addTo(map);
-            
-            // Tooltip content
-            const tooltipContent = `
-                <div class="state-info-tooltip">
-                    <h6>${state.name} (${state.code})</h6>
-                    <p><i class="bi bi-people-fill text-success me-1"></i>${state.students} alunos aguardando</p>
-                    <p><i class="bi bi-person-fill text-danger me-1"></i>${state.instructors} instrutores</p>
-                </div>
-            `;
-            
-            marker.bindTooltip(tooltipContent, {
-                permanent: false,
-                direction: 'top',
-                className: 'custom-tooltip'
-            });
-            
-            // Hover effects
-            marker.on('mouseover', function() {
-                this.setStyle({
-                    fillOpacity: 0.9,
-                    radius: this.options.radius * 1.1
-                });
-            });
-            
-            marker.on('mouseout', function() {
-                this.setStyle({
-                    fillOpacity: 0.6,
-                    radius: this.options.radius / 1.1
-                });
-            });
-            
-            // Click to register
-            marker.on('click', function() {
-                window.location.href = '/contas/registro/';
-            });
-        }
-    });
-    
-    // Group students by city for better visualization
-    const studentsByCity = {};
-    studentsData.forEach(function(student) {
-        if (student.latitude && student.longitude) {
-            const key = `${student.city_name}-${student.state_code}`;
-            if (!studentsByCity[key]) {
-                studentsByCity[key] = {
-                    city: student.city_name,
-                    state: student.state_code,
-                    lat: student.latitude,
-                    lng: student.longitude,
-                    count: 0,
-                    students: []
-                };
-            }
-            studentsByCity[key].count++;
-            studentsByCity[key].students.push(student);
-        }
-    });
-    
-    // Add city markers with student count (verde)
-    Object.values(studentsByCity).forEach(function(cityData) {
-        const markerSize = Math.max(24, Math.min(50, cityData.count * 3));
+    // Add city markers with student count (verde - alunos por cidade)
+    studentsCityData.forEach(function(cityData) {
+        const markerSize = Math.max(8, Math.min(25, cityData.count * 2));
         
-        const studentMarker = L.circleMarker([cityData.lat, cityData.lng], {
-            radius: markerSize / 2,
+        const studentMarker = L.circleMarker([cityData.latitude, cityData.longitude], {
+            radius: markerSize,
             fillColor: '#22c55e',
             color: '#fff',
-            weight: 3,
+            weight: 2,
             opacity: 1,
             fillOpacity: 0.75
         }).addTo(map);
         
-        const categoryA = cityData.students.filter(s => s.category === 'A' || s.category === 'AB').length;
-        const categoryB = cityData.students.filter(s => s.category === 'B' || s.category === 'AB').length;
+        // Calculate categories
+        const categoryA = cityData.students.filter(s => s.category && (s.category.includes('A'))).length;
+        const categoryB = cityData.students.filter(s => s.category && (s.category.includes('B'))).length;
         const withTheory = cityData.students.filter(s => s.has_theory).length;
         
         const popupContent = `
-            <div class="text-center" style="min-width: 200px;">
-                <h6 class="mb-2" style="color: #22c55e; font-weight: 700;">
+            <div class="text-center" style="min-width: 220px;">
+                <h6 class="mb-2" style="color: #22c55e; font-weight: 700; font-size: 1.1rem;">
                     <i class="bi bi-people-fill me-1"></i>${cityData.count} ${cityData.count === 1 ? 'Aluno' : 'Alunos'}
                 </h6>
-                <p class="mb-2" style="font-size: 0.9rem; color: #333;">
-                    <i class="bi bi-geo-alt-fill me-1"></i><strong>${cityData.city} - ${cityData.state}</strong>
+                <p class="mb-2" style="font-size: 0.95rem; color: #333; font-weight: 600;">
+                    <i class="bi bi-geo-alt-fill me-1" style="color: #22c55e;"></i>${cityData.city_name} - ${cityData.state_code}
                 </p>
-                <hr style="margin: 10px 0;">
-                <p class="mb-1 small" style="color: #666;">
-                    <i class="bi bi-car-front-fill me-1"></i>Categoria A: ${categoryA} | B: ${categoryB}
-                </p>
-                <p class="mb-2 small" style="color: #666;">
-                    <i class="bi bi-book-fill me-1"></i>Com teoria: ${withTheory}
-                </p>
-                <a href="/alunos/${cityData.state}/${encodeURIComponent(cityData.city)}/" class="btn btn-sm btn-success mt-2" style="width: 100%;">
-                    <i class="bi bi-search me-1"></i>Ver Detalhes dos Alunos
+                <hr style="margin: 12px 0; border-color: rgba(34, 197, 94, 0.3);">
+                <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 12px;">
+                    <p class="mb-1 small" style="color: #555;">
+                        <i class="bi bi-car-front-fill me-1"></i>Cat. A: <strong>${categoryA}</strong> | Cat. B: <strong>${categoryB}</strong>
+                    </p>
+                    <p class="mb-0 small" style="color: #555;">
+                        <i class="bi bi-book-fill me-1"></i>Com teoria: <strong>${withTheory}</strong>
+                    </p>
+                </div>
+                <a href="/contas/registro/" class="btn btn-sm btn-success" style="width: 100%; font-weight: 600;">
+                    <i class="bi bi-rocket-takeoff-fill me-1"></i>Cadastrar e Atender
                 </a>
             </div>
         `;
         
         studentMarker.bindPopup(popupContent);
         
-        // Click to view students
-        studentMarker.on('click', function() {
-            window.location.href = `/alunos/${cityData.state}/${encodeURIComponent(cityData.city)}/`;
+        // Tooltip with city name
+        studentMarker.bindTooltip(`
+            <div style="text-align: center;">
+                <strong>${cityData.city_name}</strong><br>
+                <span style="color: #22c55e;">${cityData.count} aluno${cityData.count > 1 ? 's' : ''}</span>
+            </div>
+        `, {
+            permanent: false,
+            direction: 'top',
+            className: 'custom-tooltip'
         });
         
         // Hover effects
         studentMarker.on('mouseover', function() {
             this.setStyle({
                 fillOpacity: 1,
-                radius: this.options.radius * 1.15
+                radius: this.options.radius * 1.2,
+                weight: 3
             });
         });
         
         studentMarker.on('mouseout', function() {
             this.setStyle({
                 fillOpacity: 0.75,
-                radius: this.options.radius / 1.15
+                radius: markerSize,
+                weight: 2
             });
         });
     });

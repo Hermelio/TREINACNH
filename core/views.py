@@ -53,30 +53,60 @@ def home_view(request):
         total=Count('id')
     ).order_by('-total')[:10]
     
-    # Get all students with state coordinates for map
-    # StudentLead.city is CharField, so we use state coordinates
+    # Get all students with city coordinates for map (grouped by city)
     students_with_location = StudentLead.objects.filter(
-        state__latitude__isnull=False,
-        state__longitude__isnull=False
-    ).select_related('state')
+        city__latitude__isnull=False,
+        city__longitude__isnull=False
+    ).select_related('state', 'city').prefetch_related('categories')
     
-    # Convert students to list with state coordinates
-    students_data = []
+    # Group students by city and convert to list
+    from collections import defaultdict
+    students_by_city = defaultdict(lambda: {
+        'students': [],
+        'city_name': '',
+        'state_code': '',
+        'state_name': '',
+        'latitude': 0,
+        'longitude': 0,
+        'count': 0
+    })
+    
     for student in students_with_location:
+        city_key = f"{student.city.id}"
+        city_data = students_by_city[city_key]
+        
+        # Set city info if not set
+        if not city_data['city_name']:
+            city_data['city_name'] = student.city.name
+            city_data['state_code'] = student.state.code
+            city_data['state_name'] = student.state.name
+            city_data['latitude'] = float(student.city.latitude)
+            city_data['longitude'] = float(student.city.longitude)
+        
         # Get categories as comma-separated string
         categories_str = ', '.join([cat.code for cat in student.categories.all()]) if student.categories.exists() else 'N/A'
         
-        students_data.append({
+        city_data['students'].append({
             'id': student.id,
             'name': student.name,
-            'city_name': student.city.name if student.city else 'N/A',
-            'state_code': student.state.code,
-            'state_name': student.state.name,
             'category': categories_str,
             'has_theory': student.has_theory,
-            'latitude': float(student.state.latitude),
-            'longitude': float(student.state.longitude),
         })
+        city_data['count'] += 1
+    
+    # Convert to list for JSON
+    students_data = [
+        {
+            'city_name': data['city_name'],
+            'state_code': data['state_code'],
+            'state_name': data['state_name'],
+            'latitude': data['latitude'],
+            'longitude': data['longitude'],
+            'count': data['count'],
+            'students': data['students']
+        }
+        for data in students_by_city.values()
+    ]
     
     # Banners
     banners = HomeBanner.objects.filter(is_active=True).order_by('order')[:3]
