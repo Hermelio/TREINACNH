@@ -162,6 +162,8 @@ def home_view(request):
         'top_student_states': top_student_states,
         'banners': banners,
         'page_title': 'Cadastre-se como Instrutor - TREINACNH',
+        'is_instructor': request.user.is_authenticated and hasattr(request.user, 'instructor_profile'),
+        'user_authenticated': request.user.is_authenticated,
     }
     return render(request, 'core/home.html', context)
 

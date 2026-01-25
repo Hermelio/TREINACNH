@@ -1740,6 +1740,10 @@ function initMap() {
     loadingDiv.innerHTML = '<i class="bi bi-hourglass-split"></i> Carregando cidades...';
     mapElement.appendChild(loadingDiv);
     
+    // Check user type from Django context
+    const isInstructor = {{ is_instructor|yesno:"true,false" }};
+    const isAuthenticated = {{ user_authenticated|yesno:"true,false" }};
+    
     // Fetch city data from API
     fetch('/instrutores/api/map/cities/')
         .then(response => response.json())
@@ -1785,52 +1789,142 @@ function initMap() {
                 const catA = cityData.categories.A || 0;
                 const catB = cityData.categories.B || 0;
                 
-                // Popup content
-                const popupContent = `
-                    <div class="text-center" style="min-width: 220px;">
-                        <h6 class="mb-2" style="color: #22c55e; font-weight: 700; font-size: 1.1rem;">
-                            <i class="bi bi-people-fill me-1"></i>${cityData.count} ${cityData.count === 1 ? 'Aluno' : 'Alunos'}
-                        </h6>
-                        <p class="mb-2" style="font-size: 0.95rem; color: #333; font-weight: 600;">
-                            <i class="bi bi-geo-alt-fill me-1" style="color: #22c55e;"></i>${cityData.city} - ${cityData.uf}
-                        </p>
-                        <hr style="margin: 12px 0; border-color: rgba(34, 197, 94, 0.3);">
-                        <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 12px;">
-                            <p class="mb-1 small" style="color: #555;">
-                                <i class="bi bi-award-fill me-1" style="color: #22c55e;"></i>Cat. A: <strong>${catA}</strong> | Cat. B: <strong>${catB}</strong>
+                // Popup content depends on user type
+                let popupContent;
+                
+                if (isAuthenticated) {
+                    // Logged in users (instructor or student): show stats only, no action
+                    if (isInstructor) {
+                        // Instructor: protected message
+                        popupContent = `
+                            <div class="text-center" style="min-width: 220px;">
+                                <h6 class="mb-2" style="color: #22c55e; font-weight: 700; font-size: 1.1rem;">
+                                    <i class="bi bi-people-fill me-1"></i>${cityData.count} ${cityData.count === 1 ? 'Aluno' : 'Alunos'}
+                                </h6>
+                                <p class="mb-2" style="font-size: 0.95rem; color: #333; font-weight: 600;">
+                                    <i class="bi bi-geo-alt-fill me-1" style="color: #22c55e;"></i>${cityData.city} - ${cityData.uf}
+                                </p>
+                                <hr style="margin: 12px 0; border-color: rgba(34, 197, 94, 0.3);">
+                                <div style="background: #fff3cd; padding: 12px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                                    <p class="mb-0 small" style="color: #856404;">
+                                        <i class="bi bi-shield-lock-fill me-1"></i>
+                                        <strong>Dados protegidos.</strong><br>
+                                        Os alunos entrarão em contato diretamente com você através do seu perfil.
+                                    </p>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // Student logged in: show stats only
+                        popupContent = `
+                            <div class="text-center" style="min-width: 220px;">
+                                <h6 class="mb-2" style="color: #22c55e; font-weight: 700; font-size: 1.1rem;">
+                                    <i class="bi bi-people-fill me-1"></i>${cityData.count} ${cityData.count === 1 ? 'Aluno' : 'Alunos'}
+                                </h6>
+                                <p class="mb-2" style="font-size: 0.95rem; color: #333; font-weight: 600;">
+                                    <i class="bi bi-geo-alt-fill me-1" style="color: #22c55e;"></i>${cityData.city} - ${cityData.uf}
+                                </p>
+                                <hr style="margin: 12px 0; border-color: rgba(34, 197, 94, 0.3);">
+                                <div style="background: #f8f9fa; padding: 10px; border-radius: 8px;">
+                                    <p class="mb-1 small" style="color: #555;">
+                                        <i class="bi bi-award-fill me-1" style="color: #22c55e;"></i>Cat. A: <strong>${catA}</strong> | Cat. B: <strong>${catB}</strong>
+                                    </p>
+                                    <p class="mb-0 small" style="color: #555;">
+                                        <i class="bi bi-journal-check me-1" style="color: #0d6efd;"></i>Com teoria: <strong>${cityData.with_theory}</strong>
+                                    </p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    // Not logged in: show stats and registration button
+                    popupContent = `
+                        <div class="text-center" style="min-width: 220px;">
+                            <h6 class="mb-2" style="color: #22c55e; font-weight: 700; font-size: 1.1rem;">
+                                <i class="bi bi-people-fill me-1"></i>${cityData.count} ${cityData.count === 1 ? 'Aluno' : 'Alunos'}
+                            </h6>
+                            <p class="mb-2" style="font-size: 0.95rem; color: #333; font-weight: 600;">
+                                <i class="bi bi-geo-alt-fill me-1" style="color: #22c55e;"></i>${cityData.city} - ${cityData.uf}
                             </p>
-                            <p class="mb-0 small" style="color: #555;">
-                                <i class="bi bi-journal-check me-1" style="color: #0d6efd;"></i>Com teoria: <strong>${cityData.with_theory}</strong>
-                            </p>
+                            <hr style="margin: 12px 0; border-color: rgba(34, 197, 94, 0.3);">
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 12px;">
+                                <p class="mb-1 small" style="color: #555;">
+                                    <i class="bi bi-award-fill me-1" style="color: #22c55e;"></i>Cat. A: <strong>${catA}</strong> | Cat. B: <strong>${catB}</strong>
+                                </p>
+                                <p class="mb-0 small" style="color: #555;">
+                                    <i class="bi bi-journal-check me-1" style="color: #0d6efd;"></i>Com teoria: <strong>${cityData.with_theory}</strong>
+                                </p>
+                            </div>
+                            <a href="/contas/registro/" class="btn btn-sm btn-success" style="width: 100%; font-weight: 600;">
+                                <i class="bi bi-rocket-takeoff-fill me-1"></i>Cadastrar e Atender
+                            </a>
                         </div>
-                        <a href="/contas/registro/" class="btn btn-sm btn-success" style="width: 100%; font-weight: 600;">
-                            <i class="bi bi-rocket-takeoff-fill me-1"></i>Cadastrar e Atender
-                        </a>
-                    </div>
-                `;
+                    `;
+                }
                 
                 marker.bindPopup(popupContent);
                 
-                // Tooltip
-                marker.bindTooltip(`
-                    <div style="text-align: center; padding: 8px;">
-                        <strong style="font-size: 1rem; color: #1a1a1a;">${cityData.city}</strong><br>
-                        <span style="color: #22c55e; font-weight: 700; font-size: 1.1rem;">
-                            <i class="bi bi-people-fill"></i> ${cityData.count} aluno${cityData.count > 1 ? 's' : ''}
-                        </span>
-                        <hr style="margin: 8px 0; border-color: rgba(34, 197, 94, 0.3);">
-                        <div style="font-size: 0.85rem; color: #555;">
-                            <div style="margin: 4px 0;">
-                                <i class="bi bi-award-fill me-1" style="color: #22c55e;"></i>
-                                A: <strong>${catA}</strong> | B: <strong>${catB}</strong>
-                            </div>
-                            <div style="margin: 4px 0;">
-                                <i class="bi bi-journal-check me-1" style="color: #0d6efd;"></i>
-                                Teoria: <strong>${cityData.with_theory}</strong>
+                // Tooltip - simple for instructors, detailed for others
+                let tooltipContent;
+                
+                if (isInstructor) {
+                    // Instructor: minimal info
+                    tooltipContent = `
+                        <div style="text-align: center; padding: 8px;">
+                            <strong style="font-size: 1rem; color: #1a1a1a;">${cityData.city}</strong><br>
+                            <span style="color: #22c55e; font-weight: 700; font-size: 1.1rem;">
+                                <i class="bi bi-people-fill"></i> ${cityData.count} aluno${cityData.count > 1 ? 's' : ''}
+                            </span>
+                            <div style="margin-top: 8px; font-size: 0.8rem; color: #666;">
+                                <i class="bi bi-shield-lock-fill"></i> Dados protegidos
                             </div>
                         </div>
-                    </div>
-                `, {
+                    `;
+                } else if (isAuthenticated) {
+                    // Student logged in: show stats
+                    tooltipContent = `
+                        <div style="text-align: center; padding: 8px;">
+                            <strong style="font-size: 1rem; color: #1a1a1a;">${cityData.city}</strong><br>
+                            <span style="color: #22c55e; font-weight: 700; font-size: 1.1rem;">
+                                <i class="bi bi-people-fill"></i> ${cityData.count} aluno${cityData.count > 1 ? 's' : ''}
+                            </span>
+                            <hr style="margin: 8px 0; border-color: rgba(34, 197, 94, 0.3);">
+                            <div style="font-size: 0.85rem; color: #555;">
+                                <div style="margin: 4px 0;">
+                                    <i class="bi bi-award-fill me-1" style="color: #22c55e;"></i>
+                                    A: <strong>${catA}</strong> | B: <strong>${catB}</strong>
+                                </div>
+                                <div style="margin: 4px 0;">
+                                    <i class="bi bi-journal-check me-1" style="color: #0d6efd;"></i>
+                                    Teoria: <strong>${cityData.with_theory}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Not logged in: detailed info
+                    tooltipContent = `
+                        <div style="text-align: center; padding: 8px;">
+                            <strong style="font-size: 1rem; color: #1a1a1a;">${cityData.city}</strong><br>
+                            <span style="color: #22c55e; font-weight: 700; font-size: 1.1rem;">
+                                <i class="bi bi-people-fill"></i> ${cityData.count} aluno${cityData.count > 1 ? 's' : ''}
+                            </span>
+                            <hr style="margin: 8px 0; border-color: rgba(34, 197, 94, 0.3);">
+                            <div style="font-size: 0.85rem; color: #555;">
+                                <div style="margin: 4px 0;">
+                                    <i class="bi bi-award-fill me-1" style="color: #22c55e;"></i>
+                                    A: <strong>${catA}</strong> | B: <strong>${catB}</strong>
+                                </div>
+                                <div style="margin: 4px 0;">
+                                    <i class="bi bi-journal-check me-1" style="color: #0d6efd;"></i>
+                                    Teoria: <strong>${cityData.with_theory}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                marker.bindTooltip(tooltipContent, {
                     permanent: false,
                     direction: 'top',
                     className: 'custom-tooltip',
