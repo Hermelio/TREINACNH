@@ -5,9 +5,9 @@
 <!-- Preload LCP Image - Mobile-First (≤768px usa 640w) -->
 <link rel="preload" 
       as="image" 
-      href="{% static 'images/hero/logohome3-640w.avif' %}"
-      imagesrcset="{% static 'images/hero/logohome3-640w.avif' %} 640w,
-                   {% static 'images/hero/logohome3-960w.avif' %} 960w"
+      href="{% static 'images/hero/logohome3.1-640w.avif' %}"
+      imagesrcset="{% static 'images/hero/logohome3.1-640w.avif' %} 640w,
+                   {% static 'images/hero/logohome3.1-960w.avif' %} 960w"
       imagesizes="100vw"
       media="(max-width: 768px)"
       fetchpriority="high">
@@ -15,9 +15,9 @@
 <!-- Desktop preload (≥769px usa 1280w/1920w) -->
 <link rel="preload" 
       as="image" 
-      href="{% static 'images/hero/logohome3-1280w.avif' %}"
-      imagesrcset="{% static 'images/hero/logohome3-1280w.avif' %} 1280w,
-                   {% static 'images/hero/logohome3-1920w.avif' %} 1920w"
+      href="{% static 'images/hero/logohome3.1-1280w.avif' %}"
+      imagesrcset="{% static 'images/hero/logohome3.1-1280w.avif' %} 1280w,
+                   {% static 'images/hero/logohome3.1-1920w.avif' %} 1920w"
       imagesizes="100vw"
       media="(min-width: 769px)"
       fetchpriority="high">
@@ -1224,33 +1224,33 @@
         <!-- MOBILE: AVIF 640w-960w -->
         <source type="image/avif"
                 media="(max-width: 768px)"
-                srcset="{% static 'images/hero/logohome3-640w.avif' %} 640w,
-                        {% static 'images/hero/logohome3-960w.avif' %} 960w"
+                srcset="{% static 'images/hero/logohome3.1-640w.avif' %} 640w,
+                        {% static 'images/hero/logohome3.1-960w.avif' %} 960w"
                 sizes="100vw">
         
         <!-- DESKTOP: AVIF 1280w-1920w -->
         <source type="image/avif"
                 media="(min-width: 769px)"
-                srcset="{% static 'images/hero/logohome3-1280w.avif' %} 1280w,
-                        {% static 'images/hero/logohome3-1920w.avif' %} 1920w"
+                srcset="{% static 'images/hero/logohome3.1-1280w.avif' %} 1280w,
+                        {% static 'images/hero/logohome3.1-1920w.avif' %} 1920w"
                 sizes="(min-width: 1920px) 1920px, 100vw">
         
         <!-- MOBILE: WebP fallback -->
         <source type="image/webp"
                 media="(max-width: 768px)"
-                srcset="{% static 'images/hero/logohome3-640w.webp' %} 640w,
-                        {% static 'images/hero/logohome3-960w.webp' %} 960w"
+                srcset="{% static 'images/hero/logohome3.1-640w.webp' %} 640w,
+                        {% static 'images/hero/logohome3.1-960w.webp' %} 960w"
                 sizes="100vw">
         
         <!-- DESKTOP: WebP fallback -->
         <source type="image/webp"
                 media="(min-width: 769px)"
-                srcset="{% static 'images/hero/logohome3-1280w.webp' %} 1280w,
-                        {% static 'images/hero/logohome3-1920w.webp' %} 1920w"
+                srcset="{% static 'images/hero/logohome3.1-1280w.webp' %} 1280w,
+                        {% static 'images/hero/logohome3.1-1920w.webp' %} 1920w"
                 sizes="(min-width: 1920px) 1920px, 100vw">
         
         <!-- Fallback PNG (mobile-first) -->
-        <img src="{% static 'images/hero/logohome3-640w.png' %}"
+        <img src="{% static 'images/hero/logohome3.1-640w.png' %}"
              alt="TreinaCNH - Plataforma para Instrutores de Direção"
              width="1920"
              height="1280"
