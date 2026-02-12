@@ -1,3 +1,5 @@
+{% extends 'base.html' %}
+
 {% block extra_meta %}
 <meta name="description" content="{{ page.meta_description|default:page.title }}">
 <meta name="keywords" content="{{ page.meta_keywords|default:'TreinaCNH, CNH, instrutor autônomo, aulas de direção' }}">
@@ -10,7 +12,6 @@
 <meta name="twitter:image" content="/static/images/og_instrutores.png">
 <link rel="canonical" href="{{ request.build_absolute_uri|default:'' }}">
 {% endblock %}
-{% extends 'base.html' %}
 
 {% block content %}
 <div class="container py-5" style="padding-top: 7rem !important;">
