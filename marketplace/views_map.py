@@ -46,39 +46,17 @@ def instructors_map_view(request):
     # Prepare JSON data for map markers
     instructors_json = []
     for instructor in instructors:
-        # Get coordinates from instructor or fallback to city
-        from .models import CityGeoCache
-        from django.utils.text import slugify
-        
-        lat = None
-        lon = None
-        
-        # Try instructor coordinates first
+        # Only include instructors with coordinates
         if instructor.latitude and instructor.longitude:
-            lat = float(instructor.latitude)
-            lon = float(instructor.longitude)
-        else:
-            # Fallback to city coordinates from geocache
-            city_key = f"{slugify(instructor.city.name)}|{instructor.city.state.code}"
-            try:
-                geo_cache = CityGeoCache.objects.get(city_key=city_key, geocoded=True)
-                if geo_cache.latitude and geo_cache.longitude:
-                    lat = float(geo_cache.latitude)
-                    lon = float(geo_cache.longitude)
-            except CityGeoCache.DoesNotExist:
-                pass
-        
-        # Only add if we have coordinates
-        if lat and lon:
             instructors_json.append({
                 'id': instructor.id,
                 'name': instructor.user.get_full_name(),
-                'latitude': lat,
-                'longitude': lon,
+                'latitude': float(instructor.latitude),
+                'longitude': float(instructor.longitude),
                 'neighborhood': instructor.address_neighborhood,
                 'city': str(instructor.city),
                 'is_verified': instructor.is_verified,
-                'type': 'instructor',  # Marker type for different icon
+                'type': 'instructor',
             })
     
     # Get student leads count by state
