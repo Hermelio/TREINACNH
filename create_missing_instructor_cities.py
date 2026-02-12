@@ -15,6 +15,12 @@ from marketplace.models import City, State
 missing_cities = [
     ('Bonfim', 'RR'),
     ('Horizontina', 'RS'),
+    ('Alfenas', 'MG'),
+    ('Parobé', 'RS'),
+    ('Carmo', 'RJ'),
+    ('Alexânia', 'GO'),
+    ('Itaí', 'SP'),
+    ('Santa Luzia', 'MG'),
 ]
 
 created = 0
