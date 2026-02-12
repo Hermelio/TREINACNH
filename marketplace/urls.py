@@ -23,8 +23,8 @@ urlpatterns = [
     path('lead/<int:lead_pk>/atualizar/', views.lead_update_status_view, name='lead_update_status'),
     
     # Public pages
-    path('', instructors_map_view, name='instructors_map'),
-    path('cidades/', views.cities_list_view, name='cities_list'),
+    path('', views.cities_list_view, name='instructors_map'),  # Página principal mostra lista de cidades
+    path('mapa/', instructors_map_view, name='instructors_map_detail'),  # Mapa interativo
     path('instrutor/<int:pk>/', views.instructor_detail_view, name='instructor_detail'),
     path('instrutor/<int:instructor_pk>/solicitar-contato/', views.lead_create_view, name='lead_create'),
     
