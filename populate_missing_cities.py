@@ -11,7 +11,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
-from marketplace.models import City, State
+from marketplace.models import City, State, CityGeoCache
+from django.utils.text import slugify
 
 def populate_missing_cities():
     """Read CSV and create missing cities"""
@@ -54,14 +55,29 @@ def populate_missing_cities():
                 if city:
                     skipped_count += 1
                 else:
-                    # Create city
-                    City.objects.create(
+                    # Create city (slug will be auto-generated)
+                    city = City.objects.create(
                         name=city_name,
                         state=state,
-                        latitude=0.0,  # Default coordinates
-                        longitude=0.0
+                        is_active=True
                     )
-                    print(f"✓ Created: {city_name}/{state_code}")
+                    
+                    # Create geocoding cache entry with default coordinates
+                    # These can be updated later with real coordinates
+                    city_key = f"{slugify(city_name)}|{state_code}"
+                    CityGeoCache.objects.get_or_create(
+                        city_key=city_key,
+                        defaults={
+                            'city_name': city_name,
+                            'state_code': state_code,
+                            'latitude': 0.0,  # Default - should be updated
+                            'longitude': 0.0,  # Default - should be updated
+                            'provider': 'manual',
+                            'geocoded': False
+                        }
+                    )
+                    
+                    print(f"✓ Created: {city_name}/{state_code} (coordinates need to be geocoded)")
                     created_count += 1
                     
             except Exception as e:
