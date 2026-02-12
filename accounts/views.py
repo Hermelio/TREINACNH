@@ -108,14 +108,17 @@ def logout_view(request):
 def dashboard_view(request):
     """
     User dashboard - different content based on role.
-    For students: redirect to my_leads (messages sent to instructors)
+    For students: redirect to cities_list (all instructors)
     For instructors: redirect to my_leads (contacts received)
     """
     profile = request.user.profile
     
-    # Both students and instructors go to my_leads
-    # Students see messages they sent, instructors see messages they received
-    return redirect('marketplace:my_leads')
+    # Instructors go to my_leads
+    if profile.is_instructor:
+        return redirect('marketplace:my_leads')
+    
+    # Students go to cities_list
+    return redirect('marketplace:cities_list')
 
 
 @login_required
