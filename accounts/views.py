@@ -107,29 +107,14 @@ def logout_view(request):
 def dashboard_view(request):
     """
     User dashboard - different content based on role.
-    For students: redirect to map filtered by their preferred city's state
-    For instructors: redirect to Meus Leads (contacts page)
+    For students: redirect to my_leads (messages sent to instructors)
+    For instructors: redirect to my_leads (contacts received)
     """
     profile = request.user.profile
     
-    # If instructor, redirect to Meus Leads
-    if profile.is_instructor:
-        return redirect('marketplace:my_leads')
-    
-    # If student with preferred city, redirect to map
-    if profile.is_student and profile.preferred_city:
-        from django.urls import reverse
-        state_code = profile.preferred_city.state.code
-        url = reverse('marketplace:instructors_map') + f'?state={state_code}'
-        messages.info(request, f'Mostrando instrutores em {profile.preferred_city.state.name}')
-        return redirect(url)
-    
-    # If student without city, redirect to general map
-    if profile.is_student:
-        return redirect('marketplace:instructors_map')
-    
-    # Fallback
-    return render(request, 'accounts/dashboard.html', {'profile': profile})
+    # Both students and instructors go to my_leads
+    # Students see messages they sent, instructors see messages they received
+    return redirect('marketplace:my_leads')
 
 
 @login_required
