@@ -17,11 +17,10 @@ def instructors_map_view(request):
     category_code = request.GET.get('category', '')
     gender = request.GET.get('gender', '')
     
-    # Base queryset - only verified and visible instructors
+    # Base queryset - only visible instructors (verified or not)
     # Now we get coordinates from city if instructor doesn't have their own
     instructors_qs = InstructorProfile.objects.filter(
         is_visible=True,
-        is_verified=True,
     ).select_related(
         'user', 
         'user__profile', 

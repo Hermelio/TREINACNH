@@ -188,12 +188,13 @@ class Command(BaseCommand):
                 profile.save()
 
         # Create or update InstructorProfile
+        # Set visible=True if they accepted terms, verified based on Siretran
         instructor, instructor_created = InstructorProfile.objects.update_or_create(
             user=user,
             defaults={
                 'city': city,
                 'is_verified': is_verified,
-                'is_visible': is_verified,
+                'is_visible': accept_terms,  # Show if accepted terms
             }
         )
         
