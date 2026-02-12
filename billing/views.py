@@ -172,11 +172,18 @@ def checkout_view(request, subscription_id):
                     "surname": request.user.last_name or "TreinaCNH",
                     "email": user_email,
                 },
+                "payment_methods": {
+                    "excluded_payment_methods": [],
+                    "excluded_payment_types": [],
+                    "installments": 12,  # Permite parcelamento em até 12x
+                    "default_installments": 1
+                },
                 "back_urls": {
                     "success": f"{settings.SITE_URL}/billing/pagamento/sucesso/",
                     "failure": f"{settings.SITE_URL}/billing/pagamento/falha/",
                     "pending": f"{settings.SITE_URL}/billing/pagamento/pendente/"
                 },
+                "auto_return": "approved",  # Retorna automaticamente após aprovação
                 "notification_url": f"{settings.SITE_URL}/webhook/mercadopago/",
                 "external_reference": f"subscription_{subscription.id}",
                 "statement_descriptor": "TREINACNH",
