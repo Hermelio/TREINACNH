@@ -76,6 +76,104 @@
     <div class="container">
         <h1 class="mb-4" style="color: #000000;"><i class="bi bi-geo-alt-fill me-2"></i>Instrutores por Cidade</h1>
         
+        <!-- Search and Filter Section -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h5 class="mb-0 text-white"><i class="bi bi-funnel-fill me-2"></i>Filtros de Busca</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" action="{% url 'marketplace:cities_list' %}" id="filterForm">
+                    <div class="row g-3">
+                        <!-- Search by Name -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold"><i class="bi bi-search me-1"></i>Buscar por nome</label>
+                            <input type="text" name="search_name" class="form-control" placeholder="Digite o nome do instrutor" value="{{ search_name }}">
+                        </div>
+                        
+                        <!-- State Filter -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold"><i class="bi bi-map me-1"></i>Estado</label>
+                            <select name="state" id="stateFilter" class="form-select">
+                                <option value="">Todos os estados</option>
+                                {% for state in all_states %}
+                                    <option value="{{ state.code }}" {% if selected_state == state.code %}selected{% endif %}>
+                                        {{ state.code }} - {{ state.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- City Filter -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold"><i class="bi bi-geo-alt me-1"></i>Cidade</label>
+                            <select name="city" id="cityFilter" class="form-select">
+                                <option value="">Todas as cidades</option>
+                                <!-- Cities will be loaded dynamically -->
+                            </select>
+                        </div>
+                        
+                        <!-- CNH Category Filter -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold"><i class="bi bi-card-list me-1"></i>Categoria CNH</label>
+                            <select name="category" class="form-select">
+                                <option value="">Todas as categorias</option>
+                                {% for cat in cnh_categories %}
+                                    <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>
+                                        Categoria {{ cat }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Price Range -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold"><i class="bi bi-currency-dollar me-1"></i>Preço/hora</label>
+                            <div class="input-group">
+                                <input type="number" name="min_price" class="form-control" placeholder="Mín" step="0.01" value="{{ min_price }}">
+                                <span class="input-group-text">-</span>
+                                <input type="number" name="max_price" class="form-control" placeholder="Máx" step="0.01" value="{{ max_price }}">
+                            </div>
+                        </div>
+                        
+                        <!-- Own Car Filter -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold"><i class="bi bi-car-front-fill me-1"></i>Carro próprio</label>
+                            <select name="has_car" class="form-select">
+                                <option value="">Tanto faz</option>
+                                <option value="1" {% if selected_has_car == '1' %}selected{% endif %}>Sim</option>
+                                <option value="0" {% if selected_has_car == '0' %}selected{% endif %}>Não</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Availability Filter -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold"><i class="bi bi-clock-fill me-1"></i>Disponibilidade</label>
+                            <select name="availability" class="form-select">
+                                <option value="">Qualquer horário</option>
+                                <option value="morning" {% if selected_availability == 'morning' %}selected{% endif %}>Manhã</option>
+                                <option value="afternoon" {% if selected_availability == 'afternoon' %}selected{% endif %}>Tarde</option>
+                                <option value="evening" {% if selected_availability == 'evening' %}selected{% endif %}>Noite</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-12 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search me-1"></i>Buscar
+                            </button>
+                            <a href="{% url 'marketplace:cities_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Limpar Filtros
+                            </a>
+                            <span class="ms-auto align-self-center text-muted">
+                                <strong>{{ all_instructors.count }}</strong> instrutor(es) encontrado(s)
+                            </span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
         <!-- Interactive Map Section -->
         <div class="card mb-5">
             <div class="card-header bg-primary text-white">
@@ -346,6 +444,52 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     `;
     document.head.appendChild(style);
+    
+    // City filter - load cities when state changes
+    const stateFilter = document.getElementById('stateFilter');
+    const cityFilter = document.getElementById('cityFilter');
+    const selectedCityId = '{{ selected_city }}';
+    
+    if (stateFilter && cityFilter) {
+        stateFilter.addEventListener('change', function() {
+            const stateCode = this.value;
+            cityFilter.innerHTML = '<option value="">Carregando...</option>';
+            cityFilter.disabled = true;
+            
+            if (!stateCode) {
+                cityFilter.innerHTML = '<option value="">Todas as cidades</option>';
+                cityFilter.disabled = false;
+                return;
+            }
+            
+            // Fetch cities for selected state
+            fetch(`/instrutores/api/cidades/${stateCode}/`)
+                .then(response => response.json())
+                .then(data => {
+                    cityFilter.innerHTML = '<option value="">Todas as cidades</option>';
+                    data.cities.forEach(city => {
+                        const option = document.createElement('option');
+                        option.value = city.id;
+                        option.textContent = city.name;
+                        if (selectedCityId && city.id == selectedCityId) {
+                            option.selected = true;
+                        }
+                        cityFilter.appendChild(option);
+                    });
+                    cityFilter.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar cidades:', error);
+                    cityFilter.innerHTML = '<option value="">Erro ao carregar</option>';
+                    cityFilter.disabled = false;
+                });
+        });
+        
+        // Load cities on page load if state is selected
+        if (stateFilter.value) {
+            stateFilter.dispatchEvent(new Event('change'));
+        }
+    }
 });
 </script>
 {% endblock %}

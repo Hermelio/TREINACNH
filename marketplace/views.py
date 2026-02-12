@@ -14,9 +14,9 @@ from .forms import InstructorProfileForm, LeadForm, InstructorSearchForm, Studen
 def cities_list_view(request):
     """
     Main cities page - list all states with cities and instructor counts.
-    Shows "new instructors" section and interactive map.
+    Shows "new instructors" section and interactive map with filtering.
     """
-    from django.db.models import OuterRef, Subquery
+    from django.db.models import OuterRef, Subquery, Avg
     
     # Get instructor count per state
     instructor_counts = InstructorProfile.objects.filter(
@@ -36,7 +36,79 @@ def cities_list_view(request):
     # Get ALL instructors (not just new ones)
     all_instructors = InstructorProfile.objects.filter(
         is_visible=True
-    ).select_related('user', 'user__profile', 'city', 'city__state').order_by('-created_at')
+    ).select_related('user', 'user__profile', 'city', 'city__state').prefetch_related('categories')
+    
+    # Apply filters from request
+    search_name = request.GET.get('search_name', '').strip()
+    min_price = request.GET.get('min_price', '').strip()
+    max_price = request.GET.get('max_price', '').strip()
+    min_rating = request.GET.get('min_rating', '').strip()
+    category = request.GET.get('category', '').strip()
+    has_car = request.GET.get('has_car', '').strip()
+    availability = request.GET.get('availability', '').strip()
+    selected_state = request.GET.get('state', '').strip()
+    selected_city = request.GET.get('city', '').strip()
+    
+    # Filter by name (search in first_name or last_name)
+    if search_name:
+        all_instructors = all_instructors.filter(
+            Q(user__first_name__icontains=search_name) |
+            Q(user__last_name__icontains=search_name)
+        )
+    
+    # Filter by price range
+    if min_price:
+        try:
+            all_instructors = all_instructors.filter(base_price_per_hour__gte=float(min_price))
+        except ValueError:
+            pass
+    
+    if max_price:
+        try:
+            all_instructors = all_instructors.filter(base_price_per_hour__lte=float(max_price))
+        except ValueError:
+            pass
+    
+    # Filter by minimum rating (requires review system - for now commented)
+    # if min_rating:
+    #     try:
+    #         all_instructors = all_instructors.annotate(
+    #             avg_rating=Avg('reviews__rating')
+    #         ).filter(avg_rating__gte=float(min_rating))
+    #     except ValueError:
+    #         pass
+    
+    # Filter by CNH category
+    if category and category in ['A', 'B', 'C', 'D', 'E']:
+        all_instructors = all_instructors.filter(categories__code=category)
+    
+    # Filter by own car
+    if has_car == '1':
+        all_instructors = all_instructors.filter(has_own_car=True)
+    elif has_car == '0':
+        all_instructors = all_instructors.filter(has_own_car=False)
+    
+    # Filter by availability
+    if availability == 'morning':
+        all_instructors = all_instructors.filter(available_morning=True)
+    elif availability == 'afternoon':
+        all_instructors = all_instructors.filter(available_afternoon=True)
+    elif availability == 'evening':
+        all_instructors = all_instructors.filter(available_evening=True)
+    
+    # Filter by state
+    if selected_state:
+        all_instructors = all_instructors.filter(city__state__code=selected_state)
+    
+    # Filter by city
+    if selected_city:
+        try:
+            all_instructors = all_instructors.filter(city__id=int(selected_city))
+        except ValueError:
+            pass
+    
+    # Order results
+    all_instructors = all_instructors.order_by('-created_at')
     
     # New instructors (last 30 days) for highlights section
     from django.utils import timezone
@@ -88,6 +160,18 @@ def cities_list_view(request):
         'all_instructors': all_instructors,
         'new_instructors': new_instructors,
         'page_title': 'Instrutores por Cidade',
+        # Pass filter values back to template for maintaining state
+        'search_name': search_name,
+        'min_price': min_price,
+        'max_price': max_price,
+        'min_rating': min_rating,
+        'selected_category': category,
+        'selected_has_car': has_car,
+        'selected_availability': availability,
+        'selected_state': selected_state,
+        'selected_city': selected_city,
+        'all_states': states,  # For state dropdown
+        'cnh_categories': ['A', 'B', 'C', 'D', 'E'],
     }
     return render(request, 'marketplace/cities_list.html', context)
 
