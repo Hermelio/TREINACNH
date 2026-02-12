@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class StudentRedirectMiddleware:
-    """Redirect logged-in students from home/plans to marketplace"""
+    """Redirect logged-in students from home/plans to their leads page"""
     
     def __init__(self, get_response):
         self.get_response = get_response
@@ -24,9 +24,9 @@ class StudentRedirectMiddleware:
                     # Get current URL name
                     current_url = resolve(request.path_info).url_name
                     
-                    # Redirect from home or plans to cities list (where all instructors are shown)
+                    # Redirect from home or plans to student's sent leads page
                     if current_url in ['home', 'plans']:
-                        return redirect('/instrutores/cidades/')
+                        return redirect('marketplace:my_leads')
                 except:
                     pass
         
