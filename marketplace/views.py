@@ -33,20 +33,23 @@ def cities_list_view(request):
         instructor_count=Subquery(instructor_counts)
     ).order_by('code')
     
-    # New instructors (last 30 days)
+    # Get ALL instructors (not just new ones)
+    all_instructors = InstructorProfile.objects.filter(
+        is_visible=True
+    ).select_related('user', 'user__profile', 'city', 'city__state').order_by('-created_at')
+    
+    # New instructors (last 30 days) for highlights section
     from django.utils import timezone
     from datetime import timedelta
-    new_instructors = InstructorProfile.objects.filter(
-        is_visible=True,
+    new_instructors = all_instructors.filter(
         created_at__gte=timezone.now() - timedelta(days=30)
-    ).select_related('user', 'user__profile', 'city', 'city__state').order_by('-created_at')[:6]
+    )[:6]
     
     # Get all instructors with coordinates for map markers
-    instructors_with_location = InstructorProfile.objects.filter(
-        is_visible=True,
+    instructors_with_location = all_instructors.filter(
         latitude__isnull=False,
         longitude__isnull=False
-    ).select_related('user', 'city', 'city__state')
+    )
     
     # Convert to list with float coordinates
     instructors_data = []
@@ -82,6 +85,7 @@ def cities_list_view(request):
         'states': states,
         'states_json': json.dumps(states_data),
         'instructors_json': json.dumps(instructors_data),
+        'all_instructors': all_instructors,
         'new_instructors': new_instructors,
         'page_title': 'Instrutores por Cidade',
     }
