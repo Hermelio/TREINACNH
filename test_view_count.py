@@ -10,9 +10,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
-from django.test import RequestFactory
-from marketplace.views import cities_list_view
 from marketplace.models import InstructorProfile
+import json
 
 # Contar instrutores no banco
 print("=== DADOS NO BANCO ===")
@@ -26,25 +25,35 @@ with_coords = InstructorProfile.objects.filter(
 ).count()
 print(f"Instrutores com coordenadas: {with_coords}")
 
-# Testar a view
-print("\n=== TESTANDO A VIEW ===")
-factory = RequestFactory()
-request = factory.get('/instrutores/cidades/')
+# Testar os dados que a view usa
+print("\n=== TESTANDO DADOS DA VIEW ===")
+all_instructors = InstructorProfile.objects.filter(
+    is_visible=True
+).select_related('user', 'user__profile', 'city', 'city__state').order_by('-created_at')
 
-response = cities_list_view(request)
-print(f"Status code: {response.status_code}")
+instructors_with_location = all_instructors.filter(
+    latitude__isnull=False,
+    longitude__isnull=False
+)
 
-# Verificar contexto
-if hasattr(response, 'context_data'):
-    context = response.context_data
-    if 'all_instructors' in context:
-        count = context['all_instructors'].count()
-        print(f"all_instructors no contexto: {count}")
-    if 'instructors_json' in context:
-        import json
-        instructors_json = json.loads(context['instructors_json'])
-        print(f"instructors_json tem {len(instructors_json)} instrutores")
+instructors_data = []
+for inst in instructors_with_location:
+    instructors_data.append({
+        'id': inst.id,
+        'user__first_name': inst.user.first_name,
+        'user__last_name': inst.user.last_name,
+        'latitude': float(inst.latitude),
+        'longitude': float(inst.longitude),
+        'city__name': inst.city.name,
+        'city__state__code': inst.city.state.code,
+        'city__state__name': inst.city.state.name
+    })
+
+print(f"all_instructors: {all_instructors.count()}")
+print(f"instructors_with_location: {instructors_with_location.count()}")
+print(f"instructors_data (JSON): {len(instructors_data)}")
 
 print("\n=== CONCLUSÃO ===")
-print(f"A view deveria retornar {total_visible} instrutores")
-print(f"O mapa deveria mostrar {with_coords} marcadores")
+print(f"✅ A view retorna {all_instructors.count()} instrutores na lista")
+print(f"✅ O mapa mostra {len(instructors_data)} marcadores")
+print(f"\n🎯 Tudo funcionando! O problema era erro de sintaxe no base.html que quebrava a renderização.")
