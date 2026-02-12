@@ -24,9 +24,9 @@ class StudentRedirectMiddleware:
                     # Get current URL name
                     current_url = resolve(request.path_info).url_name
                     
-                    # Redirect from home or plans to marketplace
+                    # Redirect from home or plans to cities list (where instructors are shown)
                     if current_url in ['home', 'plans']:
-                        return redirect('marketplace:instructors_map')
+                        return redirect('marketplace:cities_list')
                 except:
                     pass
         
