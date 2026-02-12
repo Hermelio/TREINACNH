@@ -117,8 +117,8 @@ def dashboard_view(request):
     if profile.is_instructor:
         return redirect('marketplace:my_leads')
     
-    # Students go to cities_list
-    return redirect('marketplace:cities_list')
+    # Students go to cities_list using absolute path
+    return redirect('/instrutores/cidades/')
 
 
 @login_required
