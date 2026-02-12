@@ -5,11 +5,11 @@
 <meta name="keywords" content="instrutor de trânsito, aulas de direção, instrutor particular, {{ instructor.city }}, CNH, avaliações, TreinaCNH">
 <meta property="og:title" content="Instrutor {{ instructor.user.get_full_name }} - {{ instructor.city }} | TreinaCNH">
 <meta property="og:description" content="Instrutor {{ instructor.user.get_full_name }} em {{ instructor.city }}. Veja avaliações, experiência, bairros atendidos e agende aulas de direção particular.">
-<meta property="og:image" content="{{ instructor.user.profile.avatar.url|default:'/static/images/og_instrutores.png' }}">
+<meta property="og:image" content="{% if instructor.user.profile.avatar %}{{ instructor.user.profile.avatar.url }}{% else %}/static/images/og_instrutores.png{% endif %}">
 <meta property="og:url" content="{{ request.build_absolute_uri|default:'' }}">
 <meta name="twitter:title" content="Instrutor {{ instructor.user.get_full_name }} - {{ instructor.city }} | TreinaCNH">
 <meta name="twitter:description" content="Instrutor {{ instructor.user.get_full_name }} em {{ instructor.city }}. Veja avaliações, experiência, bairros atendidos e agende aulas de direção particular.">
-<meta name="twitter:image" content="{{ instructor.user.profile.avatar.url|default:'/static/images/og_instrutores.png' }}">
+<meta name="twitter:image" content="{% if instructor.user.profile.avatar %}{{ instructor.user.profile.avatar.url }}{% else %}/static/images/og_instrutores.png{% endif %}">
 <link rel="canonical" href="{{ request.build_absolute_uri|default:'' }}">
 {% endblock %}
 

@@ -5,11 +5,11 @@
 <meta name="keywords" content="avaliar instrutor, avaliação, aulas de direção, instrutor de trânsito, {{ instructor.city }}, TreinaCNH">
 <meta property="og:title" content="Avaliar Instrutor {{ instructor.user.get_full_name }} - {{ instructor.city }} | TreinaCNH">
 <meta property="og:description" content="Avalie o instrutor {{ instructor.user.get_full_name }} em {{ instructor.city }}. Compartilhe sua experiência e ajude outros alunos a escolherem melhor.">
-<meta property="og:image" content="{{ instructor.user.profile.avatar.url|default:'/static/images/og_instrutores.png' }}">
+<meta property="og:image" content="{% if instructor.user.profile.avatar %}{{ instructor.user.profile.avatar.url }}{% else %}/static/images/og_instrutores.png{% endif %}">
 <meta property="og:url" content="{{ request.build_absolute_uri|default:'' }}">
 <meta name="twitter:title" content="Avaliar Instrutor {{ instructor.user.get_full_name }} - {{ instructor.city }} | TreinaCNH">
 <meta name="twitter:description" content="Avalie o instrutor {{ instructor.user.get_full_name }} em {{ instructor.city }}. Compartilhe sua experiência e ajude outros alunos a escolherem melhor.">
-<meta name="twitter:image" content="{{ instructor.user.profile.avatar.url|default:'/static/images/og_instrutores.png' }}">
+<meta name="twitter:image" content="{% if instructor.user.profile.avatar %}{{ instructor.user.profile.avatar.url }}{% else %}/static/images/og_instrutores.png{% endif %}">
 <link rel="canonical" href="{{ request.build_absolute_uri|default:'' }}">
 {% endblock %}
 {% load crispy_forms_tags %}
