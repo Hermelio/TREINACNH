@@ -81,8 +81,8 @@
                 gtag('js', new Date());
                 gtag('config', 'G-4YYW24JSXB', {
                     'page_path': window.location.pathname,
-                    'user_type': '{{ 'admin' if request.user.is_staff or request.user.is_superuser else 'visitor' }}',
-                    'send_page_view': {{ 'false' if request.user.is_staff or request.user.is_superuser else 'true' }}
+                    'user_type': '{% if request.user.is_staff or request.user.is_superuser %}admin{% else %}visitor{% endif %}',
+                    'send_page_view': {% if request.user.is_staff or request.user.is_superuser %}false{% else %}true{% endif %}
                 });
             </script>
             {% endif %}
