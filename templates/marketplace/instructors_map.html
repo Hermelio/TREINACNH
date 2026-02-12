@@ -151,27 +151,30 @@
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Custom icon for instructors
+    // Custom icon for instructors - blue marker
     const instructorIcon = L.divIcon({
         className: 'custom-instructor-marker',
         html: `
             <div style="
-                background: #0d6efd;
+                background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
                 border: 3px solid white;
                 border-radius: 50%;
-                width: 32px;
-                height: 32px;
+                width: 36px;
+                height: 36px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                box-shadow: 0 3px 10px rgba(13,110,253,0.5);
+                font-size: 20px;
+                color: white;
+                font-weight: bold;
             ">
-                <i class="bi bi-person-circle text-white" style="font-size: 18px;"></i>
+                👨‍🏫
             </div>
         `,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-        popupAnchor: [0, -16]
+        iconSize: [36, 36],
+        iconAnchor: [18, 18],
+        popupAnchor: [0, -18]
     });
 
     // Instructors data
