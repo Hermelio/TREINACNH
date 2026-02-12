@@ -4,8 +4,34 @@ Security middleware for additional protection.
 import logging
 from django.http import HttpResponseForbidden
 from django.core.cache import cache
+from django.shortcuts import redirect
+from django.urls import resolve
 
 logger = logging.getLogger(__name__)
+
+
+class StudentRedirectMiddleware:
+    """Redirect logged-in students from home/plans to marketplace"""
+    
+    def __init__(self, get_response):
+        self.get_response = get_response
+    
+    def __call__(self, request):
+        # Check if user is authenticated and is a student
+        if request.user.is_authenticated:
+            if hasattr(request.user, 'profile') and request.user.profile.role == 'STUDENT':
+                try:
+                    # Get current URL name
+                    current_url = resolve(request.path_info).url_name
+                    
+                    # Redirect from home or plans to marketplace
+                    if current_url in ['home', 'plans']:
+                        return redirect('marketplace:instructors_map')
+                except:
+                    pass
+        
+        response = self.get_response(request)
+        return response
 
 
 class SecurityMiddleware:
