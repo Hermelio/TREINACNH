@@ -1,7 +1,7 @@
 """
 Views for core app - Public pages.
 """
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Count, Q, OuterRef, Subquery
 from marketplace.models import State, City, InstructorProfile
 from .models import StaticPage, FAQEntry, HomeBanner, NewsArticle
@@ -21,6 +21,11 @@ def robots_txt(request):
 
 def home_view(request):
     """Homepage with search, featured instructors and interactive map"""
+    # Redirect logged-in students to marketplace
+    if request.user.is_authenticated:
+        if hasattr(request.user, 'profile') and request.user.profile.role == 'STUDENT':
+            return redirect('marketplace:instructors_map')
+    
     import json
     from marketplace.models import StudentLead
     

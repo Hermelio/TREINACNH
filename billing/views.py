@@ -22,7 +22,13 @@ logger = logging.getLogger(__name__)
 
 
 def plans_view(request):
-    """Public page showing available plans with user's active subscription status"""
+    """Public page showing available plans - only for instructors"""
+    # Redirect students to marketplace
+    if request.user.is_authenticated:
+        if hasattr(request.user, 'profile') and request.user.profile.role == 'STUDENT':
+            messages.info(request, 'Planos são exclusivos para instrutores.')
+            return redirect('marketplace:instructors_map')
+    
     plans = Plan.objects.filter(is_active=True).order_by('order', 'price_monthly')
     
     # Check if user has active subscription and is instructor
