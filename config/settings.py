@@ -199,6 +199,7 @@ SESSION_SAVE_EVERY_REQUEST = False  # Only save when modified
 RATELIMIT_ENABLE = True
 RATELIMIT_USE_CACHE = 'default'
 RATELIMIT_VIEW = 'core.views.ratelimit_error'  # Custom rate limit error page
+RATELIMIT_IP_META_KEY = 'HTTP_X_FORWARDED_FOR'  # Get real IP from nginx
 
 # File Upload Settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
