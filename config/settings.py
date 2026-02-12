@@ -167,7 +167,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Authentication
 LOGIN_URL = 'accounts:login'
-LOGIN_REDIRECT_URL = 'accounts:dashboard'
+LOGIN_REDIRECT_URL = 'marketplace:my_leads'  # Redirect students to their messages after login
 LOGOUT_REDIRECT_URL = 'core:home'
 
 # Crispy Forms (Bootstrap 5)

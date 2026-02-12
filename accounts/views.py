@@ -69,7 +69,7 @@ def registration_success_view(request):
 def login_view(request):
     """User login view with rate limiting protection"""
     if request.user.is_authenticated:
-        return redirect('accounts:dashboard')
+        return redirect('marketplace:my_leads')
     
     if request.method == 'POST':
         form = CustomLoginForm(request, data=request.POST)
@@ -80,8 +80,9 @@ def login_view(request):
             if user is not None:
                 login(request, user)
                 messages.success(request, f'Bem-vindo de volta, {user.first_name or user.username}!')
-                next_url = request.GET.get('next', 'accounts:dashboard')
-                return redirect(next_url)
+                
+                # Ignore 'next' parameter - always go to my_leads
+                return redirect('marketplace:my_leads')
             else:
                 messages.error(request, 'Usuário ou senha incorretos.')
         else:
