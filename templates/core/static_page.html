@@ -1,3 +1,15 @@
+{% block extra_meta %}
+<meta name="description" content="{{ page.meta_description|default:page.title }}">
+<meta name="keywords" content="{{ page.meta_keywords|default:'TreinaCNH, CNH, instrutor autônomo, aulas de direção' }}">
+<meta property="og:title" content="{{ page.title }} - TreinaCNH">
+<meta property="og:description" content="{{ page.meta_description|default:page.title }}">
+<meta property="og:image" content="/static/images/og_instrutores.png">
+<meta property="og:url" content="{{ request.build_absolute_uri|default:'' }}">
+<meta name="twitter:title" content="{{ page.title }} - TreinaCNH">
+<meta name="twitter:description" content="{{ page.meta_description|default:page.title }}">
+<meta name="twitter:image" content="/static/images/og_instrutores.png">
+<link rel="canonical" href="{{ request.build_absolute_uri|default:'' }}">
+{% endblock %}
 {% extends 'base.html' %}
 
 {% block content %}

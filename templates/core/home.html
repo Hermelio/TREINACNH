@@ -1,6 +1,47 @@
 ﻿{% extends 'base.html' %}
 {% load static %}
 
+{% block title %}Instrutor Autônomo, Aulas de Direção Particular e CNH | TreinaCNH{% endblock %}
+{% block extra_meta %}
+<meta name="description" content="Encontre instrutores de trânsito autônomos, aulas de direção particular, instrutor credenciado e aulas práticas CNH. Compare preços, veja avaliações e agende online.">
+<meta name="keywords" content="instrutor autônomo, aulas de direção particular, instrutor credenciado, aulas práticas CNH, quanto custa aula de direção, instrutor de trânsito perto de mim, aulas de carro particular, plataforma para instrutores de trânsito, instrutor de trânsito sem autoescola">
+<meta property="og:title" content="Instrutor Autônomo, Aulas de Direção Particular e CNH | TreinaCNH">
+<meta property="og:description" content="Encontre instrutores de trânsito autônomos, aulas de direção particular, instrutor credenciado e aulas práticas CNH. Compare preços, veja avaliações e agende online.">
+<meta property="og:image" content="/static/images/og_instrutores.png">
+<meta property="og:url" content="https://www.treinacnh.com.br/">
+<meta name="twitter:title" content="Instrutor Autônomo, Aulas de Direção Particular e CNH | TreinaCNH">
+<meta name="twitter:description" content="Encontre instrutores de trânsito autônomos, aulas de direção particular, instrutor credenciado e aulas práticas CNH. Compare preços, veja avaliações e agende online.">
+<meta name="twitter:image" content="/static/images/og_instrutores.png">
+<link rel="canonical" href="https://www.treinacnh.com.br/">
+{% endblock %}
+
+{% block extra_schema %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {
+            "@type": "Question",
+            "name": "Como encontrar um instrutor de trânsito autônomo?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Basta pesquisar sua cidade e comparar os instrutores disponíveis na plataforma TreinaCNH."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Quanto custa uma aula de direção particular?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Os valores variam conforme o instrutor, cidade e tipo de aula. Consulte o perfil do instrutor para ver preços atualizados."
+            }
+        }
+    ]
+}
+</script>
+{% endblock %}
+
 {% block preload %}
 <!-- Preload LCP Image - Mobile-First (≤768px usa 640w) -->
 <link rel="preload" 

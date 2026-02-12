@@ -2,10 +2,59 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+            <!-- Schema.org WebSite e Organization -->
+            <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                "name": "TreinaCNH",
+                "url": "https://www.treinacnh.com.br/",
+                "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": "https://www.treinacnh.com.br/?q={search_term_string}",
+                    "query-input": "required name=search_term_string"
+                }
+            }
+            </script>
+            <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "Organization",
+                "name": "TreinaCNH",
+                "url": "https://www.treinacnh.com.br/",
+                "logo": "https://www.treinacnh.com.br/static/images/logos/logotipoTreinaCNH-640w.webp",
+                "sameAs": [
+                    "https://www.instagram.com/treinacnh/",
+                    "https://www.facebook.com/treinacnh/"
+                ]
+            }
+            </script>
+            {% block extra_schema %}{% endblock %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Encontre instrutores de direção verificados na sua cidade. Compare preços, veja avaliações e agende aulas.">
+    <meta name="description" content="{{ meta_description|default:'Encontre instrutores de direção autônomos, aulas de direção particular e instrutores credenciados perto de você. Compare preços, veja avaliações e agende online.' }}">
+    <meta name="keywords" content="instrutor autônomo, instrutor de trânsito autônomo, aulas de direção particular, instrutor particular, encontrar instrutor de trânsito, instrutor credenciado, aulas práticas CNH, quanto custa aula de direção, instrutor de trânsito perto de mim, aulas de carro particular, instrutor de trânsito autônomo são paulo, quanto custa aula particular de direção, encontrar instrutor credenciado detran, plataforma para instrutores de trânsito, instrutor de trânsito sem autoescola">
+    <meta name="author" content="TreinaCNH">
+    <meta name="robots" content="index, follow">
     <title>{% block title %}{{ page_title|default:"TreinaCNH" }}{% endblock %} | TreinaCNH</title>
+    <link rel="canonical" href="{{ request.build_absolute_uri|default:'' }}">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="pt_BR">
+    <meta property="og:site_name" content="TreinaCNH">
+    <meta property="og:title" content="{{ og_title|default:page_title|default:'TreinaCNH - Instrutor de Direção Autônomo' }}">
+    <meta property="og:description" content="{{ og_description|default:meta_description|default:'Encontre instrutores de direção autônomos, aulas de direção particular e instrutores credenciados perto de você.' }}">
+    <meta property="og:url" content="{{ request.build_absolute_uri|default:'' }}">
+    <meta property="og:image" content="{{ og_image|default:static('images/og_instrutores.png') }}">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ og_title|default:page_title|default:'TreinaCNH - Instrutor de Direção Autônomo' }}">
+    <meta name="twitter:description" content="{{ og_description|default:meta_description|default:'Encontre instrutores de direção autônomos, aulas de direção particular e instrutores credenciados perto de você.' }}">
+    <meta name="twitter:image" content="{{ og_image|default:static('images/og_instrutores.png') }}">
+
+    {% block extra_meta %}{% endblock %}
     
     <!-- Preconnect para recursos externos -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -17,10 +66,26 @@
     <!-- Preload será adicionado por páginas específicas -->
     {% endblock %}
     
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{% static 'images/logos/logotipoTreinaCNH-640w.webp' %}">
-    <link rel="shortcut icon" type="image/png" href="{% static 'images/logos/logotipoTreinaCNH-640w.webp' %}">
-    <link rel="apple-touch-icon" href="{% static 'images/logos/logotipoTreinaCNH-960w.webp' %}">
+    <!-- Favicon e ícones -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon-16x16.png' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/apple-touch-icon.png' %}">
+    <link rel="manifest" href="{% static 'site.webmanifest' %}">
+    <link rel="shortcut icon" href="{% static 'favicon.ico' %}">
+            <!-- Google Analytics -->
+            {% if not request.user.is_staff and not request.user.is_superuser %}
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-4YYW24JSXB"></script>
+            <script>
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-4YYW24JSXB', {
+                    'page_path': window.location.pathname,
+                    'user_type': '{{ 'admin' if request.user.is_staff or request.user.is_superuser else 'visitor' }}',
+                    'send_page_view': {{ 'false' if request.user.is_staff or request.user.is_superuser else 'true' }}
+                });
+            </script>
+            {% endif %}
     
     <!-- CSS Crítico Inline -->
     <style>{% include "includes/critical.css" %}</style>

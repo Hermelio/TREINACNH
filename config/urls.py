@@ -10,6 +10,8 @@ from billing import views as billing_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
+    # Sitemap e robots.txt
+    # (urls já adicionadas em core.urls)
     # Allauth URLs (IMPORTANTE: antes das accounts!)
     path('contas/', include('allauth.urls')),
     path('contas/', include('accounts.urls')),

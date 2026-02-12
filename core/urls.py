@@ -3,6 +3,8 @@ URL Configuration for core app.
 """
 from django.urls import path
 from . import views
+from django.contrib.sitemaps.views import sitemap
+from .sitemap import sitemaps
 
 app_name = 'core'
 
@@ -18,4 +20,6 @@ urlpatterns = [
     path('alunos/<str:state_code>/<str:city_name>/', views.city_students_view, name='city_students'),
     path('lcp-test/', views.lcp_test_view, name='lcp_test'),
     path('mobile-lcp-test/', views.mobile_lcp_test_view, name='mobile_lcp_test'),
+    path('robots.txt', views.robots_txt, name='robots_txt'),
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
 ]

@@ -5,7 +5,19 @@ from django.shortcuts import render, get_object_or_404
 from django.db.models import Count, Q, OuterRef, Subquery
 from marketplace.models import State, City, InstructorProfile
 from .models import StaticPage, FAQEntry, HomeBanner, NewsArticle
+from django.http import HttpResponse
+from django.views.decorators.http import require_GET
 
+@require_GET
+def robots_txt(request):
+    lines = [
+        "User-Agent: *",
+        "Disallow: /admin/",
+        "Disallow: /contas/",
+        "Allow: /",
+        "Sitemap: " + request.build_absolute_uri('/sitemap.xml'),
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain")
 
 def home_view(request):
     """Homepage with search, featured instructors and interactive map"""

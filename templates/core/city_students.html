@@ -1,6 +1,19 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block extra_meta %}
+<meta name="description" content="Veja alunos interessados em aulas de direção particular em {{ city_name }}, {{ state_code }}. Encontre instrutores e oportunidades na sua região.">
+<meta name="keywords" content="alunos CNH, aulas de direção, instrutor particular, {{ city_name }}, {{ state_code }}, encontrar instrutor, aulas práticas CNH">
+<meta property="og:title" content="Alunos em {{ city_name }} - {{ state_code }} | TreinaCNH">
+<meta property="og:description" content="Veja alunos interessados em aulas de direção particular em {{ city_name }}, {{ state_code }}. Encontre instrutores e oportunidades na sua região.">
+<meta property="og:image" content="/static/images/og_alunos.png">
+<meta property="og:url" content="{{ request.build_absolute_uri|default:'' }}">
+<meta name="twitter:title" content="Alunos em {{ city_name }} - {{ state_code }} | TreinaCNH">
+<meta name="twitter:description" content="Veja alunos interessados em aulas de direção particular em {{ city_name }}, {{ state_code }}. Encontre instrutores e oportunidades na sua região.">
+<meta name="twitter:image" content="/static/images/og_alunos.png">
+<link rel="canonical" href="{{ request.build_absolute_uri|default:'' }}">
+{% endblock %}
+
 {% block title %}Alunos em {{ city_name }} - {{ state_code }}{% endblock %}
 
 {% block extra_css %}
