@@ -12,9 +12,10 @@ urlpatterns = [
     path('', include('core.urls')),
     # Sitemap e robots.txt
     # (urls já adicionadas em core.urls)
-    # Allauth URLs (IMPORTANTE: antes das accounts!)
-    path('contas/', include('allauth.urls')),
+    # Accounts URLs (DEVE VIR ANTES do allauth para pegar /contas/painel/)
     path('contas/', include('accounts.urls')),
+    # Allauth URLs (apenas para social login)
+    path('contas/', include('allauth.urls')),
     path('instrutores/', include('marketplace.urls')),
     path('verificacao/', include('verification.urls')),
     path('avaliacoes/', include('reviews.urls')),
