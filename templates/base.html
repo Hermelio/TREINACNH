@@ -44,14 +44,14 @@
     <meta property="og:locale" content="pt_BR">
     <meta property="og:site_name" content="TreinaCNH">
     <meta property="og:title" content="{{ og_title|default:page_title|default:'TreinaCNH - Instrutor de Direção Autônomo' }}">
-    <meta property="og:description" content="{{ og_description|default:meta_description|default:'Encontre instrutores de direção autônomos, aulas de direção particular e instrutores credenciados perto de você.' }}">
+    <meta property="og:description" content="{{ og_description|default:'Encontre instrutores de direção autônomos, aulas de direção particular e instrutores credenciados perto de você.' }}">
     <meta property="og:url" content="{{ request.build_absolute_uri|default:'' }}">
     <meta property="og:image" content="{% if og_image %}{{ og_image }}{% else %}{% static 'images/og_instrutores.png' %}{% endif %}">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ og_title|default:page_title|default:'TreinaCNH - Instrutor de Direção Autônomo' }}">
-    <meta name="twitter:description" content="{{ og_description|default:meta_description|default:'Encontre instrutores de direção autônomos, aulas de direção particular e instrutores credenciados perto de você.' }}">
+    <meta name="twitter:description" content="{{ og_description|default:'Encontre instrutores de direção autônomos, aulas de direção particular e instrutores credenciados perto de você.' }}">
     <meta name="twitter:image" content="{% if og_image %}{{ og_image }}{% else %}{% static 'images/og_instrutores.png' %}{% endif %}">
 
     {% block extra_meta %}{% endblock %}
