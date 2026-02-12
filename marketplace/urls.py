@@ -1,9 +1,6 @@
-"""
-URL Configuration for marketplace app.
-"""
 from django.urls import path
+from django.views.generic import RedirectView
 from . import views
-from .views_map import instructors_map_view
 from .api_views import get_cities_by_state, get_map_cities
 
 app_name = 'marketplace'
@@ -22,9 +19,9 @@ urlpatterns = [
     path('meus-leads/', views.my_leads_view, name='my_leads'),
     path('lead/<int:lead_pk>/atualizar/', views.lead_update_status_view, name='lead_update_status'),
     
-    # Public pages
-    path('', views.cities_list_view, name='instructors_map'),  # Página principal mostra lista de cidades
-    path('mapa/', instructors_map_view, name='instructors_map_detail'),  # Mapa interativo
+    # Public pages - ÚNICA versão do marketplace
+    path('', RedirectView.as_view(pattern_name='marketplace:cities_list', permanent=False), name='instructors_map'),
+    path('cidades/', views.cities_list_view, name='cities_list'),
     path('instrutor/<int:pk>/', views.instructor_detail_view, name='instructor_detail'),
     path('instrutor/<int:instructor_pk>/solicitar-contato/', views.lead_create_view, name='lead_create'),
     

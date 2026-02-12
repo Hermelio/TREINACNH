@@ -122,31 +122,36 @@
     
     <!-- All Instructors Section -->
     {% if all_instructors %}
-    <div class="card mb-5">
-        <div class="card-header bg-success text-white">
-            <h4 class="mb-0"><i class="bi bi-people-fill me-2"></i>Todos os Instrutores Cadastrados ({{ all_instructors.count }})</h4>
+    <div class="card mb-5 shadow-sm">
+        <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <h4 class="mb-0 text-white"><i class="bi bi-person-lines-fill me-2"></i>Todos os Instrutores Cadastrados ({{ all_instructors.count }})</h4>
         </div>
         <div class="card-body">
             <div class="row">
                 {% for instructor in all_instructors %}
                     <div class="col-md-3 mb-3">
-                        <div class="card h-100 hover-shadow">
+                        <div class="card h-100 hover-shadow border-0 shadow-sm">
                             <div class="card-body">
-                                <h6 class="card-title">
-                                    {{ instructor.user.get_full_name }}
-                                    {% if instructor.is_verified %}
-                                        <i class="bi bi-patch-check-fill text-success" title="Verificado"></i>
-                                    {% endif %}
-                                </h6>
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-2">
+                                        <i class="bi bi-person-badge-fill text-primary fs-5"></i>
+                                    </div>
+                                    <h6 class="card-title mb-0 flex-grow-1">
+                                        {{ instructor.user.get_full_name }}
+                                        {% if instructor.is_verified %}
+                                            <i class="bi bi-patch-check-fill text-success" title="Verificado"></i>
+                                        {% endif %}
+                                    </h6>
+                                </div>
                                 <p class="card-text small text-muted mb-1">
-                                    <i class="bi bi-geo-alt-fill me-1"></i>{{ instructor.city.name }}, {{ instructor.city.state.code }}
+                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ instructor.city.name }}, {{ instructor.city.state.code }}
                                 </p>
                                 {% if instructor.phone %}
                                 <p class="card-text small text-muted mb-1">
-                                    <i class="bi bi-telephone-fill me-1"></i>{{ instructor.phone }}
+                                    <i class="bi bi-telephone-fill text-success me-1"></i>{{ instructor.phone }}
                                 </p>
                                 {% endif %}
-                                <a href="{% url 'marketplace:instructor_detail' pk=instructor.pk %}" class="btn btn-sm btn-outline-primary mt-2">Ver Perfil</a>
+                                <a href="{% url 'marketplace:instructor_detail' pk=instructor.pk %}" class="btn btn-sm btn-primary mt-2 w-100"><i class="bi bi-eye-fill me-1"></i>Ver Perfil</a>
                             </div>
                         </div>
                     </div>
@@ -158,9 +163,9 @@
     
     <!-- New Instructors Section -->
     {% if new_instructors %}
-    <div class="card mb-5">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0"><i class="bi bi-star-fill me-2"></i>Novos Instrutores</h4>
+    <div class="card mb-5 shadow-sm">
+        <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <h4 class="mb-0 text-white"><i class="bi bi-stars me-2"></i>Novos Instrutores</h4>
         </div>
         <div class="card-body">
             <div class="row">
