@@ -151,12 +151,12 @@
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Custom icon for instructors - blue marker
+    // Custom icon for instructors - red marker like home
     const instructorIcon = L.divIcon({
         className: 'custom-instructor-marker',
         html: `
             <div style="
-                background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+                background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
                 border: 3px solid white;
                 border-radius: 50%;
                 width: 36px;
@@ -164,12 +164,11 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                box-shadow: 0 3px 10px rgba(13,110,253,0.5);
-                font-size: 20px;
+                box-shadow: 0 3px 10px rgba(220,53,69,0.5);
                 color: white;
-                font-weight: bold;
+                font-size: 18px;
             ">
-                👨‍🏫
+                <i class="bi bi-person-fill"></i>
             </div>
         `,
         iconSize: [36, 36],
