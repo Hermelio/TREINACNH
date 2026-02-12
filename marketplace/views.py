@@ -15,7 +15,13 @@ def cities_list_view(request):
     """
     Main cities page - list all states with cities and instructor counts.
     Shows "new instructors" section and interactive map.
+    Students are redirected to their leads page.
     """
+    # Redirect students to their leads page
+    if request.user.is_authenticated:
+        if hasattr(request.user, 'profile') and request.user.profile.role == 'STUDENT':
+            return redirect('marketplace:my_leads')
+    
     from django.db.models import OuterRef, Subquery
     
     # Get instructor count per state
