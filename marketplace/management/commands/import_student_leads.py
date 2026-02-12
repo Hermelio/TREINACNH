@@ -98,32 +98,32 @@ class Command(BaseCommand):
             State.objects.get_or_create(code=code, defaults={'name': name})
 
     def _process_row(self, row, dry_run):
-        """Process a single CSV row"""
-        # Extract data from row
+        """Process a single CSV row with correct relations and notification suppression"""
+        from marketplace.models import City, CategoryCNH, StudentLead
         external_id = row.get('id', '').strip()
         name = row.get('name', '').strip()
         phone = row.get('phone', '').strip()
-        city = row.get('city', '').strip()
+        city_name = row.get('city', '').strip()
         state_code = row.get('state', '').strip().upper()
-        category = row.get('category', '').strip().upper()
-        
+        category_str = row.get('category', '').strip().upper()
+
         # Parse metadata JSON
         metadata_str = row.get('metadata', '{}')
         try:
             metadata = json.loads(metadata_str) if metadata_str else {}
         except json.JSONDecodeError:
             metadata = {}
-        
+
         # Extract email from metadata
         email = metadata.get('email', '').strip()
-        
+
         # Parse boolean fields
         has_theory = metadata.get('hasTheory', False)
-        accept_marketing = row.get('acceptMarketing', '').lower() == 'true'
+        accept_email = row.get('acceptMarketing', '').lower() == 'true'
         accept_whatsapp = row.get('acceptWhatsApp', '').lower() == 'true'
         accept_terms = row.get('acceptTerms', '').lower() == 'true'
         is_contacted = row.get('isContacted', '').lower() == 'true'
-        
+
         # Parse dates
         contacted_at = None
         contacted_at_str = row.get('contactedAt', '').strip()
@@ -132,30 +132,48 @@ class Command(BaseCommand):
                 contacted_at = datetime.fromisoformat(contacted_at_str.replace('Z', '+00:00'))
             except ValueError:
                 pass
-        
+
         notes = row.get('notes', '').strip()
-        
+
         # Validation
         if not external_id:
             self.stdout.write(self.style.WARNING(f'Skipping row without ID'))
             return 'skipped'
-        
+
         if not name or not phone or not state_code:
             self.stdout.write(self.style.WARNING(f'Skipping incomplete row: {external_id}'))
             return 'skipped'
-        
+
         # Get or skip if state doesn't exist
         try:
             state = State.objects.get(code=state_code)
         except State.DoesNotExist:
             self.stdout.write(self.style.WARNING(f'Unknown state code: {state_code}'))
             return 'skipped'
-        
+
+        # Resolve city foreign key
+        city = None
+        if city_name:
+            city_qs = City.objects.filter(name__iexact=city_name, state=state)
+            city = city_qs.first()
+            if not city:
+                self.stdout.write(self.style.WARNING(f'City not found: {city_name}/{state_code}'))
+
+        # Resolve categories (ManyToMany)
+        categories = []
+        if category_str:
+            for cat_code in category_str:
+                cat = CategoryCNH.objects.filter(code=cat_code).first()
+                if cat:
+                    categories.append(cat)
+                else:
+                    self.stdout.write(self.style.WARNING(f'Category not found: {cat_code}'))
+
         if dry_run:
-            self.stdout.write(f'Would import: {name} - {city}/{state_code} - Cat. {category}')
+            self.stdout.write(f'Would import: {name} - {city_name}/{state_code} - Cat. {category_str}')
             return 'created'
-        
-        # Create or update lead
+
+        # Create or update lead (do not send notifications)
         lead, created = StudentLead.objects.update_or_create(
             external_id=external_id,
             defaults={
@@ -164,21 +182,22 @@ class Command(BaseCommand):
                 'email': email,
                 'city': city,
                 'state': state,
-                'category': category,
                 'has_theory': has_theory,
-                'accept_marketing': accept_marketing,
+                'accept_email': accept_email,
                 'accept_whatsapp': accept_whatsapp,
                 'accept_terms': accept_terms,
                 'is_contacted': is_contacted,
                 'contacted_at': contacted_at,
                 'metadata': metadata,
                 'notes': notes,
+                'notified_about_instructor': False,
             }
         )
-        
+        if categories:
+            lead.categories.set(categories)
         if created:
-            self.stdout.write(self.style.SUCCESS(f'✓ Created: {name} - {city}/{state_code}'))
+            self.stdout.write(self.style.SUCCESS(f'✓ Created: {name} - {city_name}/{state_code}'))
             return 'created'
         else:
-            self.stdout.write(f'→ Updated: {name} - {city}/{state_code}')
+            self.stdout.write(f'→ Updated: {name} - {city_name}/{state_code}')
             return 'updated'
