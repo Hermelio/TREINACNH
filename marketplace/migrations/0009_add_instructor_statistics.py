@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('marketplace', '0007_remove_studentlead_accept_marketing_and_more'),
+        ('marketplace', '0008_merge_20260115_1245'),
     ]
 
     operations = [
