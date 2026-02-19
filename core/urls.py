@@ -21,5 +21,6 @@ urlpatterns = [
     path('lcp-test/', views.lcp_test_view, name='lcp_test'),
     path('mobile-lcp-test/', views.mobile_lcp_test_view, name='mobile_lcp_test'),
     path('robots.txt', views.robots_txt, name='robots_txt'),
+    path('google8a3de9cf5898f665.html', views.google_site_verification, name='google_site_verification'),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
 ]

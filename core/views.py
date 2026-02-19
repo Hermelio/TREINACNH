@@ -9,6 +9,14 @@ from django.http import HttpResponse
 from django.views.decorators.http import require_GET
 
 @require_GET
+def google_site_verification(request):
+    return HttpResponse(
+        'google-site-verification: google8a3de9cf5898f665.html',
+        content_type='text/html'
+    )
+
+
+@require_GET
 def robots_txt(request):
     lines = [
         "User-Agent: *",
