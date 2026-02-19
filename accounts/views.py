@@ -62,7 +62,10 @@ def registration_success_view(request):
     Success page after registration with next steps information.
     Only accessible to authenticated users.
     """
-    return render(request, 'accounts/registration_success.html')
+    return render(request, 'accounts/registration_success.html', {
+        'seo_title': 'Cadastro Realizado | TreinaCNH',
+        'seo_description': 'Seu cadastro na TreinaCNH foi realizado com sucesso. Confira os próximos passos.',
+    })
 
 
 @ratelimit(key='ip', rate='10/m', method='POST', block=True)

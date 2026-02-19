@@ -493,6 +493,8 @@ def student_register_view(request):
         'form': form,
         'states': states,
         'categories': categories,
+        'seo_title': 'Cadastro de Aluno | TreinaCNH',
+        'seo_description': 'Cadastre-se como aluno na TreinaCNH e seja encontrado por instrutores de trânsito autônomos credenciados na sua cidade.',
     }
     return render(request, 'marketplace/student_register.html', context)
 
