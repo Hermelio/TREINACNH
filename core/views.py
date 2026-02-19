@@ -167,6 +167,28 @@ def home_view(request):
             'coordinates': coords
         })
     
+    # FAQs para Schema.org FAQPage (dinâmico a partir do banco)
+    faqs_for_schema = list(
+        FAQEntry.objects.filter(is_active=True)
+        .order_by('category', 'order')
+        .values('question', 'answer')
+    )
+    faq_schema_json = json.dumps({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": faq['question'],
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": faq['answer']
+                }
+            }
+            for faq in faqs_for_schema
+        ]
+    }, ensure_ascii=False, indent=2)
+
     context = {
         'states': states,
         'states_json': json.dumps(states_data),
@@ -181,6 +203,7 @@ def home_view(request):
         'page_title': 'Cadastre-se como Instrutor - TREINACNH',
         'is_instructor': request.user.is_authenticated and hasattr(request.user, 'instructor_profile'),
         'user_authenticated': request.user.is_authenticated,
+        'faq_schema_json': faq_schema_json,
     }
     return render(request, 'core/home.html', context)
 

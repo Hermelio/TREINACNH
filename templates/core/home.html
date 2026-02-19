@@ -16,30 +16,9 @@
 {% endblock %}
 
 {% block extra_schema %}
-<script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-        {
-            "@type": "Question",
-            "name": "Como encontrar um instrutor de trânsito autônomo?",
-            "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "Basta pesquisar sua cidade e comparar os instrutores disponíveis na plataforma TreinaCNH."
-            }
-        },
-        {
-            "@type": "Question",
-            "name": "Quanto custa uma aula de direção particular?",
-            "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "Os valores variam conforme o instrutor, cidade e tipo de aula. Consulte o perfil do instrutor para ver preços atualizados."
-            }
-        }
-    ]
-}
-</script>
+{% if faq_schema_json %}
+<script type="application/ld+json">{{ faq_schema_json|safe }}</script>
+{% endif %}
 {% endblock %}
 
 {% block preload %}
