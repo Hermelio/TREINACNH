@@ -18,12 +18,16 @@ def google_site_verification(request):
 
 @require_GET
 def robots_txt(request):
+    from django.conf import settings
+    site_url = getattr(settings, 'SITE_URL', '').rstrip('/')
+    if not site_url:
+        site_url = request.build_absolute_uri('/').rstrip('/')
     lines = [
         "User-Agent: *",
         "Disallow: /admin/",
         "Disallow: /contas/",
         "Allow: /",
-        "Sitemap: " + request.build_absolute_uri('/sitemap.xml'),
+        f"Sitemap: {site_url}/sitemap.xml",
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain")
 

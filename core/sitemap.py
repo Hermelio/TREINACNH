@@ -2,7 +2,7 @@ from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 from marketplace.models import InstructorProfile
 from django.utils import timezone
-from .models import NewsArticle
+from .models import NewsArticle, StaticPage
 
 
 class StaticViewSitemap(Sitemap):
@@ -10,18 +10,32 @@ class StaticViewSitemap(Sitemap):
     changefreq = 'weekly'
 
     def items(self):
+        # Apenas nomes de URLs que existem em core/urls.py
         return [
             'core:home',
-            'core:como_funciona',
-            'core:sobre',
-            'core:contato',
-            'core:seja_instrutor',
-            'core:termos',
+            'core:about',
+            'core:contact',
+            'core:faq',
             'core:news_list',
         ]
 
     def location(self, item):
         return reverse(item)
+
+
+class StaticPageSitemap(Sitemap):
+    """Páginas do model StaticPage (termos, politica, etc.)"""
+    priority = 0.4
+    changefreq = 'yearly'
+
+    def items(self):
+        return StaticPage.objects.filter(is_active=True)
+
+    def lastmod(self, obj):
+        return obj.updated_at
+
+    def location(self, obj):
+        return reverse('core:static_page', kwargs={'slug': obj.slug})
 
 
 class InstructorSitemap(Sitemap):
@@ -56,6 +70,7 @@ class NewsSitemap(Sitemap):
 
 sitemaps = {
     'static': StaticViewSitemap,
+    'paginas': StaticPageSitemap,
     'instrutores': InstructorSitemap,
     'noticias': NewsSitemap,
 }
