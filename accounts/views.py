@@ -128,16 +128,20 @@ def dashboard_view(request):
 def profile_edit_view(request):
     """Edit user profile"""
     profile = request.user.profile
-    
+
     if request.method == 'POST':
         form = ProfileEditForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             form.save()
             messages.success(request, 'Perfil atualizado com sucesso!')
-            return redirect('accounts:dashboard')
+            return redirect('accounts:profile_edit')
         else:
             messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
         form = ProfileEditForm(instance=profile)
-    
-    return render(request, 'accounts/profile_edit.html', {'form': form})
+
+    return render(request, 'accounts/profile_edit.html', {
+        'form': form,
+        'seo_title': 'Editar Perfil | TreinaCNH',
+        'seo_description': 'Atualize suas informações de perfil na TreinaCNH.',
+    })

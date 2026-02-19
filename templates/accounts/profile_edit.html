@@ -1,29 +1,166 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
+{% load static %}
 
 {% block content %}
-<div class="container py-5">
-    <h1 class="mb-4"><i class="bi bi-person-fill me-2"></i>Editar Perfil</h1>
-    
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-body">
-                    {% crispy form %}
+<div class="container py-5" style="padding-top: 7rem !important;">
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <h1 class="fw-bold mb-4"><i class="bi bi-person-circle me-2 text-primary"></i>Editar Perfil</h1>
+
+            {% if messages %}
+                {% for msg in messages %}
+                <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                    {{ msg }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Dica</h5>
-                    <p class="card-text small text-muted">
-                        Mantenha seu perfil atualizado para melhor experiência na plataforma.
-                    </p>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+
+                <!-- ── FOTO DE PERFIL ───────────────────────────────────────── -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="fw-semibold mb-4"><i class="bi bi-camera-fill me-2 text-primary"></i>Foto de Perfil</h5>
+
+                        <div class="d-flex align-items-center gap-4 flex-wrap">
+                            <!-- Avatar preview -->
+                            <div class="position-relative" style="width: 110px; height: 110px; flex-shrink: 0;">
+                                <img id="avatar-preview"
+                                     src="{% if form.instance.avatar %}{{ form.instance.avatar.url }}{% else %}https://ui-avatars.com/api/?name={{ form.instance.user.get_full_name|urlencode }}&size=110&background=0d6efd&color=fff&rounded=true{% endif %}"
+                                     alt="Foto de perfil"
+                                     class="rounded-circle shadow"
+                                     style="width: 110px; height: 110px; object-fit: cover; border: 3px solid #dee2e6;">
+                                <!-- Overlay edit button -->
+                                <label for="avatar-input"
+                                       class="position-absolute bottom-0 end-0 btn btn-sm btn-primary rounded-circle p-0"
+                                       style="width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center;"
+                                       title="Alterar foto">
+                                    <i class="bi bi-pencil-fill" style="font-size: .75rem;"></i>
+                                </label>
+                            </div>
+
+                            <div>
+                                <p class="mb-1 fw-semibold">{{ form.instance.user.get_full_name }}</p>
+                                <p class="text-muted small mb-2">
+                                    Formatos aceitos: JPG, PNG, WebP &mdash; máx. 5 MB.
+                                </p>
+                                <label for="avatar-input" class="btn btn-outline-primary btn-sm" style="cursor: pointer;">
+                                    <i class="bi bi-upload me-1"></i>Escolher foto
+                                </label>
+                                <span id="avatar-filename" class="text-muted small ms-2"></span>
+                            </div>
+                        </div>
+
+                        <!-- Hidden file input rendered by Django -->
+                        <div class="d-none">{{ form.avatar }}</div>
+                        {% if form.avatar.errors %}
+                            <div class="text-danger small mt-2">{{ form.avatar.errors.0 }}</div>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
+
+                <!-- ── INFORMAÇÕES BÁSICAS ─────────────────────────────────── -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="fw-semibold mb-4"><i class="bi bi-person-fill me-2 text-primary"></i>Informações Básicas</h5>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label fw-medium">Nome</label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="text-danger small">{{ form.first_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label fw-medium">Sobrenome</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="text-danger small">{{ form.last_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label for="{{ form.email.id_for_label }}" class="form-label fw-medium">E-mail</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger small">{{ form.email.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── CONTATO ─────────────────────────────────────────────── -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="fw-semibold mb-4"><i class="bi bi-telephone-fill me-2 text-primary"></i>Contato</h5>
+
+                        <div class="row g-3">
+                            <!-- TELEFONE -->
+                            <div class="col-md-6">
+                                <label for="{{ form.phone.id_for_label }}" class="form-label fw-medium">Telefone</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light fw-semibold" style="min-width: 70px; letter-spacing: .02em;">
+                                        🇧🇷 +55
+                                    </span>
+                                    {{ form.phone }}
+                                </div>
+                                <div class="form-text">DDD + número &mdash; ex: 11 99999-9999</div>
+                                {% if form.phone.errors %}
+                                    <div class="text-danger small">{{ form.phone.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- WHATSAPP -->
+                            <div class="col-md-6">
+                                <label for="{{ form.whatsapp_number.id_for_label }}" class="form-label fw-medium">
+                                    <i class="bi bi-whatsapp text-success me-1"></i>WhatsApp
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light fw-semibold" style="min-width: 70px; letter-spacing: .02em;">
+                                        🇧🇷 +55
+                                    </span>
+                                    {{ form.whatsapp_number }}
+                                </div>
+                                <div class="form-text">Pode ser igual ao telefone</div>
+                                {% if form.whatsapp_number.errors %}
+                                    <div class="text-danger small">{{ form.whatsapp_number.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── AÇÕES ───────────────────────────────────────────────── -->
+                <div class="d-flex gap-3 justify-content-end">
+                    <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary px-4">
+                        <i class="bi bi-x-lg me-1"></i>Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary px-5 fw-semibold">
+                        <i class="bi bi-check-lg me-1"></i>Salvar Alterações
+                    </button>
+                </div>
+
+            </form>
         </div>
     </div>
 </div>
+
+<script>
+/* Avatar live preview */
+document.getElementById('avatar-input').addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById('avatar-filename').textContent = file.name;
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+        document.getElementById('avatar-preview').src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+});
+</script>
 {% endblock %}

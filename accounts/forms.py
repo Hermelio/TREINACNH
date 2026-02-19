@@ -196,9 +196,23 @@ class ProfileEditForm(forms.ModelForm):
         model = Profile
         fields = ('phone', 'whatsapp_number', 'avatar')
         widgets = {
-            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+5511999999999'}),
-            'whatsapp_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+5511999999999'}),
-            'avatar': forms.FileInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '11 99999-9999',
+                'maxlength': '15',
+                'inputmode': 'tel',
+            }),
+            'whatsapp_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '11 99999-9999',
+                'maxlength': '15',
+                'inputmode': 'tel',
+            }),
+            'avatar': forms.FileInput(attrs={
+                'class': 'd-none',
+                'id': 'avatar-input',
+                'accept': 'image/*',
+            }),
         }
     
     def __init__(self, *args, **kwargs):
@@ -207,26 +221,41 @@ class ProfileEditForm(forms.ModelForm):
             self.fields['first_name'].initial = self.instance.user.first_name
             self.fields['last_name'].initial = self.instance.user.last_name
             self.fields['email'].initial = self.instance.user.email
-        
-        self.helper = FormHelper()
-        self.helper.form_method = 'post'
-        self.helper.form_enctype = 'multipart/form-data'
-        self.helper.layout = Layout(
-            HTML('<h5 class="mb-3">Informações Básicas</h5>'),
-            Row(
-                Column('first_name', css_class='form-group col-md-6 mb-3'),
-                Column('last_name', css_class='form-group col-md-6 mb-3'),
-            ),
-            Field('email', css_class='mb-3'),
-            HTML('<h5 class="mb-3 mt-4">Contato</h5>'),
-            Row(
-                Column('phone', css_class='form-group col-md-6 mb-3'),
-                Column('whatsapp_number', css_class='form-group col-md-6 mb-3'),
-            ),
-            HTML('<h5 class="mb-3 mt-4">Foto de Perfil</h5>'),
-            Field('avatar', css_class='mb-3'),
-            Submit('submit', 'Salvar Alterações', css_class='btn btn-primary')
-        )
+
+        # Strip +55 prefix so only local digits are shown in the input
+        for field_name in ('phone', 'whatsapp_number'):
+            value = getattr(self.instance, field_name, '') or ''
+            if value.startswith('+55'):
+                value = value[3:]
+            self.fields[field_name].initial = value
+
+    def _normalize_phone(self, value):
+        """Strip spaces/dashes and ensure +55 prefix in E.164 format."""
+        if not value:
+            return value
+        # Remove anything except digits and leading +
+        digits = ''.join(c for c in value if c.isdigit())
+        if not digits:
+            return value
+        # If the user typed the full number with country code already
+        if value.lstrip().startswith('+55'):
+            return '+55' + digits[2:] if digits.startswith('55') else '+55' + digits
+        # Otherwise prepend +55
+        if digits.startswith('55') and len(digits) >= 12:
+            return '+' + digits
+        return '+55' + digits
+
+    def clean_phone(self):
+        value = self.cleaned_data.get('phone', '').strip()
+        if not value:
+            return value
+        return self._normalize_phone(value)
+
+    def clean_whatsapp_number(self):
+        value = self.cleaned_data.get('whatsapp_number', '').strip()
+        if not value:
+            return value
+        return self._normalize_phone(value)
     
     def save(self, commit=True):
         profile = super().save(commit=False)
