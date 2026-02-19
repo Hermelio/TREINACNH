@@ -507,6 +507,15 @@
             justify-content: center;
             color: white;
             font-size: 1rem;
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 2px solid rgba(255,255,255,0.4);
+        }
+        .user-avatar-small img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
         }
         
         .instructor-card {
@@ -662,7 +671,11 @@
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                                 <div class="user-avatar-small me-2">
-                                    <i class="bi bi-person-fill"></i>
+                                    {% if user.profile.avatar %}
+                                        <img src="{{ user.profile.avatar.url }}" alt="{{ user.first_name }}">
+                                    {% else %}
+                                        <i class="bi bi-person-fill"></i>
+                                    {% endif %}
                                 </div>
                                 {{ user.first_name|default:user.username }}
                             </a>
