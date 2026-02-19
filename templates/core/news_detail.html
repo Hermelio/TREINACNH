@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_meta %}
+<meta property="og:type" content="article">
+{% if news.image_url %}
+<meta property="og:image" content="{{ news.image_url }}">
+<meta name="twitter:image" content="{{ news.image_url }}">
+{% else %}
+<meta property="og:image" content="{% static 'images/og_instrutores.png' %}">
+<meta name="twitter:image" content="{% static 'images/og_instrutores.png' %}">
+{% endif %}
+<meta property="article:published_time" content="{{ news.published_date|date:'c' }}">
+<meta property="article:section" content="{{ news.get_category_display }}">
+<link rel="canonical" href="{{ request.build_absolute_uri }}">
+{% endblock %}
+
+{% block extra_schema %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "NewsArticle",
+  "headline": "{{ news.title|escapejs }}",
+  "description": "{{ news.summary|escapejs }}",
+  "datePublished": "{{ news.published_date|date:'c' }}",
+  "dateModified": "{{ news.updated_at|date:'c' }}",
+  "publisher": {
+    "@type": "Organization",
+    "name": "TreinaCNH",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "{% static 'images/favicon-32x32.png' %}"
+    }
+  },
+  {% if news.image_url %}
+  "image": "{{ news.image_url }}",
+  {% endif %}
+  "url": "{{ request.build_absolute_uri }}",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "{{ request.build_absolute_uri }}"
+  }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="bg-light border-bottom" style="padding-top: 6rem !important;">
+    <div class="container py-2">
+        <ol class="breadcrumb mb-0 small">
+            <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Início</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'core:news_list' %}">Notícias</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ news.title|truncatechars:50 }}</li>
+        </ol>
+    </div>
+</nav>
+
+<!-- Article -->
+<main class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <!-- Main article column -->
+            <article class="col-lg-8">
+
+                <!-- Category badge + date -->
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <span class="badge bg-primary fs-6 px-3 py-2">{{ news.get_category_display }}</span>
+                    <time class="text-muted small" datetime="{{ news.published_date|date:'c' }}">
+                        <i class="bi bi-calendar3 me-1"></i>
+                        {{ news.published_date|date:"d \d\e F \d\e Y" }}
+                    </time>
+                </div>
+
+                <!-- Headline -->
+                <h1 class="fw-bold mb-4" style="font-size: 2rem; line-height: 1.3;">{{ news.title }}</h1>
+
+                <!-- Featured image -->
+                {% if news.image_url %}
+                <div class="mb-4">
+                    <img src="{{ news.image_url }}"
+                         alt="{{ news.title }}"
+                         class="img-fluid rounded shadow-sm w-100"
+                         style="max-height: 420px; object-fit: cover;"
+                         loading="eager">
+                </div>
+                {% endif %}
+
+                <!-- Summary (lead paragraph) -->
+                {% if news.summary %}
+                <p class="lead text-muted border-start border-4 border-primary ps-3 mb-4">
+                    {{ news.summary }}
+                </p>
+                {% endif %}
+
+                <!-- Full content -->
+                {% if news.content %}
+                <div class="article-body lh-lg">
+                    {{ news.content|linebreaks }}
+                </div>
+                {% endif %}
+
+                <!-- Source attribution -->
+                <hr class="my-4">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <span class="text-muted small">
+                        <i class="bi bi-link-45deg me-1"></i>
+                        Fonte:
+                        {% if news.source_url %}
+                        <a href="{{ news.source_url }}" target="_blank" rel="noopener noreferrer nofollow"
+                           class="text-decoration-none">{{ news.source }}</a>
+                        {% else %}
+                        {{ news.source }}
+                        {% endif %}
+                    </span>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'core:news_list' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left me-1"></i>Todas as notícias
+                        </a>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Sidebar -->
+            <aside class="col-lg-4 mt-5 mt-lg-0">
+                {% if related_news %}
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        <i class="bi bi-newspaper me-2"></i>Notícias Relacionadas
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        {% for item in related_news %}
+                        <li class="list-group-item px-3 py-3">
+                            <a href="{% url 'core:news_detail' slug=item.slug %}"
+                               class="text-decoration-none text-dark d-block">
+                                <span class="fw-semibold lh-sm d-block mb-1" style="font-size: 0.92rem;">
+                                    {{ item.title|truncatechars:80 }}
+                                </span>
+                                <time class="text-muted" style="font-size: 0.8rem;">
+                                    {{ item.published_date|date:"d/m/Y" }}
+                                </time>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <!-- CTA box -->
+                <div class="card border-0 shadow-sm mt-4 bg-primary text-white">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-person-check fs-2 mb-2 d-block"></i>
+                        <h5 class="fw-bold">Encontre seu Instrutor</h5>
+                        <p class="small mb-3 opacity-75">
+                            Compare instrutores autônomos credenciados na sua cidade.
+                        </p>
+                        <a href="{% url 'core:home' %}" class="btn btn-light btn-sm fw-bold">
+                            Buscar Instrutor
+                        </a>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</main>
+{% endblock %}

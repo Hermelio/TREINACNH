@@ -5,6 +5,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Count, Q, OuterRef, Subquery
 from marketplace.models import State, City, InstructorProfile
 from .models import StaticPage, FAQEntry, HomeBanner, NewsArticle
+from .seo import get_page_seo, build_seo
 from django.http import HttpResponse
 from django.views.decorators.http import require_GET
 
@@ -212,7 +213,7 @@ def home_view(request):
         'total_cities': total_cities,
         'top_student_states': top_student_states,
         'banners': banners,
-        'page_title': 'Cadastre-se como Instrutor - TREINACNH',
+        **get_page_seo('core:home'),
         'is_instructor': request.user.is_authenticated and hasattr(request.user, 'instructor_profile'),
         'user_authenticated': request.user.is_authenticated,
         'faq_schema_json': faq_schema_json,
@@ -222,7 +223,7 @@ def home_view(request):
 
 def about_view(request):
     """About us page"""
-    context = {'page_title': 'Sobre Nós'}
+    context = get_page_seo('core:about')
     return render(request, 'core/about.html', context)
 
 
@@ -232,7 +233,7 @@ def contact_view(request):
         from django.contrib import messages
         messages.success(request, 'Mensagem enviada com sucesso! Responderemos em breve.')
     
-    context = {'page_title': 'Contato'}
+    context = get_page_seo('core:contact')
     return render(request, 'core/contact.html', context)
 
 
@@ -248,7 +249,7 @@ def faq_view(request):
     
     context = {
         'grouped_faqs': grouped_faqs,
-        'page_title': 'Perguntas Frequentes',
+        **get_page_seo('core:faq'),
     }
     return render(request, 'core/faq.html', context)
 
@@ -259,6 +260,7 @@ def static_page_view(request, slug):
     context = {
         'page': page,
         'page_title': page.title,
+        **build_seo(title=f'{page.title} | TreinaCNH'),
     }
     return render(request, 'core/static_page.html', context)
 
@@ -312,6 +314,7 @@ def news_list_view(request):
         'all_news': all_news,
         'categories': categories,
         'selected_category': category,
+        **get_page_seo('core:news_list'),
     }
     
     return render(request, 'core/news_list.html', context)
@@ -327,9 +330,15 @@ def news_detail_view(request, slug):
         is_active=True
     ).exclude(id=news.id)[:4]
     
+    # Dynamic SEO: title from article, description from summary
+    raw_desc = (news.summary or news.content or '').strip()
     context = {
         'news': news,
         'related_news': related_news,
+        **build_seo(
+            title=f'{news.title} | TreinaCNH',
+            description=raw_desc,
+        ),
     }
     
     return render(request, 'core/news_detail.html', context)

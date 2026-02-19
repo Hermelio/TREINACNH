@@ -32,26 +32,26 @@
             {% block extra_schema %}{% endblock %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="{{ meta_description|default:'Encontre instrutores de direção autônomos, aulas de direção particular e instrutores credenciados perto de você. Compare preços, veja avaliações e agende online.' }}">
+    <meta name="description" content="{{ seo_description|default:'Encontre instrutores de trânsito autônomos credenciados perto de você. Compare preços, veja avaliações e agende aulas de direção particular.' }}">
     <meta name="keywords" content="instrutor autônomo, instrutor de trânsito autônomo, aulas de direção particular, instrutor particular, encontrar instrutor de trânsito, instrutor credenciado, aulas práticas CNH, quanto custa aula de direção, instrutor de trânsito perto de mim, aulas de carro particular, instrutor de trânsito autônomo são paulo, quanto custa aula particular de direção, encontrar instrutor credenciado detran, plataforma para instrutores de trânsito, instrutor de trânsito sem autoescola">
     <meta name="author" content="TreinaCNH">
     <meta name="robots" content="index, follow">
-    <title>{% block title %}{{ page_title|default:"TreinaCNH" }}{% endblock %} | TreinaCNH</title>
+    <title>{% block title %}{{ seo_title|default:page_title|default:"TreinaCNH" }}{% endblock %}</title>
     <link rel="canonical" href="{{ request.build_absolute_uri|default:'' }}">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:locale" content="pt_BR">
     <meta property="og:site_name" content="TreinaCNH">
-    <meta property="og:title" content="{{ og_title|default:'TreinaCNH - Instrutor de Direção Autônomo' }}">
-    <meta property="og:description" content="{{ og_description|default:'Encontre instrutores de direção autônomos, aulas de direção particular e instrutores credenciados perto de você.' }}">
+    <meta property="og:title" content="{{ seo_title|default:page_title|default:'TreinaCNH - Instrutor de Direção Autônomo' }}">
+    <meta property="og:description" content="{{ seo_description|default:'Encontre instrutores de trânsito autônomos credenciados perto de você. Compare preços, veja avaliações e agende aulas de direção particular.' }}">
     <meta property="og:url" content="{{ request.build_absolute_uri|default:'' }}">
     <meta property="og:image" content="{% if og_image %}{{ og_image }}{% else %}{% static 'images/og_instrutores.png' %}{% endif %}">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ og_title|default:'TreinaCNH - Instrutor de Direção Autônomo' }}">
-    <meta name="twitter:description" content="{{ og_description|default:'Encontre instrutores de direção autônomos, aulas de direção particular e instrutores credenciados perto de você.' }}">
+    <meta name="twitter:title" content="{{ seo_title|default:page_title|default:'TreinaCNH - Instrutor de Direção Autônomo' }}">
+    <meta name="twitter:description" content="{{ seo_description|default:'Encontre instrutores de trânsito autônomos credenciados perto de você. Compare preços, veja avaliações e agende aulas de direção particular.' }}">
     <meta name="twitter:image" content="{% if og_image %}{{ og_image }}{% else %}{% static 'images/og_instrutores.png' %}{% endif %}">
 
     {% block extra_meta %}{% endblock %}

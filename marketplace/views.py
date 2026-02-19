@@ -9,6 +9,7 @@ from django.core.paginator import Paginator
 from django.views.decorators.http import require_http_methods
 from .models import State, City, InstructorProfile, Lead, CategoryCNH, StudentLead
 from .forms import InstructorProfileForm, LeadForm, InstructorSearchForm, StudentRegistrationForm
+from core.seo import build_seo
 
 
 def cities_list_view(request):
@@ -265,12 +266,24 @@ def instructor_detail_view(request, pk):
     # WhatsApp message
     whatsapp_link = instructor.get_whatsapp_link()
     
+    # Dynamic SEO: instructor name + city in title, bio as description
+    full_name = instructor.user.get_full_name()
+    city_name = instructor.city.name if instructor.city else ''
+    seo = build_seo(
+        title=f'Instrutor {full_name} em {city_name} | TreinaCNH',
+        description=(
+            instructor.bio
+            or f'Instrutor de trânsito autônomo credenciado em {city_name}. '
+               f'Aulas de direção particular. Veja avaliações e agende na TreinaCNH.'
+        ),
+    )
+
     context = {
         'instructor': instructor,
         'reviews': reviews,
         'avg_rating': avg_rating,
         'whatsapp_link': whatsapp_link,
-        'page_title': f'{instructor.user.get_full_name()} - Instrutor',
+        **seo,
     }
     return render(request, 'marketplace/instructor_detail.html', context)
 
