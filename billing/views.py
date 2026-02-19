@@ -193,7 +193,7 @@ def checkout_view(request, subscription_id):
                     "failure": f"{settings.SITE_URL}/planos/pagamento/falha/",
                     "pending": f"{settings.SITE_URL}/planos/pagamento/pendente/"
                 },
-                "auto_return": "approved",  # Retorna automaticamente após aprovação
+                # auto_return removido: MP nao aceita back_urls com porta nao padrao (ex: :8080)
                 "notification_url": f"{settings.SITE_URL}/webhook/mercadopago/",
                 "external_reference": f"subscription_{subscription.id}",
                 "statement_descriptor": "TREINACNH",
