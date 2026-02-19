@@ -48,6 +48,8 @@ def _post_webhook(client, payment_id=9999001):
         WEBHOOK_URL,
         data=json.dumps(mp_webhook_payload(payment_id)),
         content_type="application/json",
+        REMOTE_ADDR="127.0.0.1",
+        HTTP_X_FORWARDED_FOR="127.0.0.1",
     )
 
 
