@@ -104,14 +104,24 @@ def checkout_view(request, subscription_id):
         try:
             plan = Plan.objects.get(id=subscription_id)
             from datetime import date, timedelta
-            subscription = Subscription.objects.create(
+            # Check if already has an active subscription for this plan to avoid duplicates
+            existing = Subscription.objects.filter(
                 instructor=instructor_profile,
                 plan=plan,
-                status='ACTIVE',
-                start_date=date.today(),
-                end_date=date.today() + timedelta(days=30)
-            )
-            messages.success(request, f'Assinatura do {plan.name} criada! Complete o pagamento.')
+                status=SubscriptionStatusChoices.ACTIVE,
+            ).first()
+            if existing and existing.is_active:
+                subscription = existing
+                messages.info(request, f'Você já possui uma assinatura ativa do {plan.name}.')
+            else:
+                subscription = Subscription.objects.create(
+                    instructor=instructor_profile,
+                    plan=plan,
+                    status='ACTIVE',
+                    start_date=date.today(),
+                    end_date=date.today() + timedelta(days=30)
+                )
+                messages.success(request, f'Assinatura do {plan.name} criada! Complete o pagamento.')
         except Plan.DoesNotExist:
             messages.error(request, 'Plano não encontrado.')
             return redirect('billing:plans')
@@ -179,9 +189,9 @@ def checkout_view(request, subscription_id):
                     "default_installments": 1
                 },
                 "back_urls": {
-                    "success": f"{settings.SITE_URL}/billing/pagamento/sucesso/",
-                    "failure": f"{settings.SITE_URL}/billing/pagamento/falha/",
-                    "pending": f"{settings.SITE_URL}/billing/pagamento/pendente/"
+                    "success": f"{settings.SITE_URL}/planos/pagamento/sucesso/",
+                    "failure": f"{settings.SITE_URL}/planos/pagamento/falha/",
+                    "pending": f"{settings.SITE_URL}/planos/pagamento/pendente/"
                 },
                 "auto_return": "approved",  # Retorna automaticamente após aprovação
                 "notification_url": f"{settings.SITE_URL}/webhook/mercadopago/",
