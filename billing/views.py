@@ -399,8 +399,51 @@ def mercadopago_webhook(request):
 
 @login_required
 def payment_success_view(request):
-    """Payment success page"""
-    messages.success(request, 'Pagamento realizado com sucesso! Sua assinatura foi renovada.')
+    """Payment success page - processes MP return URL params to confirm payment immediately"""
+    # MP sends these GET params on return: payment_id, status, external_reference, etc.
+    mp_payment_id = request.GET.get('payment_id') or request.GET.get('collection_id')
+    mp_status = request.GET.get('status') or request.GET.get('collection_status')
+    external_reference = request.GET.get('external_reference', '')
+
+    if mp_payment_id and mp_status == 'approved' and external_reference.startswith('subscription_'):
+        try:
+            subscription_id = external_reference.replace('subscription_', '')
+            subscription = Subscription.objects.get(
+                id=subscription_id,
+                instructor__user=request.user
+            )
+
+            # Update or create payment with approved status
+            payment, created = Payment.objects.update_or_create(
+                external_id=str(mp_payment_id),
+                defaults={
+                    'subscription': subscription,
+                    'amount': subscription.plan.price_monthly,
+                    'status': PaymentStatusChoices.APPROVED,
+                    'paid_at': timezone.now(),
+                    'payment_method': PaymentMethodChoices.PIX,
+                }
+            )
+
+            # Extend subscription
+            from datetime import timedelta
+            if subscription.end_date and subscription.end_date >= timezone.now().date():
+                subscription.end_date = subscription.end_date + timedelta(days=30)
+            else:
+                subscription.end_date = timezone.now().date() + timedelta(days=30)
+            subscription.status = SubscriptionStatusChoices.ACTIVE
+            subscription.save()
+
+            logger.info(f"Payment {mp_payment_id} confirmed via back_url for subscription {subscription.id}")
+            messages.success(request, f'🎉 Pagamento aprovado! Assinatura do {subscription.plan.name} renovada até {subscription.end_date.strftime("%d/%m/%Y")}.')
+        except Exception as e:
+            logger.error(f"Error processing success return from MP: {str(e)}")
+            messages.success(request, 'Pagamento realizado com sucesso! Sua assinatura foi renovada.')
+    elif mp_status == 'pending':
+        messages.info(request, 'Pagamento pendente de confirmação. Você receberá uma atualização em breve.')
+    else:
+        messages.success(request, 'Pagamento realizado! Sua assinatura será ativada em instantes.')
+
     return redirect('billing:my_subscription')
 
 
