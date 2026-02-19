@@ -44,7 +44,7 @@ class InstructorSitemap(Sitemap):
 
     def items(self):
         return InstructorProfile.objects.filter(
-            is_active=True,
+            is_visible=True,
             latitude__isnull=False,
             longitude__isnull=False
         )
