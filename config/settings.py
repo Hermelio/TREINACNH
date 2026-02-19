@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'django.contrib.sites',  # Required for allauth
+    'django.contrib.sitemaps',
     
     # Third-party
     'crispy_forms',
