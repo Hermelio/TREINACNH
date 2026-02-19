@@ -161,6 +161,9 @@ SITE_URL = config('SITE_URL', default='http://localhost:8000')
 # Mercado Pago Configuration
 MERCADOPAGO_PUBLIC_KEY = config('MERCADOPAGO_PUBLIC_KEY', default='')
 MERCADOPAGO_ACCESS_TOKEN = config('MERCADOPAGO_ACCESS_TOKEN', default='')
+# ID do collector (recebedor) da conta MP - usado para validar webhooks
+# Encontre em: curl https://api.mercadopago.com/users/me -H "Authorization: Bearer SEU_TOKEN"
+MERCADOPAGO_COLLECTOR_ID = config('MERCADOPAGO_COLLECTOR_ID', default='')
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

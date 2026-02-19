@@ -260,45 +260,69 @@ def mercadopago_webhook(request):
         # Parse webhook data
         data = json.loads(request.body)
         logger.info(f"Webhook received: {data}")
-        
+
         # Check notification type
         if data.get('type') == 'payment':
             payment_id = data.get('data', {}).get('id')
-            
+
             if not payment_id:
                 logger.warning("No payment ID in webhook")
                 return HttpResponse(status=400)
-            
-            # Check for duplicate processing (idempotency)
+
+            # -------------------------------------------------------
+            # IDEMPOTÊNCIA: ignorar se já aprovado (evita reprocessamento)
+            # -------------------------------------------------------
             existing_payment = Payment.objects.filter(external_id=str(payment_id)).first()
             if existing_payment and existing_payment.status == PaymentStatusChoices.APPROVED:
                 logger.info(f"Payment {payment_id} already processed and approved - skipping")
                 return HttpResponse(status=200)
-            
+
             # Get payment details from Mercado Pago
             try:
                 sdk = mercadopago.SDK(settings.MERCADOPAGO_ACCESS_TOKEN)
                 payment_info = sdk.payment().get(payment_id)
-                
+
                 if payment_info.get("status") != 200:
                     logger.error(f"Failed to get payment from MP: {payment_info}")
                     return HttpResponse(status=500)
-                
+
                 payment_data = payment_info["response"]
-                logger.info(f"Payment data retrieved: ID={payment_id}, Status={payment_data.get('status')}")
-                
+                logger.info(f"Payment data retrieved: ID={payment_id}, Status={payment_data.get('status')}, Detail={payment_data.get('status_detail')}")
+
             except Exception as e:
                 logger.error(f"Error fetching payment from Mercado Pago: {str(e)}")
                 return HttpResponse(status=500)
-            
+
+            # -------------------------------------------------------
+            # VALIDAÇÃO 1: live_mode deve bater com o ambiente configurado
+            # Em produção, rejeitar pagamentos de teste (live_mode=False)
+            # -------------------------------------------------------
+            is_production = not settings.DEBUG
+            payment_live_mode = payment_data.get('live_mode', False)
+            if is_production and not payment_live_mode:
+                logger.warning(f"Rejected test payment {payment_id} in production environment")
+                return HttpResponse(status=200)  # 200 para MP não retentar
+            if not is_production and payment_live_mode:
+                logger.warning(f"Rejected live payment {payment_id} in test/development environment")
+                return HttpResponse(status=200)
+
+            # -------------------------------------------------------
+            # VALIDAÇÃO 2: collector_id deve ser nossa conta MP
+            # -------------------------------------------------------
+            expected_collector_id = getattr(settings, 'MERCADOPAGO_COLLECTOR_ID', None)
+            actual_collector_id = payment_data.get('collector_id')
+            if expected_collector_id and str(actual_collector_id) != str(expected_collector_id):
+                logger.error(f"collector_id mismatch: expected {expected_collector_id}, got {actual_collector_id} for payment {payment_id}")
+                return HttpResponse(status=200)
+
             # Get subscription from external_reference
             external_ref = payment_data.get('external_reference', '')
             if not external_ref or not external_ref.startswith('subscription_'):
                 logger.warning(f"Invalid external reference: {external_ref}")
                 return HttpResponse(status=200)
-            
+
             subscription_id = external_ref.replace('subscription_', '')
-            
+
             try:
                 subscription = Subscription.objects.select_related('instructor', 'plan').get(id=subscription_id)
             except Subscription.DoesNotExist:
@@ -307,7 +331,20 @@ def mercadopago_webhook(request):
             except ValueError:
                 logger.error(f"Invalid subscription ID format: {subscription_id}")
                 return HttpResponse(status=400)
-            
+
+            # -------------------------------------------------------
+            # VALIDAÇÃO 3: valor pago deve ser >= preço do plano
+            # -------------------------------------------------------
+            transaction_amount = float(payment_data.get('transaction_amount', 0))
+            expected_amount = float(subscription.plan.price_monthly)
+            if transaction_amount < expected_amount:
+                logger.error(
+                    f"Amount mismatch for payment {payment_id}: "
+                    f"received R${transaction_amount:.2f}, expected R${expected_amount:.2f} "
+                    f"for plan '{subscription.plan.name}'"
+                )
+                return HttpResponse(status=200)  # 200 para MP não retentar
+
             # Map MP payment method to our enum
             mp_method = payment_data.get('payment_method_id', 'unknown').upper()
             if 'PIX' in mp_method:
@@ -320,74 +357,80 @@ def mercadopago_webhook(request):
                 payment_method = PaymentMethodChoices.DEBIT_CARD
             else:
                 payment_method = mp_method[:20]  # Fallback
-            
-            # Map MP status to our enum
-            mp_status = payment_data.get('status', 'pending').upper()
+
+            # -------------------------------------------------------
+            # VALIDAÇÃO 4: status + status_detail para aprovação real
+            # Apenas status=approved E status_detail=accredited ativa assinatura
+            # -------------------------------------------------------
+            mp_status = payment_data.get('status', 'pending')
+            mp_status_detail = payment_data.get('status_detail', '')
+
+            is_truly_approved = (
+                mp_status == 'approved' and
+                mp_status_detail in ('accredited', 'partially_refunded')  # accredited = pago e creditado
+            )
+
             status_map = {
-                'PENDING': PaymentStatusChoices.PENDING,
-                'APPROVED': PaymentStatusChoices.APPROVED,
-                'AUTHORIZED': PaymentStatusChoices.APPROVED,
-                'IN_PROCESS': PaymentStatusChoices.PENDING,
-                'IN_MEDIATION': PaymentStatusChoices.PENDING,
-                'REJECTED': PaymentStatusChoices.REJECTED,
-                'CANCELLED': PaymentStatusChoices.CANCELLED,
-                'REFUNDED': PaymentStatusChoices.REFUNDED,
-                'CHARGED_BACK': PaymentStatusChoices.REFUNDED,
+                'pending': PaymentStatusChoices.PENDING,
+                'approved': PaymentStatusChoices.APPROVED,
+                'authorized': PaymentStatusChoices.APPROVED,
+                'in_process': PaymentStatusChoices.PENDING,
+                'in_mediation': PaymentStatusChoices.PENDING,
+                'rejected': PaymentStatusChoices.REJECTED,
+                'cancelled': PaymentStatusChoices.CANCELLED,
+                'refunded': PaymentStatusChoices.REFUNDED,
+                'charged_back': PaymentStatusChoices.REFUNDED,
             }
             payment_status = status_map.get(mp_status, PaymentStatusChoices.PENDING)
-            
+
             # Update or create payment record
             payment, created = Payment.objects.update_or_create(
                 external_id=str(payment_id),
                 defaults={
                     'subscription': subscription,
-                    'amount': payment_data.get('transaction_amount', 0),
+                    'amount': transaction_amount,
                     'payment_method': payment_method,
                     'status': payment_status,
                     'payment_details': payment_data,
-                    'paid_at': timezone.now() if payment_status == PaymentStatusChoices.APPROVED else None
+                    'paid_at': timezone.now() if is_truly_approved else None,
                 }
             )
-            
+
             action = "Created" if created else "Updated"
-            logger.info(f"{action} payment {payment.id}: {payment_status} for subscription {subscription.id}")
-            
-            # If approved, extend subscription
-            if payment_status == PaymentStatusChoices.APPROVED:
+            logger.info(f"{action} payment {payment.id}: status={mp_status} detail={mp_status_detail} for subscription {subscription.id}")
+
+            # Activate/extend subscription only when truly approved + accredited
+            if is_truly_approved:
                 old_end_date = subscription.end_date
-                
+
                 if subscription.end_date and subscription.end_date >= timezone.now().date():
-                    # Extend from current end date if still valid
                     new_end_date = subscription.end_date + timedelta(days=30)
                 else:
-                    # Start from today if expired or no end date
                     new_end_date = timezone.now().date() + timedelta(days=30)
-                
+
                 subscription.end_date = new_end_date
                 subscription.status = SubscriptionStatusChoices.ACTIVE
                 subscription.save()
-                
+
                 logger.info(f"Subscription {subscription.id} extended: {old_end_date} -> {new_end_date}")
-                
+
                 # TODO: Send confirmation email
                 try:
                     # send_payment_confirmation_email(subscription, payment)
                     pass
                 except Exception as email_error:
                     logger.error(f"Failed to send confirmation email: {email_error}")
-            
-            # Handle rejected payments
+
             elif payment_status == PaymentStatusChoices.REJECTED:
-                logger.warning(f"Payment {payment_id} rejected for subscription {subscription.id}")
-                # TODO: Send rejection notification
-                # send_payment_rejection_email(subscription, payment)
-            
+                logger.warning(f"Payment {payment_id} rejected (detail={mp_status_detail}) for subscription {subscription.id}")
+                # TODO: send_payment_rejection_email(subscription, payment)
+
             return HttpResponse(status=200)
-        
+
         # Handle other notification types
         logger.info(f"Unhandled notification type: {data.get('type')}")
         return HttpResponse(status=200)
-        
+
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON in webhook: {str(e)}")
         return HttpResponse(status=400)
@@ -413,32 +456,57 @@ def payment_success_view(request):
                 instructor__user=request.user
             )
 
-            # Update or create payment with approved status
-            payment, created = Payment.objects.update_or_create(
+            # Idempotência: se o webhook já processou e aprovou, não duplicar
+            already_approved = Payment.objects.filter(
                 external_id=str(mp_payment_id),
-                defaults={
-                    'subscription': subscription,
-                    'amount': subscription.plan.price_monthly,
-                    'status': PaymentStatusChoices.APPROVED,
-                    'paid_at': timezone.now(),
-                    'payment_method': PaymentMethodChoices.PIX,
-                }
-            )
+                status=PaymentStatusChoices.APPROVED
+            ).exists()
 
-            # Extend subscription
-            from datetime import timedelta
-            if subscription.end_date and subscription.end_date >= timezone.now().date():
-                subscription.end_date = subscription.end_date + timedelta(days=30)
-            else:
-                subscription.end_date = timezone.now().date() + timedelta(days=30)
-            subscription.status = SubscriptionStatusChoices.ACTIVE
-            subscription.save()
+            if not already_approved:
+                # Verificar via API do MP se o status_detail é realmente 'accredited'
+                try:
+                    sdk = mercadopago.SDK(settings.MERCADOPAGO_ACCESS_TOKEN)
+                    payment_info = sdk.payment().get(mp_payment_id)
+                    if payment_info.get('status') == 200:
+                        pd = payment_info['response']
+                        mp_status_detail = pd.get('status_detail', '')
+                        transaction_amount = float(pd.get('transaction_amount', 0))
+                        expected_amount = float(subscription.plan.price_monthly)
+                        is_truly_approved = (
+                            pd.get('status') == 'approved' and
+                            mp_status_detail in ('accredited', 'partially_refunded') and
+                            transaction_amount >= expected_amount
+                        )
+                    else:
+                        is_truly_approved = False
+                except Exception:
+                    # Se não conseguir validar via API, confia no parâmetro da URL
+                    is_truly_approved = True
 
-            logger.info(f"Payment {mp_payment_id} confirmed via back_url for subscription {subscription.id}")
+                if is_truly_approved:
+                    Payment.objects.update_or_create(
+                        external_id=str(mp_payment_id),
+                        defaults={
+                            'subscription': subscription,
+                            'amount': subscription.plan.price_monthly,
+                            'status': PaymentStatusChoices.APPROVED,
+                            'paid_at': timezone.now(),
+                            'payment_method': PaymentMethodChoices.CREDIT_CARD,
+                        }
+                    )
+                    from datetime import timedelta
+                    if subscription.end_date and subscription.end_date >= timezone.now().date():
+                        subscription.end_date = subscription.end_date + timedelta(days=30)
+                    else:
+                        subscription.end_date = timezone.now().date() + timedelta(days=30)
+                    subscription.status = SubscriptionStatusChoices.ACTIVE
+                    subscription.save()
+                    logger.info(f"Payment {mp_payment_id} confirmed via back_url for subscription {subscription.id}")
+
             messages.success(request, f'🎉 Pagamento aprovado! Assinatura do {subscription.plan.name} renovada até {subscription.end_date.strftime("%d/%m/%Y")}.')
         except Exception as e:
             logger.error(f"Error processing success return from MP: {str(e)}")
-            messages.success(request, 'Pagamento realizado com sucesso! Sua assinatura foi renovada.')
+            messages.success(request, 'Pagamento realizado com sucesso! Sua assinatura será ativada em instantes.')
     elif mp_status == 'pending':
         messages.info(request, 'Pagamento pendente de confirmação. Você receberá uma atualização em breve.')
     else:
