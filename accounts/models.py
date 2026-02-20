@@ -95,7 +95,7 @@ class Profile(models.Model):
 
     is_profile_complete = models.BooleanField(
         'Cadastro Completo',
-        default=True,
+        default=False,
         help_text='Usuário informou se é aluno ou instrutor. False para novos usuários via Google.'
     )
 

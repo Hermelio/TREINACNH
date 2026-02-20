@@ -25,6 +25,7 @@
           <!-- Form -->
           <form method="post" id="complete-profile-form">
             {% csrf_token %}
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
             <div class="row g-3 mb-4">
 

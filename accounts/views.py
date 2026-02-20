@@ -26,14 +26,19 @@ def register_view(request):
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            
+
+            # Registration form already captured role — mark profile complete
+            user.profile.is_profile_complete = True
+
             # Process instructor extra fields if provided
             if user.profile.is_instructor:
                 whatsapp = request.POST.get('whatsapp', '').strip()
                 if whatsapp:
                     user.profile.whatsapp_number = whatsapp
-                    user.profile.save()
-            
+
+            # Always persist profile changes made above
+            user.profile.save()
+
             # Auto login after registration
             login(request, user)
             
@@ -129,11 +134,26 @@ def complete_profile_view(request):
     """
     Shown after Google login. User must choose: Aluno or Instrutor.
     Marks profile as complete and redirects appropriately.
+    Supports ?next= for post-completion redirect to safe internal URLs.
     """
+    from django.utils.http import url_has_allowed_host_and_scheme
+
     profile = request.user.profile
 
     if profile.is_profile_complete:
         return redirect('accounts:dashboard')
+
+    # Preserve ?next across GET and POST
+    next_url = request.POST.get('next') or request.GET.get('next', '')
+    next_url_safe = (
+        url_has_allowed_host_and_scheme(
+            url=next_url,
+            allowed_hosts=request.get_host(),
+            require_https=request.is_secure(),
+        )
+        if next_url
+        else False
+    )
 
     if request.method == 'POST':
         form = CompleteProfileForm(request.POST)
@@ -142,6 +162,9 @@ def complete_profile_view(request):
             profile.role = role
             profile.is_profile_complete = True
             profile.save()
+
+            if next_url_safe:
+                return redirect(next_url)
 
             if role == RoleChoices.INSTRUCTOR:
                 messages.success(
@@ -163,6 +186,7 @@ def complete_profile_view(request):
     return render(request, 'accounts/complete_profile.html', {
         'form': form,
         'user': request.user,
+        'next': next_url,
         'seo_title': 'Complete seu Cadastro | TreinaCNH',
     })
 
