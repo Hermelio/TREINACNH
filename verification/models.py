@@ -251,3 +251,15 @@ class AuditLog(models.Model):
             metadata=metadata or {},
             ip_address=ip_address
         )
+
+
+class PendingDocument(InstructorDocument):
+    """
+    Proxy model used exclusively for the admin approval queue.
+    Shows only PENDING documents — no new DB table needed.
+    """
+    class Meta:
+        proxy = True
+        verbose_name = '⏳ Documento Pendente'
+        verbose_name_plural = '⏳ Fila de Aprovação'
+        ordering = ['uploaded_at']
