@@ -25,9 +25,29 @@ def document_upload_view(request):
         messages.error(request, 'Complete seu perfil de instrutor primeiro.')
         return redirect('marketplace:instructor_profile_edit')
     
+    # Build map of already-submitted docs for context
+    existing_docs = {
+        d.doc_type: d
+        for d in InstructorDocument.objects.filter(instructor=instructor_profile)
+    }
+
     if request.method == 'POST':
         form = DocumentUploadForm(request.POST, request.FILES)
         if form.is_valid():
+            doc_type = form.cleaned_data['doc_type']
+
+            # Block re-submission if there is already a PENDING or APPROVED doc of this type
+            existing = existing_docs.get(doc_type)
+            if existing and existing.status in ('PENDING', 'APPROVED'):
+                status_label = existing.get_status_display()
+                messages.warning(
+                    request,
+                    f'Você já possui um documento "{existing.get_doc_type_display()}" '
+                    f'com status "{status_label}". '
+                    f'Aguarde a análise ou entre em contato para substituí-lo.'
+                )
+                return redirect('verification:my_documents')
+
             document = form.save(commit=False)
             document.instructor = instructor_profile
             document.save()
@@ -102,8 +122,19 @@ def document_upload_view(request):
             messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
         form = DocumentUploadForm()
-    
-    return render(request, 'verification/document_upload.html', {'form': form})
+
+    # Determine which types are still uploadable (missing or rejected)
+    def _can_upload(dt):
+        doc = existing_docs.get(dt)
+        return doc is None or doc.status == 'REJECTED'
+
+    context = {
+        'form': form,
+        'existing_docs': existing_docs,
+        'can_upload_cnh': _can_upload(DocumentTypeChoices.CNH),
+        'can_upload_cert': _can_upload(DocumentTypeChoices.CERT_INSTRUTOR),
+    }
+    return render(request, 'verification/document_upload.html', context)
 
 
 @login_required
@@ -115,12 +146,27 @@ def my_documents_view(request):
     
     try:
         instructor_profile = InstructorProfile.objects.get(user=request.user)
-        documents = InstructorDocument.objects.filter(instructor=instructor_profile).order_by('-uploaded_at')
+        documents = InstructorDocument.objects.filter(
+            instructor=instructor_profile
+        ).order_by('-uploaded_at')
     except InstructorProfile.DoesNotExist:
         documents = []
-    
+        instructor_profile = None
+
+    docs_by_type = {d.doc_type: d for d in documents}
+    cnh_doc  = docs_by_type.get(DocumentTypeChoices.CNH)
+    cert_doc = docs_by_type.get(DocumentTypeChoices.CERT_INSTRUTOR)
+
+    def _can_upload(doc):
+        return doc is None or doc.status == 'REJECTED'
+
     context = {
         'documents': documents,
+        'cnh_doc':   cnh_doc,
+        'cert_doc':  cert_doc,
+        'can_upload_cnh':  _can_upload(cnh_doc),
+        'can_upload_cert': _can_upload(cert_doc),
+        'is_verified': instructor_profile.is_verified if instructor_profile else False,
         'page_title': 'Meus Documentos',
     }
     return render(request, 'verification/my_documents.html', context)

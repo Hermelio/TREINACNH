@@ -1,89 +1,219 @@
-{% extends 'base.html' %}
-{% load crispy_forms_tags %}
+﻿{% extends 'base.html' %}
+{% block title %}Meus Documentos | TreinaCNH{% endblock %}
 
 {% block content %}
 <div class="container py-5">
-    <h1 class="mb-4"><i class="bi bi-file-earmark-check me-2"></i>Meus Documentos</h1>
-    
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Documentos Enviados</h5>
-                </div>
-                <div class="card-body">
-                    {% if documents %}
-                        <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Tipo</th>
-                                        <th>Status</th>
-                                        <th>Enviado em</th>
-                                        <th>Observações</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for doc in documents %}
-                                        <tr>
-                                            <td>{{ doc.get_doc_type_display }}</td>
-                                            <td>
-                                                {% if doc.status == 'PENDING' %}
-                                                    <span class="badge bg-warning">Pendente</span>
-                                                {% elif doc.status == 'APPROVED' %}
-                                                    <span class="badge bg-success">Aprovado</span>
-                                                {% else %}
-                                                    <span class="badge bg-danger">Rejeitado</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>{{ doc.uploaded_at|date:"d/m/Y H:i" }}</td>
-                                            <td>{{ doc.notes|default:"-" }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <p class="text-muted mb-0">Nenhum documento enviado ainda.</p>
-                    {% endif %}
-                </div>
+
+  {# Page heading #}
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <h2 class="mb-0"><i class="bi bi-file-earmark-check me-2 text-primary"></i>Meus Documentos</h2>
+    {% if is_verified %}
+      <span class="badge bg-success fs-6 px-3 py-2">&#x2705; Instrutor Verificado</span>
+    {% else %}
+      <a href="{% url 'verification:document_upload' %}" class="btn btn-primary">
+        <i class="bi bi-cloud-upload-fill me-1"></i>Enviar Documento
+      </a>
+    {% endif %}
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {# Progress cards #}
+  <div class="row g-3 mb-4">
+
+    {# CNH card #}
+    <div class="col-sm-6 col-lg-4">
+      {% if cnh_doc %}
+        <div class="card h-100 border-0 shadow-sm border-start border-4
+          {% if cnh_doc.status == 'APPROVED' %}border-success{% elif cnh_doc.status == 'PENDING' %}border-warning{% else %}border-danger{% endif %}">
+      {% else %}
+        <div class="card h-100 border-0 shadow-sm border-start border-4 border-secondary">
+      {% endif %}
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="fw-semibold">CNH</span>
+              {% if cnh_doc %}
+                <span class="badge
+                  {% if cnh_doc.status == 'APPROVED' %}bg-success
+                  {% elif cnh_doc.status == 'PENDING' %}bg-warning text-dark
+                  {% else %}bg-danger{% endif %}">
+                  {{ cnh_doc.get_status_display }}
+                </span>
+              {% else %}
+                <span class="badge bg-secondary">Nao enviado</span>
+              {% endif %}
             </div>
-            
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Enviar Novo Documento</h5>
+            <div class="small text-muted mb-2">Carteira Nacional de Habilitacao</div>
+            {% if cnh_doc %}
+              <div class="small text-muted">Enviado em {{ cnh_doc.uploaded_at|date:"d/m/Y" }}</div>
+              {% if cnh_doc.status == 'REJECTED' and cnh_doc.notes %}
+                <div class="alert alert-danger py-1 px-2 small mt-2 mb-2">
+                  <strong>Motivo:</strong> {{ cnh_doc.notes }}
                 </div>
-                <div class="card-body">
-                    <a href="{% url 'verification:document_upload' %}" class="btn btn-primary">
-                        <i class="bi bi-cloud-upload-fill me-2"></i>Enviar Documento
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Documentos Necessários</h5>
-                    <ul class="list-unstyled">
-                        <li class="mb-2">
-                            <i class="bi bi-check-circle-fill text-success me-2"></i>CNH
-                        </li>
-                        <li class="mb-2">
-                            <i class="bi bi-check-circle-fill text-success me-2"></i>Certificado de Instrutor
-                        </li>
-                        <li class="mb-2">
-                            <i class="bi bi-circle text-muted me-2"></i>Documento do Veículo (opcional)
-                        </li>
-                    </ul>
-                    <hr>
-                    <p class="small text-muted mb-0">
-                        <i class="bi bi-info-circle me-1"></i>
-                        Todos os documentos são analisados pela nossa equipe em até 48h.
-                    </p>
-                </div>
-            </div>
+              {% endif %}
+              {% if can_upload_cnh %}
+                <a href="{% url 'verification:document_upload' %}" class="btn btn-sm btn-outline-danger mt-2">
+                  <i class="bi bi-arrow-clockwise me-1"></i>Reenviar
+                </a>
+              {% endif %}
+            {% else %}
+              <a href="{% url 'verification:document_upload' %}" class="btn btn-sm btn-outline-primary mt-2">
+                <i class="bi bi-upload me-1"></i>Enviar agora
+              </a>
+            {% endif %}
+          </div>
         </div>
     </div>
+
+    {# Certificado card #}
+    <div class="col-sm-6 col-lg-4">
+      {% if cert_doc %}
+        <div class="card h-100 border-0 shadow-sm border-start border-4
+          {% if cert_doc.status == 'APPROVED' %}border-success{% elif cert_doc.status == 'PENDING' %}border-warning{% else %}border-danger{% endif %}">
+      {% else %}
+        <div class="card h-100 border-0 shadow-sm border-start border-4 border-secondary">
+      {% endif %}
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="fw-semibold">Certificado</span>
+              {% if cert_doc %}
+                <span class="badge
+                  {% if cert_doc.status == 'APPROVED' %}bg-success
+                  {% elif cert_doc.status == 'PENDING' %}bg-warning text-dark
+                  {% else %}bg-danger{% endif %}">
+                  {{ cert_doc.get_status_display }}
+                </span>
+              {% else %}
+                <span class="badge bg-secondary">Nao enviado</span>
+              {% endif %}
+            </div>
+            <div class="small text-muted mb-2">Certificado de Instrutor</div>
+            {% if cert_doc %}
+              <div class="small text-muted">Enviado em {{ cert_doc.uploaded_at|date:"d/m/Y" }}</div>
+              {% if cert_doc.status == 'REJECTED' and cert_doc.notes %}
+                <div class="alert alert-danger py-1 px-2 small mt-2 mb-2">
+                  <strong>Motivo:</strong> {{ cert_doc.notes }}
+                </div>
+              {% endif %}
+              {% if can_upload_cert %}
+                <a href="{% url 'verification:document_upload' %}" class="btn btn-sm btn-outline-danger mt-2">
+                  <i class="bi bi-arrow-clockwise me-1"></i>Reenviar
+                </a>
+              {% endif %}
+            {% else %}
+              <a href="{% url 'verification:document_upload' %}" class="btn btn-sm btn-outline-primary mt-2">
+                <i class="bi bi-upload me-1"></i>Enviar agora
+              </a>
+            {% endif %}
+          </div>
+        </div>
+    </div>
+
+    {# Info / tip card #}
+    <div class="col-sm-12 col-lg-4">
+      <div class="card h-100 border-0 shadow-sm bg-light">
+        <div class="card-body small">
+          <p class="fw-semibold mb-2"><i class="bi bi-info-circle-fill text-primary me-1"></i>Como funciona</p>
+          <ol class="ps-3 mb-0">
+            <li>Envie a CNH e o Certificado de Instrutor</li>
+            <li>Nossa equipe analisa em ate <strong>3 dias uteis</strong></li>
+            <li>Voce recebe o <strong>selo de verificado</strong> no seu perfil</li>
+          </ol>
+          {% if not is_verified %}
+          <hr class="my-2">
+          <p class="mb-0">
+            {% if not cnh_doc or cnh_doc.status == 'REJECTED' %}
+              <span class="text-danger"><i class="bi bi-x-circle me-1"></i>CNH pendente</span><br>
+            {% elif cnh_doc.status == 'PENDING' %}
+              <span class="text-warning"><i class="bi bi-hourglass-split me-1"></i>CNH em analise</span><br>
+            {% else %}
+              <span class="text-success"><i class="bi bi-check-circle me-1"></i>CNH aprovada</span><br>
+            {% endif %}
+            {% if not cert_doc or cert_doc.status == 'REJECTED' %}
+              <span class="text-danger"><i class="bi bi-x-circle me-1"></i>Certificado pendente</span>
+            {% elif cert_doc.status == 'PENDING' %}
+              <span class="text-warning"><i class="bi bi-hourglass-split me-1"></i>Certificado em analise</span>
+            {% else %}
+              <span class="text-success"><i class="bi bi-check-circle me-1"></i>Certificado aprovado</span>
+            {% endif %}
+          </p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>{# /row #}
+
+  {# History table #}
+  <div class="card shadow-sm border-0">
+    <div class="card-header fw-semibold">
+      <i class="bi bi-clock-history me-1"></i>Historico de Envios
+    </div>
+    <div class="card-body p-0">
+      {% if documents %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Tipo</th>
+                <th>Status</th>
+                <th>Enviado em</th>
+                <th>Selfie</th>
+                <th>Observacoes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for doc in documents %}
+              <tr>
+                <td>{{ doc.get_doc_type_display }}</td>
+                <td>
+                  <span class="badge
+                    {% if doc.status == 'APPROVED' %}bg-success
+                    {% elif doc.status == 'PENDING' %}bg-warning text-dark
+                    {% else %}bg-danger{% endif %}">
+                    {{ doc.get_status_display }}
+                  </span>
+                </td>
+                <td>{{ doc.uploaded_at|date:"d/m/Y H:i" }}</td>
+                <td>
+                  {% if doc.selfie %}
+                    <i class="bi bi-check-circle-fill text-success" title="Selfie enviada"></i>
+                  {% else %}
+                    <i class="bi bi-dash text-muted"></i>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if doc.status == 'REJECTED' and doc.notes %}
+                    <span class="text-danger small">{{ doc.notes }}</span>
+                  {% else %}
+                    <span class="text-muted small">{{ doc.notes|default:"-" }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="p-4 text-center text-muted">
+          <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+          Nenhum documento enviado ainda.
+          <div class="mt-3">
+            <a href="{% url 'verification:document_upload' %}" class="btn btn-primary btn-sm">
+              <i class="bi bi-cloud-upload-fill me-1"></i>Enviar primeiro documento
+            </a>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
 </div>
 {% endblock %}

@@ -2,33 +2,47 @@
 Forms for verification app.
 """
 from django import forms
-from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Submit, Field, HTML
 from .models import InstructorDocument
 
 
 class DocumentUploadForm(forms.ModelForm):
-    """Form for instructors to upload documents"""
-    
+    """Formulário para instrutores enviarem documentos e selfie."""
+
     class Meta:
         model = InstructorDocument
-        fields = ['doc_type', 'file']
+        fields = ['doc_type', 'file', 'selfie']
         widgets = {
             'doc_type': forms.Select(attrs={'class': 'form-select'}),
-            'file': forms.FileInput(attrs={'class': 'form-control', 'accept': '.pdf,.jpg,.jpeg,.png'}),
+            'file': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': '.pdf,.jpg,.jpeg,.png',
+            }),
+            'selfie': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': '.jpg,.jpeg,.png',
+            }),
         }
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_method = 'post'
-        self.helper.form_enctype = 'multipart/form-data'
-        self.helper.layout = Layout(
-            HTML('<p class="text-muted mb-3">Envie seus documentos para verificação. Arquivos aceitos: PDF, JPG, PNG (máximo 10MB).</p>'),
-            Field('doc_type', css_class='mb-3'),
-            Field('file', css_class='mb-3'),
-            Submit('submit', 'Enviar Documento', css_class='btn btn-primary')
-        )
+        labels = {
+            'doc_type': 'Tipo de documento',
+            'file':     'Arquivo do documento (PDF ou imagem)',
+            'selfie':   'Selfie segurando o documento (opcional)',
+        }
+        help_texts = {
+            'file':   'Formatos aceitos: PDF, JPG, PNG. Tamanho máximo: 10 MB.',
+            'selfie': 'Foto do seu rosto segurando o documento — acelera a aprovação.',
+        }
+
+    def clean_file(self):
+        f = self.cleaned_data.get('file')
+        if f and f.size > 10 * 1024 * 1024:
+            raise forms.ValidationError('O arquivo não pode ultrapassar 10 MB.')
+        return f
+
+    def clean_selfie(self):
+        s = self.cleaned_data.get('selfie')
+        if s and s.size > 10 * 1024 * 1024:
+            raise forms.ValidationError('A selfie não pode ultrapassar 10 MB.')
+        return s
 
 
 class DocumentReviewForm(forms.ModelForm):
