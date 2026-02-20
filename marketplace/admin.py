@@ -113,13 +113,14 @@ class InstructorProfileAdmin(admin.ModelAdmin):
     """Admin for InstructorProfile model"""
     list_display = (
         'user_full_name', 'city', 'gender', 'years_experience',
-        'has_own_car', 'is_verified', 'is_visible', 'completion_badge', 'created_at'
+        'has_own_car', 'verification_badge', 'is_visible', 'completion_badge',
+        'pending_docs_count', 'created_at',
     )
     list_filter = ('is_verified', 'is_visible', 'gender', 'has_own_car', 'city__state')
     search_fields = ('user__username', 'user__first_name', 'user__last_name', 'city__name')
     readonly_fields = ('created_at', 'updated_at', 'profile_completion_score')
     filter_horizontal = ('categories',)
-    
+
     fieldsets = (
         ('Usuário', {
             'fields': ('user', 'city')
@@ -147,42 +148,65 @@ class InstructorProfileAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
-    
+
+    def get_inline_instances(self, request, obj=None):
+        """Load document inline only on existing objects (not on creation form)."""
+        if obj is None:
+            return []
+        from verification.admin import InstructorDocumentInline
+        return [InstructorDocumentInline(self.model, self.admin_site)]
+
     def user_full_name(self, obj):
         return obj.user.get_full_name() or obj.user.username
     user_full_name.short_description = 'Instrutor'
-    
+
+    def verification_badge(self, obj):
+        if obj.is_verified:
+            return format_html('<span style="color:#1a7a3c;font-weight:700">✅ Verificado</span>')
+        # Count pending docs
+        pending = obj.documents.filter(status='PENDING').count() if hasattr(obj, 'documents') else 0
+        if pending:
+            return format_html(
+                '<span style="color:#ff8c00;font-weight:700">⏳ {} pendente(s)</span>', pending
+            )
+        return format_html('<span style="color:#999">— Sem docs</span>')
+    verification_badge.short_description = 'Verificação'
+
+    def pending_docs_count(self, obj):
+        count = obj.documents.filter(status='PENDING').count()
+        if count:
+            return format_html(
+                '<span style="background:#ffc107;color:#000;padding:2px 10px;'
+                'border-radius:12px;font-weight:700;">{}</span>', count
+            )
+        return format_html('<span style="color:#aaa">0</span>')
+    pending_docs_count.short_description = '⏳ Pendentes'
+
     def completion_badge(self, obj):
         score = obj.profile_completion_score
-        if score >= 80:
-            color = 'green'
-        elif score >= 50:
-            color = 'orange'
-        else:
-            color = 'red'
+        color = 'green' if score >= 80 else ('orange' if score >= 50 else 'red')
         return format_html(
-            '<span style="color: {}; font-weight: bold;">{:.0f}%</span>',
-            color, score
+            '<span style="color:{};font-weight:bold;">{:.0f}%</span>', color, score
         )
     completion_badge.short_description = 'Completude'
-    
+
     actions = ['make_verified', 'make_unverified', 'make_visible', 'make_invisible']
-    
+
     def make_verified(self, request, queryset):
         updated = queryset.update(is_verified=True)
         self.message_user(request, f'{updated} instrutor(es) verificado(s).')
     make_verified.short_description = 'Marcar como verificado'
-    
+
     def make_unverified(self, request, queryset):
         updated = queryset.update(is_verified=False)
         self.message_user(request, f'{updated} instrutor(es) desmarcado(s) como verificado.')
     make_unverified.short_description = 'Remover verificação'
-    
+
     def make_visible(self, request, queryset):
         updated = queryset.update(is_visible=True)
         self.message_user(request, f'{updated} instrutor(es) tornado(s) visível(is).')
     make_visible.short_description = 'Tornar visível'
-    
+
     def make_invisible(self, request, queryset):
         updated = queryset.update(is_visible=False)
         self.message_user(request, f'{updated} instrutor(es) tornado(s) invisível(is).')

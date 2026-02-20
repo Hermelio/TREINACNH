@@ -1,0 +1,42 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+
+{% block content %}
+{% if doc_is_pending %}
+<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;
+            padding:16px;margin:0 0 20px 0;display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;">
+  <div style="flex:1;min-width:200px;">
+    <label style="font-weight:700;display:block;margin-bottom:6px;">
+      📝 Observações (preencha antes de aprovar/rejeitar)
+    </label>
+    <input id="qa-notes" type="text"
+           placeholder="Motivo da decisão (opcional)..."
+           value="{{ doc_notes }}"
+           style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:.95em;">
+  </div>
+
+  <form id="qa-approve-form" method="post" action="{{ approve_url }}" style="margin:0;">
+    {% csrf_token %}
+    <input type="hidden" name="notes" id="qa-approve-notes" value="">
+    <button type="submit"
+            onclick="document.getElementById('qa-approve-notes').value=document.getElementById('qa-notes').value"
+            style="background:#198754;color:#fff;padding:10px 28px;border:none;
+                   border-radius:6px;font-weight:700;font-size:1.05em;cursor:pointer;white-space:nowrap;">
+      ✅ APROVAR
+    </button>
+  </form>
+
+  <form id="qa-reject-form" method="post" action="{{ reject_url }}" style="margin:0;">
+    {% csrf_token %}
+    <input type="hidden" name="notes" id="qa-reject-notes" value="">
+    <button type="submit"
+            onclick="document.getElementById('qa-reject-notes').value=document.getElementById('qa-notes').value"
+            style="background:#dc3545;color:#fff;padding:10px 28px;border:none;
+                   border-radius:6px;font-weight:700;font-size:1.05em;cursor:pointer;white-space:nowrap;">
+      ❌ REJEITAR
+    </button>
+  </form>
+</div>
+{% endif %}
+{{ block.super }}
+{% endblock %}
