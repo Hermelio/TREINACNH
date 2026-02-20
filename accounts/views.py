@@ -7,9 +7,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.generic import CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django_ratelimit.decorators import ratelimit
-from .forms import UserRegistrationForm, CustomLoginForm, ProfileEditForm, CompleteProfileForm
+from .forms import UserRegistrationForm, CustomLoginForm, ProfileEditForm, CompleteProfileForm, StudentDataForm
 from .models import Profile, RoleChoices
 
 
@@ -174,12 +174,16 @@ def complete_profile_view(request):
                 )
                 return redirect('accounts:registration_success')
             else:
-                messages.success(
+                # Students must fill in their personal data before using the platform
+                messages.info(
                     request,
                     f'Bem-vindo, {request.user.first_name or request.user.username}! '
-                    'Encontre instrutores na sua cidade.'
+                    'Complete seus dados para poder contatar instrutores.'
                 )
-                return redirect('/instrutores/cidades/')
+                complete_url = reverse('accounts:complete_student_data')
+                if next_url_safe:
+                    complete_url += f'?next={next_url}'
+                return redirect(complete_url)
     else:
         form = CompleteProfileForm()
 
@@ -188,6 +192,79 @@ def complete_profile_view(request):
         'user': request.user,
         'next': next_url,
         'seo_title': 'Complete seu Cadastro | TreinaCNH',
+    })
+
+
+@login_required
+def complete_student_data_view(request):
+    """
+    Second-step form for students: collects name, email, WhatsApp, CPF,
+    CNH categories of interest, and city/state location.
+    Students cannot contact instructors until this is done.
+    """
+    from django.utils.http import url_has_allowed_host_and_scheme
+    from django.urls import reverse as _reverse
+
+    profile = request.user.profile
+
+    if not profile.is_student:
+        return redirect('accounts:dashboard')
+
+    next_url = request.POST.get('next') or request.GET.get('next', '')
+    next_safe = (
+        url_has_allowed_host_and_scheme(
+            url=next_url,
+            allowed_hosts=request.get_host(),
+            require_https=request.is_secure(),
+        )
+        if next_url else False
+    )
+
+    if request.method == 'POST':
+        form = StudentDataForm(request.POST, user=request.user, profile=profile)
+        if form.is_valid():
+            cd = form.cleaned_data
+
+            # Save to User
+            user = request.user
+            user.first_name = cd['first_name']
+            user.last_name = cd['last_name']
+            user.email = cd['email']
+            user.save()
+
+            # Save to Profile
+            profile.whatsapp_number = cd['whatsapp_number']
+
+            # CPF uniqueness check (allow same user to resubmit)
+            from accounts.models import Profile as ProfileModel
+            existing_cpf = ProfileModel.objects.filter(cpf=cd['cpf']).exclude(pk=profile.pk).first()
+            if existing_cpf:
+                form.add_error('cpf', 'Este CPF já está cadastrado.')
+            else:
+                profile.cpf = cd['cpf']
+                profile.preferred_city = cd['preferred_city']
+                profile.save()
+
+                # Save M2M categories
+                from marketplace.models import CategoryCNH
+                cats = CategoryCNH.objects.filter(code__in=cd['cnh_categories'])
+                profile.cnh_categories.set(cats)
+
+                messages.success(
+                    request,
+                    '✅ Perfil completo! Agora você pode contatar instrutores na sua cidade.'
+                )
+
+                if next_safe:
+                    return redirect(next_url)
+                return redirect('/instrutores/cidades/')
+    else:
+        form = StudentDataForm(user=request.user, profile=profile)
+
+    return render(request, 'accounts/complete_student_data.html', {
+        'form': form,
+        'next': next_url,
+        'seo_title': 'Complete seu Perfil | TreinaCNH',
     })
 
 

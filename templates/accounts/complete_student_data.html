@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5" style="padding-top: 7rem !important;">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
+
+      <div class="card shadow border-0">
+        <div class="card-body p-4 p-md-5">
+
+          <!-- Header -->
+          <div class="text-center mb-4">
+            <div class="fs-1 mb-2">📋</div>
+            <h2 class="fw-bold">Complete seu perfil de aluno</h2>
+            <p class="text-muted">
+              Preencha os dados abaixo para poder entrar em contato com instrutores.
+            </p>
+          </div>
+
+          {% if messages %}
+            {% for msg in messages %}
+              <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                {{ msg }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="post" id="student-data-form" novalidate>
+            {% csrf_token %}
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+            <!-- ── Dados pessoais ─────────────────────────────────── -->
+            <h5 class="fw-semibold mb-3 border-bottom pb-2">👤 Dados pessoais</h5>
+
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label for="id_first_name" class="form-label">Nome <span class="text-danger">*</span></label>
+                <input type="text" id="id_first_name" name="first_name"
+                       class="form-control {% if form.first_name.errors %}is-invalid{% endif %}"
+                       value="{{ form.first_name.value|default:'' }}" required>
+                {% for e in form.first_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-md-6">
+                <label for="id_last_name" class="form-label">Sobrenome <span class="text-danger">*</span></label>
+                <input type="text" id="id_last_name" name="last_name"
+                       class="form-control {% if form.last_name.errors %}is-invalid{% endif %}"
+                       value="{{ form.last_name.value|default:'' }}" required>
+                {% for e in form.last_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+              </div>
+
+              <div class="col-md-6">
+                <label for="id_email" class="form-label">E-mail <span class="text-danger">*</span></label>
+                <input type="email" id="id_email" name="email"
+                       class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+                       value="{{ form.email.value|default:'' }}" required>
+                {% for e in form.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+              </div>
+
+              <div class="col-md-6">
+                <label for="id_whatsapp_number" class="form-label">WhatsApp <span class="text-danger">*</span></label>
+                <input type="tel" id="id_whatsapp_number" name="whatsapp_number"
+                       class="form-control {% if form.whatsapp_number.errors %}is-invalid{% endif %}"
+                       value="{{ form.whatsapp_number.value|default:'' }}"
+                       placeholder="(11) 99999-9999" required>
+                <div class="form-text">O instrutor usará este número para te contatar.</div>
+                {% for e in form.whatsapp_number.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+
+              <div class="col-md-6">
+                <label for="id_cpf" class="form-label">CPF <span class="text-danger">*</span></label>
+                <input type="text" id="id_cpf" name="cpf"
+                       class="form-control {% if form.cpf.errors %}is-invalid{% endif %}"
+                       value="{{ form.cpf.value|default:'' }}"
+                       placeholder="000.000.000-00" inputmode="numeric" maxlength="14" required>
+                <div class="form-text">Apenas números, sem pontos ou traços.</div>
+                {% for e in form.cpf.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+            </div>
+
+            <!-- ── Categoria CNH ──────────────────────────────────── -->
+            <h5 class="fw-semibold mb-3 border-bottom pb-2">🪪 Categorias CNH que você deseja obter</h5>
+
+            <div class="row g-2 mb-4">
+              {% for code, label in form.fields.cnh_categories.choices %}
+                <div class="col-6 col-md-4">
+                  <div class="form-check cnh-check border rounded p-2">
+                    <input class="form-check-input" type="checkbox"
+                           name="cnh_categories" value="{{ code }}"
+                           id="cat_{{ code }}"
+                           {% if code in form.cnh_categories.value %}checked{% endif %}>
+                    <label class="form-check-label fw-semibold w-100" for="cat_{{ code }}">
+                      {{ label }}
+                    </label>
+                  </div>
+                </div>
+              {% endfor %}
+              {% for e in form.cnh_categories.errors %}
+                <div class="col-12 text-danger small">{{ e }}</div>
+              {% endfor %}
+            </div>
+
+            <!-- ── Localização ──────────────────────────────────────── -->
+            <h5 class="fw-semibold mb-3 border-bottom pb-2">📍 Sua localização</h5>
+            <p class="text-muted small mb-3">
+              Usamos sua cidade para encontrar instrutores próximos a você.
+            </p>
+
+            <div class="row g-3 mb-4">
+              <div class="col-md-4">
+                <label for="id_student_state" class="form-label">Estado <span class="text-danger">*</span></label>
+                <select id="id_student_state" name="state"
+                        class="form-select {% if form.state.errors %}is-invalid{% endif %}" required>
+                  {% for value, label in form.fields.state.choices %}
+                    <option value="{{ value }}" {% if value == form.state.value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                {% for e in form.state.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+              </div>
+
+              <div class="col-md-8">
+                <label for="id_student_city" class="form-label">Cidade <span class="text-danger">*</span></label>
+                <select id="id_student_city" name="preferred_city"
+                        class="form-select {% if form.preferred_city.errors %}is-invalid{% endif %}" required>
+                  <option value="">Selecione primeiro o estado…</option>
+                  {% comment %}Pre-fill on reload (when state already chosen){% endcomment %}
+                  {% if form.preferred_city.value %}
+                    <option value="{{ form.preferred_city.value }}" selected>
+                      {{ form.fields.preferred_city.widget.attrs|default:'' }}
+                      (cidade atual)
+                    </option>
+                  {% endif %}
+                </select>
+                {% for e in form.preferred_city.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="btn btn-dark w-100 py-3 fw-semibold fs-5">
+              Salvar e continuar →
+            </button>
+
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  .cnh-check {
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+  }
+  .cnh-check:has(input:checked) {
+    background-color: #f0f0f0;
+    border-color: #000 !important;
+  }
+  .cnh-check label { cursor: pointer; }
+</style>
+
+<script>
+(function () {
+  const stateSelect = document.getElementById('id_student_state');
+  const citySelect  = document.getElementById('id_student_city');
+  const savedCity   = "{{ form.preferred_city.value|default:'' }}";
+  const savedState  = "{{ form.state.value|default:'' }}";
+
+  function loadCities(stateCode, selectCityId) {
+    if (!stateCode) {
+      citySelect.innerHTML = '<option value="">Selecione primeiro o estado…</option>';
+      return;
+    }
+    citySelect.innerHTML = '<option value="">Carregando cidades…</option>';
+    fetch(`/instrutores/api/cidades/${stateCode}/`)
+      .then(r => r.json())
+      .then(data => {
+        citySelect.innerHTML = '<option value="">Selecione sua cidade…</option>';
+        data.cities.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = c.name;
+          if (String(c.id) === String(selectCityId)) opt.selected = true;
+          citySelect.appendChild(opt);
+        });
+      })
+      .catch(() => {
+        citySelect.innerHTML = '<option value="">Erro ao carregar cidades.</option>';
+      });
+  }
+
+  stateSelect.addEventListener('change', function () {
+    loadCities(this.value, null);
+  });
+
+  // On page load, if a state is already selected, load its cities
+  if (savedState) {
+    loadCities(savedState, savedCity);
+  }
+})();
+</script>
+{% endblock %}

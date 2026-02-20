@@ -117,6 +117,14 @@ class Profile(models.Model):
         verbose_name='Cidade Preferida',
         help_text='Cidade onde o aluno busca instrutores'
     )
+
+    cnh_categories = models.ManyToManyField(
+        'marketplace.CategoryCNH',
+        blank=True,
+        related_name='student_profiles',
+        verbose_name='Categorias CNH de Interesse',
+        help_text='Categorias de CNH que o aluno deseja obter'
+    )
     
     # Preferences and Consents
     accept_whatsapp_messages = models.BooleanField(
@@ -161,6 +169,24 @@ class Profile(models.Model):
     def is_admin_support(self):
         """Check if user is admin/support"""
         return self.role == RoleChoices.ADMIN_SUPPORT
+
+    @property
+    def is_student_data_complete(self):
+        """
+        True when the student has filled in all data required to contact instructors.
+        Always returns True for non-students (instructors/admins).
+        """
+        if not self.is_student:
+            return True
+        return bool(
+            self.user.first_name
+            and self.user.last_name
+            and self.user.email
+            and (self.phone or self.whatsapp_number)
+            and self.cpf
+            and self.preferred_city_id
+            and self.cnh_categories.exists()
+        )
 
 
 class Address(models.Model):

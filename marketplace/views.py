@@ -294,6 +294,15 @@ def lead_create_view(request, instructor_pk):
     Create a lead/contact request for an instructor.
     Can be used by logged-in users or anonymous visitors.
     """
+    # Guard: authenticated students must have complete profile data
+    if request.user.is_authenticated:
+        profile = getattr(request.user, 'profile', None)
+        if profile and profile.is_student and not profile.is_student_data_complete:
+            from django.urls import reverse
+            next_url = request.get_full_path()
+            return redirect(
+                reverse('accounts:complete_student_data') + f'?next={next_url}'
+            )
     instructor = get_object_or_404(InstructorProfile, pk=instructor_pk, is_visible=True)
     
     if request.method == 'POST':

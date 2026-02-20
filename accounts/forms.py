@@ -297,3 +297,117 @@ class CompleteProfileForm(forms.Form):
         widget=forms.RadioSelect,
         required=True,
     )
+
+
+class StudentDataForm(forms.Form):
+    """
+    Collects the minimum data required for a student to contact instructors:
+    name, e-mail, WhatsApp, CPF, CNH categories of interest, state + city.
+    """
+    first_name = forms.CharField(
+        label='Nome',
+        max_length=30,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Seu nome'}),
+    )
+    last_name = forms.CharField(
+        label='Sobrenome',
+        max_length=150,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Seu sobrenome'}),
+    )
+    email = forms.EmailField(
+        label='E-mail',
+        required=True,
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'seu@email.com'}),
+    )
+    whatsapp_number = forms.CharField(
+        label='WhatsApp',
+        max_length=17,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '(11) 99999-9999',
+            'inputmode': 'tel',
+        }),
+        help_text='Número com DDD. O instrutor usará este número para te contatar.',
+    )
+    cpf = forms.CharField(
+        label='CPF',
+        max_length=14,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '000.000.000-00',
+            'inputmode': 'numeric',
+        }),
+        help_text='Apenas números, sem pontos ou traços.',
+    )
+    cnh_categories = forms.MultipleChoiceField(
+        label='Categoria(s) CNH que você deseja obter',
+        required=True,
+        choices=[
+            ('A', 'A — Motocicletas'),
+            ('B', 'B — Carros'),
+            ('C', 'C — Caminhões'),
+            ('D', 'D — Ônibus'),
+            ('E', 'E — Carretas'),
+        ],
+        widget=forms.CheckboxSelectMultiple,
+    )
+    state = forms.ChoiceField(
+        label='Estado',
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_student_state'}),
+    )
+    preferred_city = forms.IntegerField(
+        label='Cidade',
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_student_city'}),
+        error_messages={'required': 'Selecione sua cidade.'},
+    )
+
+    def __init__(self, *args, user=None, profile=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        from marketplace.models import State as StateModel
+        states = list(StateModel.objects.values_list('code', 'code').order_by('code'))
+        self.fields['state'].choices = [('', 'Selecione um estado...')] + states
+
+        # Pre-fill from existing data
+        if user:
+            self.fields['first_name'].initial = user.first_name
+            self.fields['last_name'].initial = user.last_name
+            self.fields['email'].initial = user.email
+        if profile:
+            self.fields['whatsapp_number'].initial = profile.whatsapp_number or profile.phone
+            self.fields['cpf'].initial = profile.cpf
+            if profile.preferred_city:
+                self.fields['state'].initial = profile.preferred_city.state.code
+                self.fields['preferred_city'].initial = profile.preferred_city_id
+
+    def clean_cpf(self):
+        raw = self.cleaned_data.get('cpf', '')
+        digits = ''.join(c for c in raw if c.isdigit())
+        if len(digits) != 11:
+            raise forms.ValidationError('CPF deve ter exatamente 11 dígitos.')
+        return digits
+
+    def clean_whatsapp_number(self):
+        value = self.cleaned_data.get('whatsapp_number', '').strip()
+        digits = ''.join(c for c in value if c.isdigit())
+        if len(digits) < 10:
+            raise forms.ValidationError('Informe um número de WhatsApp válido com DDD.')
+        # Store as +55...
+        if not digits.startswith('55') or len(digits) < 12:
+            digits = '55' + digits
+        return '+' + digits
+
+    def clean_preferred_city(self):
+        city_id = self.cleaned_data.get('preferred_city')
+        if not city_id:
+            raise forms.ValidationError('Selecione sua cidade.')
+        from marketplace.models import City
+        try:
+            return City.objects.get(pk=city_id)
+        except City.DoesNotExist:
+            raise forms.ValidationError('Cidade inválida.')

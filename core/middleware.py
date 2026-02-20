@@ -21,6 +21,7 @@ class ProfileCompletionMiddleware:
     EXEMPT_PREFIXES = (
         '/admin/',
         '/contas/completar-cadastro/',
+        '/contas/completar-dados-aluno/',
         '/contas/sair/',          # logout
         '/contas/google/',        # allauth Google OAuth flow
         '/contas/social/',        # allauth social callback
