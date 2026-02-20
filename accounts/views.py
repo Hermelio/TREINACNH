@@ -148,7 +148,7 @@ def complete_profile_view(request):
     next_url_safe = (
         url_has_allowed_host_and_scheme(
             url=next_url,
-            allowed_hosts=request.get_host(),
+            allowed_hosts={request.get_host()},
             require_https=request.is_secure(),
         )
         if next_url
@@ -214,7 +214,7 @@ def complete_student_data_view(request):
     next_safe = (
         url_has_allowed_host_and_scheme(
             url=next_url,
-            allowed_hosts=request.get_host(),
+            allowed_hosts={request.get_host()},  # must be a set/iterable, not a plain string
             require_https=request.is_secure(),
         )
         if next_url else False
@@ -225,39 +225,34 @@ def complete_student_data_view(request):
         if form.is_valid():
             cd = form.cleaned_data
 
-            # Save to User
+            # Persist User fields — update_fields avoids touching last_login / password
             user = request.user
             user.first_name = cd['first_name']
             user.last_name = cd['last_name']
-            user.email = cd['email']
-            user.save()
+            # Only update email when it differs; avoids invalidating provider-verified address
+            if cd['email'] and cd['email'] != user.email:
+                user.email = cd['email']
+            user.save(update_fields=['first_name', 'last_name', 'email'])
 
-            # Save to Profile
+            # Persist Profile fields (CPF uniqueness already validated in the form)
             profile.whatsapp_number = cd['whatsapp_number']
+            profile.cpf = cd['cpf']
+            profile.preferred_city = cd['preferred_city']
+            profile.save(update_fields=['whatsapp_number', 'cpf', 'preferred_city'])
 
-            # CPF uniqueness check (allow same user to resubmit)
-            from accounts.models import Profile as ProfileModel
-            existing_cpf = ProfileModel.objects.filter(cpf=cd['cpf']).exclude(pk=profile.pk).first()
-            if existing_cpf:
-                form.add_error('cpf', 'Este CPF já está cadastrado.')
-            else:
-                profile.cpf = cd['cpf']
-                profile.preferred_city = cd['preferred_city']
-                profile.save()
+            # Save M2M categories; set() handles both add and clear correctly
+            from marketplace.models import CategoryCNH
+            cats = list(CategoryCNH.objects.filter(code__in=cd['cnh_categories']))
+            profile.cnh_categories.set(cats)
 
-                # Save M2M categories
-                from marketplace.models import CategoryCNH
-                cats = CategoryCNH.objects.filter(code__in=cd['cnh_categories'])
-                profile.cnh_categories.set(cats)
+            messages.success(
+                request,
+                '✅ Perfil completo! Agora você pode contatar instrutores na sua cidade.'
+            )
 
-                messages.success(
-                    request,
-                    '✅ Perfil completo! Agora você pode contatar instrutores na sua cidade.'
-                )
-
-                if next_safe:
-                    return redirect(next_url)
-                return redirect('/instrutores/cidades/')
+            if next_safe:
+                return redirect(next_url)
+            return redirect('/instrutores/cidades/')
     else:
         form = StudentDataForm(user=request.user, profile=profile)
 

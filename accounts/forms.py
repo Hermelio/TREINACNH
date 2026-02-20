@@ -369,6 +369,9 @@ class StudentDataForm(forms.Form):
 
     def __init__(self, *args, user=None, profile=None, **kwargs):
         super().__init__(*args, **kwargs)
+        # Store references so cross-field validators can access them
+        self._user = user
+        self._profile = profile
         from marketplace.models import State as StateModel
         states = list(StateModel.objects.values_list('code', 'code').order_by('code'))
         self.fields['state'].choices = [('', 'Selecione um estado...')] + states
@@ -390,6 +393,13 @@ class StudentDataForm(forms.Form):
         digits = ''.join(c for c in raw if c.isdigit())
         if len(digits) != 11:
             raise forms.ValidationError('CPF deve ter exatamente 11 dígitos.')
+        # Check uniqueness at form-validation time (exclude own profile on resubmit)
+        from accounts.models import Profile as ProfileModel
+        qs = ProfileModel.objects.filter(cpf=digits)
+        if self._profile is not None:
+            qs = qs.exclude(pk=self._profile.pk)
+        if qs.exists():
+            raise forms.ValidationError('Este CPF já está cadastrado.')
         return digits
 
     def clean_whatsapp_number(self):

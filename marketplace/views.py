@@ -265,7 +265,16 @@ def instructor_detail_view(request, pk):
     
     # WhatsApp message
     whatsapp_link = instructor.get_whatsapp_link()
-    
+
+    # Flag so the template can hide direct-contact buttons for students who haven't
+    # finished their profile yet (same rule as the lead_create_view guard).
+    student_data_incomplete = (
+        request.user.is_authenticated
+        and hasattr(request.user, 'profile')
+        and request.user.profile.is_student
+        and not request.user.profile.is_student_data_complete
+    )
+
     # Dynamic SEO: instructor name + city in title, bio as description
     full_name = instructor.user.get_full_name()
     city_name = instructor.city.name if instructor.city else ''
@@ -283,6 +292,7 @@ def instructor_detail_view(request, pk):
         'reviews': reviews,
         'avg_rating': avg_rating,
         'whatsapp_link': whatsapp_link,
+        'student_data_incomplete': student_data_incomplete,
         **seo,
     }
     return render(request, 'marketplace/instructor_detail.html', context)
@@ -299,9 +309,10 @@ def lead_create_view(request, instructor_pk):
         profile = getattr(request.user, 'profile', None)
         if profile and profile.is_student and not profile.is_student_data_complete:
             from django.urls import reverse
+            from urllib.parse import urlencode
             next_url = request.get_full_path()
             return redirect(
-                reverse('accounts:complete_student_data') + f'?next={next_url}'
+                reverse('accounts:complete_student_data') + '?' + urlencode({'next': next_url})
             )
     instructor = get_object_or_404(InstructorProfile, pk=instructor_pk, is_visible=True)
     
