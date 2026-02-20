@@ -28,6 +28,11 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# Handlers de erro personalizados
+from django.views.defaults import page_not_found, server_error  # noqa: E402
+handler404 = page_not_found
+handler500 = server_error
     
     # Debug toolbar (comentado)
     # import debug_toolbar
