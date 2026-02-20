@@ -75,6 +75,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'core.middleware.ProfileCompletionMiddleware',  # Force role selection after Google login
     'core.middleware.StudentRedirectMiddleware',  # Redirect students from home/plans
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -297,8 +298,8 @@ ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http'  # Forçar HTTP para o ambiente atual
 
-# Redirect URLs
-LOGIN_REDIRECT_URL = '/contas/dashboard/'
+# Redirect URLs  (allauth overrides the top-level LOGIN_REDIRECT_URL)
+LOGIN_REDIRECT_URL = '/contas/painel/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 SOCIALACCOUNT_LOGIN_ON_GET = True  # Login automático com Google
 

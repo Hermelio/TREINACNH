@@ -5,9 +5,48 @@ import logging
 from django.http import HttpResponseForbidden
 from django.core.cache import cache
 from django.shortcuts import redirect
-from django.urls import resolve
+from django.urls import resolve, reverse
 
 logger = logging.getLogger(__name__)
+
+
+class ProfileCompletionMiddleware:
+    """
+    Forces users who signed up via Google (or any OAuth provider) and have not
+    yet chosen their role (Aluno/Instrutor) to the complete_profile page.
+    Safe: skips admin, logout, social-auth, static and webhook paths.
+    """
+
+    # Paths that are always allowed, even for incomplete profiles
+    EXEMPT_PREFIXES = (
+        '/admin/',
+        '/contas/completar-cadastro/',
+        '/contas/sair/',          # logout
+        '/contas/google/',        # allauth Google OAuth flow
+        '/contas/social/',        # allauth social callback
+        '/contas/accounts/',      # allauth fallback
+        '/static/',
+        '/media/',
+        '/webhook/',
+        '/favicon',
+        '/robots.txt',
+        '/sitemap',
+    )
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.user.is_authenticated:
+            path = request.path_info
+            if not any(path.startswith(p) for p in self.EXEMPT_PREFIXES):
+                profile = getattr(request.user, 'profile', None)
+                if profile is not None and not profile.is_profile_complete:
+                    complete_url = reverse('accounts:complete_profile')
+                    if path != complete_url:
+                        return redirect(complete_url)
+
+        return self.get_response(request)
 
 
 class StudentRedirectMiddleware:

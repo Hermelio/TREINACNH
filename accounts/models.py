@@ -92,7 +92,13 @@ class Profile(models.Model):
         choices=RoleChoices.choices,
         default=RoleChoices.STUDENT
     )
-    
+
+    is_profile_complete = models.BooleanField(
+        'Cadastro Completo',
+        default=True,
+        help_text='Usuário informou se é aluno ou instrutor. False para novos usuários via Google.'
+    )
+
     avatar = models.ImageField(
         'Foto de Perfil',
         upload_to='avatars/%Y/%m/',

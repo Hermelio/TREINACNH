@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5" style="padding-top: 7rem !important;">
+  <div class="row justify-content-center">
+    <div class="col-md-7 col-lg-6">
+
+      <div class="card shadow border-0">
+        <div class="card-body p-5">
+
+          <!-- Header -->
+          <div class="text-center mb-4">
+            <div class="mb-3">
+              {% if user.first_name %}
+                <h2 class="fw-bold">Olá, {{ user.first_name }}! 👋</h2>
+              {% else %}
+                <h2 class="fw-bold">Bem-vindo ao TreinaCNH! 👋</h2>
+              {% endif %}
+            </div>
+            <p class="text-muted">
+              Só mais um passo! Nos diga como você vai usar a plataforma.
+            </p>
+          </div>
+
+          <!-- Form -->
+          <form method="post" id="complete-profile-form">
+            {% csrf_token %}
+
+            <div class="row g-3 mb-4">
+
+              <!-- Card: Aluno -->
+              <div class="col-12">
+                <label class="d-block cursor-pointer" for="role_student">
+                  <input type="radio" name="role" value="STUDENT" id="role_student"
+                         class="visually-hidden role-radio"
+                         {% if form.role.value == 'STUDENT' %}checked{% endif %}>
+                  <div class="card border-2 role-card p-3 d-flex flex-row align-items-center gap-3"
+                       id="card_student">
+                    <div class="fs-1">🎓</div>
+                    <div>
+                      <div class="fw-bold fs-5">Sou Aluno</div>
+                      <div class="text-muted small">Quero encontrar instrutores de autoescola na minha cidade</div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Card: Instrutor -->
+              <div class="col-12">
+                <label class="d-block cursor-pointer" for="role_instructor">
+                  <input type="radio" name="role" value="INSTRUCTOR" id="role_instructor"
+                         class="visually-hidden role-radio"
+                         {% if form.role.value == 'INSTRUCTOR' %}checked{% endif %}>
+                  <div class="card border-2 role-card p-3 d-flex flex-row align-items-center gap-3"
+                       id="card_instructor">
+                    <div class="fs-1">🚗</div>
+                    <div>
+                      <div class="fw-bold fs-5">Sou Instrutor</div>
+                      <div class="text-muted small">Quero divulgar meu serviço e receber contatos de alunos</div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+            </div>
+
+            {% if form.role.errors %}
+              <div class="alert alert-danger py-2">
+                {{ form.role.errors|join:", " }}
+              </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-dark w-100 py-3 fw-semibold" id="btn-continuar" disabled>
+              Continuar →
+            </button>
+
+          </form>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  .cursor-pointer { cursor: pointer; }
+
+  .role-card {
+    border-color: #dee2e6 !important;
+    border-radius: 12px;
+    transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+  }
+
+  .role-card:hover {
+    border-color: #adb5bd !important;
+    background-color: #f8f9fa;
+  }
+
+  .role-card.selected {
+    border-color: #000 !important;
+    background-color: #f0f0f0;
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.08);
+  }
+</style>
+
+<script>
+  (function () {
+    const radios = document.querySelectorAll('.role-radio');
+    const btn    = document.getElementById('btn-continuar');
+
+    function updateUI() {
+      radios.forEach(function (radio) {
+        const cardId = radio.id === 'role_student' ? 'card_student' : 'card_instructor';
+        const card   = document.getElementById(cardId);
+        if (radio.checked) {
+          card.classList.add('selected');
+        } else {
+          card.classList.remove('selected');
+        }
+      });
+
+      const anyChecked = Array.from(radios).some(r => r.checked);
+      btn.disabled = !anyChecked;
+    }
+
+    radios.forEach(function (radio) {
+      radio.addEventListener('change', updateUI);
+      // Also allow clicking the card itself
+      const cardId = radio.id === 'role_student' ? 'card_student' : 'card_instructor';
+      document.getElementById(cardId).addEventListener('click', function () {
+        radio.checked = true;
+        updateUI();
+      });
+    });
+
+    updateUI(); // in case of page reload with pre-filled value
+  })();
+</script>
+{% endblock %}

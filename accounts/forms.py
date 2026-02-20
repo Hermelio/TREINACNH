@@ -281,3 +281,19 @@ class AddressForm(forms.ModelForm):
             'neighborhood': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Centro (opcional)'}),
             'is_primary': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+
+class CompleteProfileForm(forms.Form):
+    """
+    Minimal form shown after Google login so the user can choose
+    whether they are a student (Aluno) or instructor (Instrutor).
+    """
+    role = forms.ChoiceField(
+        label='Como você vai usar o TreinaCNH?',
+        choices=[
+            (RoleChoices.STUDENT, 'Aluno — quero encontrar instrutores'),
+            (RoleChoices.INSTRUCTOR, 'Instrutor — quero divulgar meu serviço'),
+        ],
+        widget=forms.RadioSelect,
+        required=True,
+    )

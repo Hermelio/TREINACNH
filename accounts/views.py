@@ -9,8 +9,8 @@ from django.views.generic import CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django_ratelimit.decorators import ratelimit
-from .forms import UserRegistrationForm, CustomLoginForm, ProfileEditForm
-from .models import Profile
+from .forms import UserRegistrationForm, CustomLoginForm, ProfileEditForm, CompleteProfileForm
+from .models import Profile, RoleChoices
 
 
 @ratelimit(key='ip', rate='5/m', method='POST', block=True)
@@ -122,6 +122,49 @@ def dashboard_view(request):
     
     # Students go to cities_list using absolute path
     return redirect('/instrutores/cidades/')
+
+
+@login_required
+def complete_profile_view(request):
+    """
+    Shown after Google login. User must choose: Aluno or Instrutor.
+    Marks profile as complete and redirects appropriately.
+    """
+    profile = request.user.profile
+
+    if profile.is_profile_complete:
+        return redirect('accounts:dashboard')
+
+    if request.method == 'POST':
+        form = CompleteProfileForm(request.POST)
+        if form.is_valid():
+            role = form.cleaned_data['role']
+            profile.role = role
+            profile.is_profile_complete = True
+            profile.save()
+
+            if role == RoleChoices.INSTRUCTOR:
+                messages.success(
+                    request,
+                    f'Bem-vindo, {request.user.first_name or request.user.username}! '
+                    'Complete seu perfil de instrutor para aparecer no mapa.'
+                )
+                return redirect('accounts:registration_success')
+            else:
+                messages.success(
+                    request,
+                    f'Bem-vindo, {request.user.first_name or request.user.username}! '
+                    'Encontre instrutores na sua cidade.'
+                )
+                return redirect('/instrutores/cidades/')
+    else:
+        form = CompleteProfileForm()
+
+    return render(request, 'accounts/complete_profile.html', {
+        'form': form,
+        'user': request.user,
+        'seo_title': 'Complete seu Cadastro | TreinaCNH',
+    })
 
 
 @login_required
