@@ -23,6 +23,10 @@ USE_X_FORWARDED_PORT = True
 
 # CSRF Trusted Origins - Required for forms to work with specific domains/IPs
 CSRF_TRUSTED_ORIGINS = [
+    'https://treinacnh.com.br',
+    'https://www.treinacnh.com.br',
+    'http://treinacnh.com.br',
+    'http://www.treinacnh.com.br',
     'http://72.61.36.89:8080',
     'http://72.61.36.89',
     'http://localhost:8080',
@@ -180,16 +184,18 @@ CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
 # Security Settings (Production)
 if not DEBUG:
-    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)  # Changed to False for HTTP
-    SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=False, cast=bool)  # Changed to False for HTTP
-    CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)  # Changed to False for HTTP
-    SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=0, cast=int)  # Disabled for HTTP
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-    SECURE_HSTS_PRELOAD = False
+    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
+    SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=False, cast=bool)
+    CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)
+    SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=0, cast=int)
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = config('SECURE_HSTS_INCLUDE_SUBDOMAINS', default=False, cast=bool)
+    SECURE_HSTS_PRELOAD = config('SECURE_HSTS_PRELOAD', default=False, cast=bool)
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
     SECURE_REFERRER_POLICY = 'same-origin'
+    # Tell Django it's behind an HTTPS reverse proxy (nginx sets this header)
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Additional Security Settings
 SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookie
