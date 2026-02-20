@@ -205,6 +205,9 @@ class InstructorDocument(models.Model):
         if has_cnh and has_cert:
             self.instructor.is_verified = True
             self.instructor.save()
+            # Inicia o trial de 14 dias somente na primeira vez que for verificado
+            if not self.instructor.trial_start_date:
+                self.instructor.activate_trial()
 
 
 class AuditLog(models.Model):
