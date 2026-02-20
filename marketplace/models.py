@@ -360,49 +360,66 @@ class InstructorProfile(models.Model):
     def profile_completion_score(self):
         """
         Calculate profile completion percentage (0-100).
-        Used to encourage instructors to complete their profiles.
+
+        Breakdown (total = 100):
+          Bio                          10
+          Bairros / área de atuação    10
+          Idade                         5
+          Anos de experiência           5
+          Categorias (A, B…)           10
+          Preço base por hora          10
+          Informação de veículo         5
+          Disponibilidade               10
+          Avatar                        10
+          WhatsApp                     10
+          Documento aprovado (CNH ou
+            Certificado DETRAN)        15
+          ─────────────────────────── ───
+          TOTAL                        100
         """
         score = 0
-        total_fields = 15
-        
-        # Basic info (3 points each)
+
+        # ── Informações básicas ───────────────────────────────────────
         if self.bio:
-            score += 3
-        if self.neighborhoods_text:
-            score += 3
-        if self.age:
-            score += 3
-        
-        # Professional (4 points each)
-        if self.years_experience > 0:
-            score += 4
-        if self.categories.exists():
-            score += 4
-        if self.base_price_per_hour:
-            score += 4
-        
-        # Vehicle (3 points each)
-        if self.has_own_car and self.car_model:
-            score += 6
-        elif not self.has_own_car:
-            score += 3
-        
-        # Availability (2 points each)
-        if self.available_morning or self.available_afternoon or self.available_evening:
-            score += 6
-        
-        # Avatar from user profile (5 points)
-        if hasattr(self.user, 'profile') and self.user.profile.avatar:
-            score += 5
-        
-        # Phone/WhatsApp (5 points)
-        if hasattr(self.user, 'profile') and self.user.profile.whatsapp_number:
-            score += 5
-        
-        # Verification (10 points bonus)
-        if self.is_verified:
             score += 10
-        
+        if self.neighborhoods_text:
+            score += 10
+        if self.age:
+            score += 5
+
+        # ── Dados profissionais ───────────────────────────────────────
+        if self.years_experience and self.years_experience > 0:
+            score += 5
+        if self.categories.exists():
+            score += 10
+        if self.base_price_per_hour:
+            score += 10
+
+        # ── Veículo ───────────────────────────────────────────────────
+        if self.has_own_car and self.car_model:
+            score += 5
+        elif not self.has_own_car:
+            score += 5   # informou que não tem carro próprio
+
+        # ── Disponibilidade ───────────────────────────────────────────
+        if self.available_morning or self.available_afternoon or self.available_evening:
+            score += 10
+
+        # ── Contato / foto ────────────────────────────────────────────
+        if hasattr(self.user, 'profile') and self.user.profile.avatar:
+            score += 10
+        if hasattr(self.user, 'profile') and self.user.profile.whatsapp_number:
+            score += 10
+
+        # ── Documento aprovado (CNH OU Certificado DETRAN) ────────────
+        # Obrigatório para atingir 100 %
+        has_approved_doc = self.documents.filter(
+            doc_type__in=['CNH', 'CERT_INSTRUTOR'],
+            status='APPROVED'
+        ).exists()
+        if has_approved_doc:
+            score += 15
+
         return min(score, 100)
     
     @property
