@@ -340,7 +340,15 @@ class _DocumentAdminMixin:
                 reverse('admin:verification_instructordocument_change', args=[pk])
             )
         doc   = get_object_or_404(InstructorDocument, pk=pk)
-        notes = (request.POST.get('notes') or '').strip() or 'Rejeitado pelo admin.'
+        notes = (request.POST.get('notes') or '').strip()
+        if not notes:
+            messages.error(
+                request,
+                '⚠️ Informe o motivo da rejeição antes de prosseguir.',
+            )
+            return HttpResponseRedirect(
+                reverse('admin:verification_instructordocument_change', args=[pk])
+            )
         doc.reject(reviewer=request.user, notes=notes)
         AuditLog.log(
             'DOCUMENT_REJECTED', 'InstructorDocument', doc.pk,

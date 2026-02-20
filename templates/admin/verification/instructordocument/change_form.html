@@ -1,42 +1,82 @@
-{% extends "admin/change_form.html" %}
+﻿{% extends "admin/change_form.html" %}
 {% load i18n %}
 
 {% block content %}
 {% if doc_is_pending %}
-<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;
-            padding:16px;margin:0 0 20px 0;display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;">
-  <div style="flex:1;min-width:200px;">
-    <label style="font-weight:700;display:block;margin-bottom:6px;">
-      📝 Observações (preencha antes de aprovar/rejeitar)
-    </label>
-    <input id="qa-notes" type="text"
-           placeholder="Motivo da decisão (opcional)..."
-           value="{{ doc_notes }}"
-           style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:.95em;">
+<div id="qa-panel" style="background:#fff3cd;border:2px solid #ffc107;border-radius:8px;
+            padding:20px;margin:0 0 24px 0;">
+
+  <p style="font-weight:700;font-size:1.05em;margin:0 0 10px 0;">
+    &#x1F4DD; Observacao / Motivo da decisao
+  </p>
+
+  <textarea id="qa-notes" rows="3"
+            placeholder="Descreva o motivo da aprovacao ou rejeicao (obrigatorio ao rejeitar)..."
+            style="width:100%;padding:10px;border:1px solid #ccc;border-radius:6px;
+                   font-size:.95em;resize:vertical;box-sizing:border-box;">{{ doc_notes }}</textarea>
+  <p id="qa-notes-error" style="color:#dc3545;font-size:.88em;margin:4px 0 12px 0;display:none;">
+    &#x26A0;&#xFE0F; O motivo e obrigatorio ao rejeitar um documento.
+  </p>
+
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;">
+
+    <form id="qa-approve-form" method="post" action="{{ approve_url }}" style="margin:0;">
+      {% csrf_token %}
+      <input type="hidden" name="notes" id="qa-approve-notes" value="">
+      <button type="submit"
+              style="background:#198754;color:#fff;padding:10px 28px;border:none;
+                     border-radius:6px;font-weight:700;font-size:1.05em;cursor:pointer;white-space:nowrap;">
+        &#x2705; APROVAR
+      </button>
+    </form>
+
+    <form id="qa-reject-form" method="post" action="{{ reject_url }}" style="margin:0;">
+      {% csrf_token %}
+      <input type="hidden" name="notes" id="qa-reject-notes" value="">
+      <button type="submit"
+              style="background:#dc3545;color:#fff;padding:10px 28px;border:none;
+                     border-radius:6px;font-weight:700;font-size:1.05em;cursor:pointer;white-space:nowrap;">
+        &#x274C; REJEITAR
+      </button>
+    </form>
+
   </div>
-
-  <form id="qa-approve-form" method="post" action="{{ approve_url }}" style="margin:0;">
-    {% csrf_token %}
-    <input type="hidden" name="notes" id="qa-approve-notes" value="">
-    <button type="submit"
-            onclick="document.getElementById('qa-approve-notes').value=document.getElementById('qa-notes').value"
-            style="background:#198754;color:#fff;padding:10px 28px;border:none;
-                   border-radius:6px;font-weight:700;font-size:1.05em;cursor:pointer;white-space:nowrap;">
-      ✅ APROVAR
-    </button>
-  </form>
-
-  <form id="qa-reject-form" method="post" action="{{ reject_url }}" style="margin:0;">
-    {% csrf_token %}
-    <input type="hidden" name="notes" id="qa-reject-notes" value="">
-    <button type="submit"
-            onclick="document.getElementById('qa-reject-notes').value=document.getElementById('qa-notes').value"
-            style="background:#dc3545;color:#fff;padding:10px 28px;border:none;
-                   border-radius:6px;font-weight:700;font-size:1.05em;cursor:pointer;white-space:nowrap;">
-      ❌ REJEITAR
-    </button>
-  </form>
 </div>
+
+<script>
+(function () {
+  var notesEl   = document.getElementById('qa-notes');
+  var errorEl   = document.getElementById('qa-notes-error');
+  var approveForm = document.getElementById('qa-approve-form');
+  var rejectForm  = document.getElementById('qa-reject-form');
+
+  approveForm.addEventListener('submit', function () {
+    document.getElementById('qa-approve-notes').value = notesEl.value.trim();
+  });
+
+  rejectForm.addEventListener('submit', function (e) {
+    var val = notesEl.value.trim();
+    if (!val) {
+      e.preventDefault();
+      errorEl.style.display = 'block';
+      notesEl.focus();
+      notesEl.style.borderColor = '#dc3545';
+      return;
+    }
+    errorEl.style.display = 'none';
+    notesEl.style.borderColor = '#ccc';
+    document.getElementById('qa-reject-notes').value = val;
+  });
+
+  notesEl.addEventListener('input', function () {
+    if (notesEl.value.trim()) {
+      errorEl.style.display = 'none';
+      notesEl.style.borderColor = '#ccc';
+    }
+  });
+})();
+</script>
+
 {% endif %}
 {{ block.super }}
 {% endblock %}
