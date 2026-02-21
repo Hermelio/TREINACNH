@@ -265,7 +265,7 @@ def mercadopago_webhook(request):
 
             if not payment_id:
                 logger.warning("No payment ID in webhook")
-                return HttpResponse(status=400)
+                return HttpResponse(status=200)
 
             # -------------------------------------------------------
             # IDEMPOTÊNCIA: ignorar se já aprovado (evita reprocessamento)
@@ -282,14 +282,14 @@ def mercadopago_webhook(request):
 
                 if payment_info.get("status") != 200:
                     logger.error(f"Failed to get payment from MP: {payment_info}")
-                    return HttpResponse(status=500)
+                    return HttpResponse(status=200)  # 200 always - MP must not retry
 
                 payment_data = payment_info["response"]
                 logger.info(f"Payment data retrieved: ID={payment_id}, Status={payment_data.get('status')}, Detail={payment_data.get('status_detail')}")
 
             except Exception as e:
                 logger.error(f"Error fetching payment from Mercado Pago: {str(e)}")
-                return HttpResponse(status=500)
+                return HttpResponse(status=200)  # 200 always - MP must not retry
 
             # -------------------------------------------------------
             # VALIDAÇÃO 1: live_mode deve bater com o ambiente configurado
@@ -326,10 +326,10 @@ def mercadopago_webhook(request):
                 subscription = Subscription.objects.select_related('instructor', 'plan').get(id=subscription_id)
             except Subscription.DoesNotExist:
                 logger.error(f"Subscription not found: {subscription_id}")
-                return HttpResponse(status=404)
+                return HttpResponse(status=200)  # 200 always - MP must not retry
             except ValueError:
                 logger.error(f"Invalid subscription ID format: {subscription_id}")
-                return HttpResponse(status=400)
+                return HttpResponse(status=200)  # 200 always - MP must not retry
 
             # -------------------------------------------------------
             # VALIDAÇÃO 3: valor pago deve ser >= preço do plano
