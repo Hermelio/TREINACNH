@@ -210,7 +210,14 @@ SESSION_SAVE_EVERY_REQUEST = False  # Only save when modified
 RATELIMIT_ENABLE = True
 RATELIMIT_USE_CACHE = 'default'
 RATELIMIT_VIEW = 'core.views.ratelimit_error'  # Custom rate limit error page
-RATELIMIT_IP_META_KEY = 'HTTP_X_FORWARDED_FOR'  # Get real IP from nginx
+# Safe IP extractor: X-Real-IP (set by nginx) → first of X-Forwarded-For → REMOTE_ADDR
+# Using a callable avoids ImproperlyConfigured when any header is missing/empty
+RATELIMIT_IP_META_KEY = lambda r: (
+    r.META.get('HTTP_X_REAL_IP')
+    or r.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
+    or r.META.get('REMOTE_ADDR', '127.0.0.1')
+)
+RATELIMIT_FAIL_OPEN = False  # Strict: fail closed (reject if IP can't be determined)
 
 # File Upload Settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
