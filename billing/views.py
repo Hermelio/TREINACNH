@@ -193,7 +193,7 @@ def checkout_view(request, subscription_id):
                     "failure": f"{settings.SITE_URL}/planos/pagamento/falha/",
                     "pending": f"{settings.SITE_URL}/planos/pagamento/pendente/"
                 },
-                # auto_return removido: MP nao aceita back_urls com porta nao padrao (ex: :8080)
+                "auto_return": "approved",
                 "notification_url": f"{settings.SITE_URL}/webhook/mercadopago/",
                 "external_reference": f"subscription_{subscription.id}",
                 "statement_descriptor": "TREINACNH",
@@ -295,16 +295,17 @@ def mercadopago_webhook(request):
 
             # -------------------------------------------------------
             # VALIDAÇÃO 1: live_mode deve bater com o ambiente configurado
-            # Em produção, rejeitar pagamentos de teste (live_mode=False)
+            # Só rejeita se AMBOS: produção E credencial for LIVE (não TEST)
             # -------------------------------------------------------
             is_production = not settings.DEBUG
             payment_live_mode = payment_data.get('live_mode', False)
-            if is_production and not payment_live_mode:
-                logger.warning(f"Rejected test payment {payment_id} in production environment")
+            access_token = settings.MERCADOPAGO_ACCESS_TOKEN
+            using_test_credentials = access_token.startswith('TEST-')
+            # Apenas bloquear se: produção com credencial LIVE recebendo pagamento de teste
+            # Não bloquear enquanto credenciais TEST estiverem em uso
+            if is_production and not using_test_credentials and not payment_live_mode:
+                logger.warning(f"Rejected test payment {payment_id} in production environment with live credentials")
                 return HttpResponse(status=200)  # 200 para MP não retentar
-            if not is_production and payment_live_mode:
-                logger.warning(f"Rejected live payment {payment_id} in test/development environment")
-                return HttpResponse(status=200)
 
             # -------------------------------------------------------
             # VALIDAÇÃO 2: collector_id deve ser nossa conta MP
@@ -356,7 +357,7 @@ def mercadopago_webhook(request):
             elif 'DEBIT' in mp_method or 'DEBITO' in mp_method:
                 payment_method = PaymentMethodChoices.DEBIT_CARD
             else:
-                payment_method = mp_method[:20]  # Fallback
+                payment_method = PaymentMethodChoices.CREDIT_CARD  # Fallback seguro
 
             # -------------------------------------------------------
             # VALIDAÇÃO 4: status + status_detail para aprovação real
@@ -427,17 +428,17 @@ def mercadopago_webhook(request):
 
             return HttpResponse(status=200)
 
-        # Handle other notification types
+        # Handle other notification types (merchant_order, etc.) - always 200
         logger.info(f"Unhandled notification type: {data.get('type')}")
         return HttpResponse(status=200)
 
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON in webhook: {str(e)}")
-        return HttpResponse(status=400)
+        return HttpResponse(status=200)  # 200 para MP não retentar
     except Exception as e:
         import traceback
         logger.error(f"Webhook error: {str(e)}\n{traceback.format_exc()}")
-        return HttpResponse(status=500)
+        return HttpResponse(status=200)  # 200 para MP não retentar em erros internos
 
 
 @login_required
