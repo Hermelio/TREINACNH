@@ -40,7 +40,8 @@ def register_view(request):
             user.profile.save()
 
             # Auto login after registration
-            login(request, user)
+            # Pass explicit backend — required when multiple auth backends are configured (allauth + ModelBackend)
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             
             # Different messages based on role
             if user.profile.is_instructor:
