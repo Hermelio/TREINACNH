@@ -27,17 +27,10 @@ def register_view(request):
         if form.is_valid():
             user = form.save()
 
-            # Registration form already captured role — mark profile complete
+            # Registration form already captured role — mark profile complete.
+            # Use update_fields to avoid touching fields already saved in form.save().
             user.profile.is_profile_complete = True
-
-            # Process instructor extra fields if provided
-            if user.profile.is_instructor:
-                whatsapp = request.POST.get('whatsapp', '').strip()
-                if whatsapp:
-                    user.profile.whatsapp_number = whatsapp
-
-            # Always persist profile changes made above
-            user.profile.save()
+            user.profile.save(update_fields=['is_profile_complete'])
 
             # Auto login after registration
             # Pass explicit backend — required when multiple auth backends are configured (allauth + ModelBackend)

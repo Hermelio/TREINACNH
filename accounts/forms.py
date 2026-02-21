@@ -160,6 +160,15 @@ class UserRegistrationForm(UserCreationForm):
         self.fields['password1'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Senha'})
         self.fields['password2'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Confirme a senha'})
 
+    def clean_cpf(self):
+        cpf = self.cleaned_data.get('cpf', '')
+        digits = ''.join(c for c in cpf if c.isdigit())
+        if len(digits) != 11:
+            raise forms.ValidationError('CPF deve ter exatamente 11 dígitos.')
+        if Profile.objects.filter(cpf=digits).exists():
+            raise forms.ValidationError('Este CPF já está cadastrado. Use outro CPF ou faça login.')
+        return digits
+
     def clean_whatsapp_number(self):
         value = self.cleaned_data.get('whatsapp_number', '').strip()
         if not value:
