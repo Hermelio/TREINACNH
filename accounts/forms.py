@@ -1,12 +1,43 @@
 """
 Forms for user registration, login, and profile management.
 """
+import re
+
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Row, Column, Field, HTML
 from .models import Profile, Address, RoleChoices
+
+
+def _normalize_whatsapp_br(value):
+    """
+    Normalize a Brazilian WhatsApp number entered by the user.
+
+    Accepts any of:
+      - 11 97835-4889
+      - (11) 97835-4889
+      - 5511978354889
+      - +5511978354889
+
+    Always stores as '+5511978354889' (E.164 with country code).
+    Raises forms.ValidationError for invalid input.
+    """
+    if not value:
+        return value
+    digits = re.sub(r'\D', '', value)
+    # Strip leading country code variations so we can prepend cleanly
+    if digits.startswith('55') and len(digits) >= 12:
+        pass  # already has country code
+    else:
+        digits = '55' + digits
+    # Valid Brazilian mobile numbers: 55 + DDD (2 digits) + 8 or 9 digit number = 12 or 13 total
+    if len(digits) not in (12, 13):
+        raise forms.ValidationError(
+            'Número de WhatsApp inválido. Informe DDD + número. Ex: 11 97835-4889'
+        )
+    return '+' + digits
 
 
 class UserRegistrationForm(UserCreationForm):
@@ -65,12 +96,13 @@ class UserRegistrationForm(UserCreationForm):
     whatsapp_number = forms.CharField(
         required=True,
         label='WhatsApp',
-        max_length=17,
+        max_length=20,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': '+5511999999999'
+            'placeholder': '11 99999-9999',
+            'inputmode': 'tel',
         }),
-        help_text='Número com código do país e DDD'
+        help_text='DDD + número, sem +55. Ex: 11 97835-4889',
     )
     has_own_car = forms.BooleanField(
         required=False,
@@ -127,7 +159,13 @@ class UserRegistrationForm(UserCreationForm):
         
         self.fields['password1'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Senha'})
         self.fields['password2'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Confirme a senha'})
-    
+
+    def clean_whatsapp_number(self):
+        value = self.cleaned_data.get('whatsapp_number', '').strip()
+        if not value:
+            return value
+        return _normalize_whatsapp_br(value)
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
@@ -255,7 +293,7 @@ class ProfileEditForm(forms.ModelForm):
         value = self.cleaned_data.get('whatsapp_number', '').strip()
         if not value:
             return value
-        return self._normalize_phone(value)
+        return _normalize_whatsapp_br(value)
     
     def save(self, commit=True):
         profile = super().save(commit=False)
@@ -323,14 +361,14 @@ class StudentDataForm(forms.Form):
     )
     whatsapp_number = forms.CharField(
         label='WhatsApp',
-        max_length=17,
+        max_length=20,
         required=True,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': '(11) 99999-9999',
+            'placeholder': '11 99999-9999',
             'inputmode': 'tel',
         }),
-        help_text='Número com DDD. O instrutor usará este número para te contatar.',
+        help_text='DDD + número, sem +55. Ex: 11 97835-4889. O instrutor usará este número para te contatar.',
     )
     cpf = forms.CharField(
         label='CPF',
@@ -382,7 +420,12 @@ class StudentDataForm(forms.Form):
             self.fields['last_name'].initial = user.last_name
             self.fields['email'].initial = user.email
         if profile:
-            self.fields['whatsapp_number'].initial = profile.whatsapp_number or profile.phone
+            wa = profile.whatsapp_number or profile.phone or ''
+            # Strip +55 or 55 prefix so the user sees only DDD + number
+            wa_digits = re.sub(r'\D', '', wa)
+            if wa_digits.startswith('55') and len(wa_digits) >= 12:
+                wa_digits = wa_digits[2:]
+            self.fields['whatsapp_number'].initial = wa_digits or wa
             self.fields['cpf'].initial = profile.cpf
             if profile.preferred_city:
                 self.fields['state'].initial = profile.preferred_city.state.code
@@ -404,13 +447,9 @@ class StudentDataForm(forms.Form):
 
     def clean_whatsapp_number(self):
         value = self.cleaned_data.get('whatsapp_number', '').strip()
-        digits = ''.join(c for c in value if c.isdigit())
-        if len(digits) < 10:
-            raise forms.ValidationError('Informe um número de WhatsApp válido com DDD.')
-        # Store as +55...
-        if not digits.startswith('55') or len(digits) < 12:
-            digits = '55' + digits
-        return '+' + digits
+        if not value:
+            raise forms.ValidationError('Informe seu número de WhatsApp com DDD.')
+        return _normalize_whatsapp_br(value)
 
     def clean_preferred_city(self):
         city_id = self.cleaned_data.get('preferred_city')
