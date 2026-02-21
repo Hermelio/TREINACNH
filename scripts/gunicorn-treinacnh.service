@@ -10,7 +10,7 @@ WorkingDirectory=/var/www/TREINACNH
 Environment="PATH=/var/www/TREINACNH/venv/bin"
 ExecStart=/var/www/TREINACNH/venv/bin/gunicorn \
           --workers 3 \
-          --bind 127.0.0.1:8001 \
+          --bind unix:/var/www/TREINACNH/gunicorn.sock \
           --timeout 120 \
           --access-logfile /var/www/TREINACNH/logs/gunicorn-access.log \
           --error-logfile /var/www/TREINACNH/logs/gunicorn-error.log \
