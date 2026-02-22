@@ -201,26 +201,32 @@
                             </a>
                         {% else %}
                             {% if whatsapp_link %}
-                                <a href="{{ whatsapp_link }}" target="_blank" class="btn btn-whatsapp w-100 mb-2">
+                                <a href="{{ whatsapp_link }}" 
+                                   target="_blank" 
+                                   class="btn btn-whatsapp w-100 mb-2"
+                                   id="whatsapp-btn"
+                                   data-instructor-id="{{ instructor.pk }}">
                                     <i class="bi bi-whatsapp me-2"></i>Falar no WhatsApp
                                 </a>
+                                <small class="text-muted d-block text-center">
+                                    Ao clicar, você será direcionado para conversar diretamente com o instrutor
+                                </small>
+                            {% else %}
+                                <div class="alert alert-warning mb-3" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    <strong>WhatsApp não disponível</strong><br>
+                                    <small>O instrutor ainda não cadastrou o WhatsApp.</small>
+                                </div>
                             {% endif %}
-
-                            <a href="{% url 'marketplace:lead_create' instructor_pk=instructor.pk %}" class="btn btn-primary w-100 mb-3">
-                                <i class="bi bi-envelope-fill me-2"></i>Solicitar Contato
-                            </a>
                         {% endif %}
                     {% else %}
                         <div class="alert alert-warning mb-3" role="alert">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>
                             <strong>Perfil em análise</strong><br>
-                            <small>Este instrutor está aguardando verificação dos documentos. O contato será liberado após aprovação.</small>
+                            <small>Este instrutor está aguardando verificação. O contato será liberado após aprovação.</small>
                         </div>
                         <button class="btn btn-secondary w-100 mb-2" disabled>
                             <i class="bi bi-whatsapp me-2"></i>WhatsApp Indisponível
-                        </button>
-                        <button class="btn btn-secondary w-100 mb-3" disabled>
-                            <i class="bi bi-envelope-fill me-2"></i>Contato Indisponível
                         </button>
                     {% endif %}
                     
@@ -235,6 +241,25 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Profile Stats (only for instructor viewing own profile) -->
+            {% if user.is_authenticated and user == instructor.user %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-bar-chart-fill me-2 text-primary"></i>Estatísticas do Perfil</h6>
+                        <div class="row text-center">
+                            <div class="col-12 mb-2">
+                                <strong class="d-block fs-4">{{ instructor.profile_views }}</strong>
+                                <small class="text-muted">Visualizações</small>
+                            </div>
+                            <div class="col-12">
+                                <strong class="d-block fs-4">{{ instructor.leads_received.count }}</strong>
+                                <small class="text-muted">Contatos Recebidos</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
             
             <!-- Tips -->
             <div class="card">
@@ -251,4 +276,35 @@
         </div>
     </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const whatsappBtn = document.getElementById('whatsapp-btn');
+    
+    if (whatsappBtn) {
+        whatsappBtn.addEventListener('click', function(e) {
+            // Don't prevent default - let WhatsApp open
+            // But send AJAX request to register the contact
+            const instructorId = this.dataset.instructorId;
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                             document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+            
+            // Send AJAX request
+            fetch(`/marketplace/instrutor/${instructorId}/whatsapp-contact/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            }).catch(err => {
+                console.log('Error registering WhatsApp contact:', err);
+                // Don't show error to user, just log it
+            });
+        });
+    }
+});
+</script>
 {% endblock %}
