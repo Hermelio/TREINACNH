@@ -239,7 +239,8 @@ def complete_student_data_view(request):
                     profile.whatsapp_number = cd['whatsapp_number']
                     profile.cpf = cd['cpf']
                     profile.preferred_city = cd['preferred_city']
-                    profile.save(update_fields=['whatsapp_number', 'cpf', 'preferred_city'])
+                    profile.is_profile_complete = True
+                    profile.save(update_fields=['whatsapp_number', 'cpf', 'preferred_city', 'is_profile_complete'])
 
                     # Save M2M categories; set() handles both add and clear correctly
                     from marketplace.models import CategoryCNH
