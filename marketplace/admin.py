@@ -5,6 +5,8 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.db.models import Count
 from django.contrib import messages
+from django.http import HttpResponse
+import csv
 from .models import (
     State, City, CategoryCNH, InstructorProfile, Lead, StudentLead,
     InstructorAvailability, Appointment, CityGeoCache
@@ -197,7 +199,56 @@ class InstructorProfileAdmin(admin.ModelAdmin):
         )
     completion_badge.short_description = 'Completude'
 
-    actions = ['approve_instructors', 'make_unverified', 'make_visible', 'make_invisible']
+    actions = ['approve_instructors', 'make_unverified', 'make_visible', 'make_invisible', 'export_to_csv']
+
+    def export_to_csv(self, request, queryset):
+        """Export selected instructors to CSV"""
+        response = HttpResponse(content_type='text/csv; charset=utf-8')
+        response['Content-Disposition'] = 'attachment; filename="instrutores_export.csv"'
+        response.write('\ufeff')  # UTF-8 BOM for Excel compatibility
+        
+        writer = csv.writer(response)
+        # Header
+        writer.writerow([
+            'ID', 'Nome Completo', 'Email', 'Telefone', 'WhatsApp', 'CPF',
+            'Cidade', 'Estado', 'Gênero', 'Idade', 'Anos Experiência',
+            'Categorias CNH', 'Possui Carro', 'Modelo Carro', 
+            'Preço Base/Hora', 'Disponibilidade Manhã', 'Disponibilidade Tarde', 
+            'Disponibilidade Noite', 'Verificado', 'Visível', 'Score Completude',
+            'Data Cadastro'
+        ])
+        
+        # Data rows
+        for instructor in queryset.select_related('user', 'city', 'city__state').prefetch_related('categories'):
+            profile = instructor.user.profile if hasattr(instructor.user, 'profile') else None
+            writer.writerow([
+                instructor.id,
+                instructor.user.get_full_name() or instructor.user.username,
+                instructor.user.email,
+                profile.phone if profile else '',
+                profile.whatsapp_number if profile else '',
+                profile.cpf if profile else '',
+                instructor.city.name if instructor.city else '',
+                instructor.city.state.code if instructor.city else '',
+                instructor.get_gender_display(),
+                instructor.age or '',
+                instructor.years_experience or '',
+                ', '.join([cat.code for cat in instructor.categories.all()]),
+                'Sim' if instructor.has_own_car else 'Não',
+                instructor.car_model or '',
+                instructor.base_price_per_hour or '',
+                'Sim' if instructor.available_morning else 'Não',
+                'Sim' if instructor.available_afternoon else 'Não',
+                'Sim' if instructor.available_evening else 'Não',
+                'Sim' if instructor.is_verified else 'Não',
+                'Sim' if instructor.is_visible else 'Não',
+                f'{instructor.profile_completion_score}%',
+                instructor.created_at.strftime('%d/%m/%Y %H:%M'),
+            ])
+        
+        self.message_user(request, f'{queryset.count()} instrutor(es) exportado(s) para CSV.')
+        return response
+    export_to_csv.short_description = '📥 Exportar selecionados para CSV'
 
     def approve_instructors(self, request, queryset):
         """
