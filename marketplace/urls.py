@@ -22,7 +22,8 @@ urlpatterns = [
     path('', views.cities_list_view, name='instructors_map'),
     path('cidades/', views.cities_list_view, name='cities_list'),
     path('instrutor/<int:pk>/', views.instructor_detail_view, name='instructor_detail'),
-    path('instrutor/<int:instructor_pk>/solicitar-contato/', views.lead_create_view, name='lead_create'),
+    # path('instrutor/<int:instructor_pk>/solicitar-contato/', views.lead_create_view, name='lead_create'),  # DESABILITADO: Contato apenas via WhatsApp
+    path('instrutor/<int:instructor_pk>/whatsapp-contact/', views.register_whatsapp_contact, name='whatsapp_contact'),
     
     # Dynamic routes (must come last to avoid conflicts)
     path('<str:state_code>/<slug:city_slug>/', views.city_instructors_list_view, name='city_list'),
