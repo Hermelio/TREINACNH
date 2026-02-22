@@ -34,7 +34,7 @@ class UserAdmin(BaseUserAdmin):
     inlines = (ProfileInline,)
     list_display = ('username', 'email', 'first_name', 'last_name', 'get_role', 'is_staff', 'is_active', 'date_joined')
     list_filter = ('is_staff', 'is_superuser', 'is_active', 'profile__role')
-    actions = BaseUserAdmin.actions + ['export_users_to_csv', 'export_students_to_csv']
+    actions = list(BaseUserAdmin.actions) + ['export_users_to_csv', 'export_students_to_csv']
 
     def get_role(self, obj):
         try:
