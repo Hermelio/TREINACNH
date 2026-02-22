@@ -4,11 +4,12 @@ Views for authentication and profile management.
 import logging
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import login, authenticate, logout, get_user_model
 from django.contrib.auth import views as django_auth_views
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction, IntegrityError
+from django.db.models import Q
 from django.utils.decorators import method_decorator
 from django.views.generic import CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -79,35 +80,80 @@ def registration_success_view(request):
     })
 
 
+_FAIL_COUNT_PREFIX = 'login_fail_count'
+_FAIL_LAST_USER_KEY = 'login_last_username'
+_SHOW_CTA_AFTER = 3
+
+
 @ratelimit(key='ip', rate='10/m', method='POST', block=True)
 def login_view(request):
-    """User login view with rate limiting protection"""
+    """User login view with rate limiting and incremental password-recovery CTA."""
     if request.user.is_authenticated:
         return redirect('marketplace:my_leads')
-    
+
+    User = get_user_model()
+    show_recover_cta = False
+
     if request.method == 'POST':
         form = CustomLoginForm(request, data=request.POST)
+        raw_username = request.POST.get('username', '').strip().lower()
+        fail_key = f'{_FAIL_COUNT_PREFIX}:{raw_username}'
+
         if form.is_valid():
             username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(username=username, password=password)
+            user = authenticate(request, username=username, password=form.cleaned_data.get('password'))
+
             if user is not None:
+                # Success: wipe counters and log the user in
+                request.session.pop(fail_key, None)
+                request.session.pop(_FAIL_LAST_USER_KEY, None)
                 login(request, user)
                 messages.success(request, f'Bem-vindo de volta, {user.first_name or user.username}!')
-                
-                # Ignore 'next' parameter - always go to my_leads
+                logger.info('login_success user_id=%s ip=%s', user.pk, _client_ip(request))
                 return redirect('marketplace:my_leads')
             else:
+                # Credentials rejected — increment counter only if the account exists
+                user_exists = User.objects.filter(
+                    Q(username__iexact=username) | Q(email__iexact=username)
+                ).exists()
+
+                if user_exists:
+                    count = request.session.get(fail_key, 0) + 1
+                    request.session[fail_key] = count
+                    request.session[_FAIL_LAST_USER_KEY] = raw_username
+                    logger.warning(
+                        'login_failed_wrong_password username=%s count=%d ip=%s',
+                        username, count, _client_ip(request),
+                    )
+                else:
+                    # Unknown account — don't reveal its non-existence via a counter bump
+                    count = request.session.get(fail_key, 0)
+                    logger.warning(
+                        'login_failed_unknown_user username=%s ip=%s',
+                        username, _client_ip(request),
+                    )
+
+                show_recover_cta = count >= _SHOW_CTA_AFTER
                 messages.error(request, 'Usuário ou senha incorretos.')
         else:
-            # Show form errors
+            # Form-level validation error (e.g. empty fields)
+            count = request.session.get(fail_key, 0)
+            show_recover_cta = count >= _SHOW_CTA_AFTER
             for field, errors in form.errors.items():
                 for error in errors:
-                    messages.error(request, f'{field}: {error}')
+                    messages.error(request, error if field == '__all__' else f'{field}: {error}')
     else:
         form = CustomLoginForm()
-    
-    return render(request, 'accounts/login.html', {'form': form})
+        # Recover CTA state from session so a page refresh keeps it visible
+        last_username = request.session.get(_FAIL_LAST_USER_KEY, '')
+        if last_username:
+            fail_key = f'{_FAIL_COUNT_PREFIX}:{last_username}'
+            show_recover_cta = request.session.get(fail_key, 0) >= _SHOW_CTA_AFTER
+
+    return render(request, 'accounts/login.html', {
+        'form': form,
+        'show_recover_cta': show_recover_cta,
+    })
 
 
 @login_required
