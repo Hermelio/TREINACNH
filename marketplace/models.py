@@ -41,6 +41,13 @@ class State(models.Model):
 
 class City(models.Model):
     """Cities with state relationship"""
+    ibge_id = models.IntegerField(
+        'Código IBGE',
+        null=True,
+        blank=True,
+        unique=True,
+        help_text='Código do município no IBGE (7 dígitos)',
+    )
     state = models.ForeignKey(State, on_delete=models.CASCADE, related_name='cities', verbose_name='Estado')
     name = models.CharField('Nome', max_length=100)
     slug = models.SlugField('Slug', max_length=120, unique=True, blank=True)
@@ -56,16 +63,28 @@ class City(models.Model):
         indexes = [
             models.Index(fields=['state', 'name']),
             models.Index(fields=['slug']),
+            models.Index(fields=['ibge_id']),
         ]
     
     def __str__(self):
         return f"{self.name}/{self.state.code}"
     
     def save(self, *args, **kwargs):
-        """Auto-generate slug from name and state"""
+        """Auto-generate slug from name and state with conflict handling."""
         if not self.slug:
             base_slug = slugify(f"{self.name}-{self.state.code}")
-            self.slug = base_slug
+            slug = base_slug
+            counter = 1
+            qs = City.objects.filter(slug=slug)
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            while qs.exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+                qs = City.objects.filter(slug=slug)
+                if self.pk:
+                    qs = qs.exclude(pk=self.pk)
+            self.slug = slug
         super().save(*args, **kwargs)
     
     def get_absolute_url(self):

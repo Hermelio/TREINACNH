@@ -12,11 +12,11 @@ logger = logging.getLogger(__name__)
 def get_cities_by_state(request, state_code):
     """
     API endpoint to get cities by state code.
-    Returns JSON with cities list.
+    Returns JSON with cities list for all cities (not only is_active),
+    so student dropdowns show every Brazilian municipality.
     """
     cities = City.objects.filter(
-        state__code=state_code.upper(),
-        is_active=True
+        state__code=state_code.upper()
     ).values('id', 'name').order_by('name')
     
     return JsonResponse({
