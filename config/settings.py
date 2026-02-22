@@ -294,12 +294,19 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='TreinaCNH <noreply@treinacnh.com.br>')
-SERVER_EMAIL = config('SERVER_EMAIL', default='noreply@treinacnh.com.br')
+# DEFAULT_FROM_EMAIL: if not set explicitly, falls back to EMAIL_HOST_USER (required by Gmail SMTP
+# — the "From" address must match the authenticated account; a mismatch causes 550 errors).
+_email_host_user = config('EMAIL_HOST_USER', default='')
+DEFAULT_FROM_EMAIL = config(
+    'DEFAULT_FROM_EMAIL',
+    default=f'TreinaCNH <{_email_host_user}>' if _email_host_user else 'TreinaCNH <noreply@treinacnh.com.br>',
+)
+SERVER_EMAIL = config('SERVER_EMAIL', default=_email_host_user or 'noreply@treinacnh.com.br')
 EMAIL_SUBJECT_PREFIX = '[TreinaCNH] '
 
-# Password-reset link lifetime (seconds). Default 3 days → 1 day em produção.
-PASSWORD_RESET_TIMEOUT = config('PASSWORD_RESET_TIMEOUT', default=86400, cast=int)
+# Password-reset link lifetime. 4 h is a good balance between security and UX.
+# Override via PASSWORD_RESET_TIMEOUT in .env (seconds).
+PASSWORD_RESET_TIMEOUT = config('PASSWORD_RESET_TIMEOUT', default=14400, cast=int)
 
 # ==========================================
 # DJANGO-ALLAUTH CONFIGURATION

@@ -1,17 +1,23 @@
 """
 Views for authentication and profile management.
 """
+import logging
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import views as django_auth_views
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction, IntegrityError
+from django.utils.decorators import method_decorator
 from django.views.generic import CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy, reverse
 from django_ratelimit.decorators import ratelimit
-from .forms import UserRegistrationForm, CustomLoginForm, ProfileEditForm, CompleteProfileForm, StudentDataForm
+from .forms import UserRegistrationForm, CustomLoginForm, ProfileEditForm, CompleteProfileForm, StudentDataForm, CustomPasswordResetForm
 from .models import Profile, RoleChoices
+
+logger = logging.getLogger(__name__)
 
 
 @ratelimit(key='ip', rate='5/m', method='POST', block=True)
@@ -298,3 +304,64 @@ def profile_edit_view(request):
         'seo_title': 'Editar Perfil | TreinaCNH',
         'seo_description': 'Atualize suas informações de perfil na TreinaCNH.',
     })
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Password Reset — custom CBVs with logging
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _client_ip(request):
+    """Return the real client IP, respecting nginx X-Real-IP header."""
+    return (
+        request.META.get('HTTP_X_REAL_IP')
+        or request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
+        or request.META.get('REMOTE_ADDR', '—')
+    )
+
+
+@method_decorator(ratelimit(key='ip', rate='5/h', method='POST', block=True), name='dispatch')
+class PasswordResetRequestView(django_auth_views.PasswordResetView):
+    """
+    Rate-limited password reset request.
+    Logs only the client IP — never the submitted e-mail address so there is
+    no user-enumeration risk in the log file.
+    """
+    template_name = 'accounts/password_reset.html'
+    email_template_name = 'registration/password_reset_email.html'
+    subject_template_name = 'registration/password_reset_subject.txt'
+    form_class = CustomPasswordResetForm
+    success_url = '/contas/senha/recuperar/enviado/'
+
+    def form_valid(self, form):
+        # Inject canonical domain/protocol from SITE_URL so the reset link in the
+        # e-mail always uses e.g. https://treinacnh.com.br regardless of what the
+        # reverse proxy puts in the Host header.
+        from urllib.parse import urlparse
+        from django.conf import settings as _s
+        _site = urlparse(getattr(_s, 'SITE_URL', 'http://localhost:8000'))
+        self.extra_email_context = {
+            'domain': _site.netloc,
+            'protocol': _site.scheme,
+            'site_name': 'TreinaCNH',
+        }
+        logger.info(
+            'password_reset_requested ip=%s ua=%.120s',
+            _client_ip(self.request),
+            self.request.META.get('HTTP_USER_AGENT', ''),
+        )
+        return super().form_valid(form)
+
+
+class PasswordResetConfirmLoggingView(django_auth_views.PasswordResetConfirmView):
+    """
+    Confirm/set-new-password view. Logs user_id on success — never the e-mail.
+    """
+    template_name = 'accounts/password_reset_confirm.html'
+    success_url = '/contas/senha/redefinir/concluido/'
+
+    def form_valid(self, form):
+        # Capture pk before super() may clear self.user
+        user_id = self.user.pk if getattr(self, 'user', None) else '?'
+        response = super().form_valid(form)
+        logger.info('password_reset_completed user_id=%s ip=%s', user_id, _client_ip(self.request))
+        return response
