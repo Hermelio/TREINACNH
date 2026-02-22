@@ -5,6 +5,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import transaction, IntegrityError
 from django.views.generic import CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy, reverse
@@ -26,6 +27,10 @@ def register_view(request):
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
+            if user is None:
+                # IntegrityError on CPF caught inside form.save() (race condition)
+                messages.error(request, 'Este CPF já está cadastrado. Use outro CPF ou faça login.')
+                return render(request, 'accounts/register.html', {'form': form})
 
             # Registration form already captured role — mark profile complete.
             # Use update_fields to avoid touching fields already saved in form.save().
@@ -51,6 +56,7 @@ def register_view(request):
             messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
         form = UserRegistrationForm()
+
     
     return render(request, 'accounts/register.html', {'form': form})
 
@@ -218,26 +224,39 @@ def complete_student_data_view(request):
         form = StudentDataForm(request.POST, user=request.user, profile=profile)
         if form.is_valid():
             cd = form.cleaned_data
+            try:
+                with transaction.atomic():
+                    # Persist User fields — update_fields avoids touching last_login / password
+                    user = request.user
+                    user.first_name = cd['first_name']
+                    user.last_name = cd['last_name']
+                    # Only update email when it differs; avoids invalidating provider-verified address
+                    if cd['email'] and cd['email'] != user.email:
+                        user.email = cd['email']
+                    user.save(update_fields=['first_name', 'last_name', 'email'])
 
-            # Persist User fields — update_fields avoids touching last_login / password
-            user = request.user
-            user.first_name = cd['first_name']
-            user.last_name = cd['last_name']
-            # Only update email when it differs; avoids invalidating provider-verified address
-            if cd['email'] and cd['email'] != user.email:
-                user.email = cd['email']
-            user.save(update_fields=['first_name', 'last_name', 'email'])
+                    # Persist Profile fields (CPF uniqueness already validated in the form)
+                    profile.whatsapp_number = cd['whatsapp_number']
+                    profile.cpf = cd['cpf']
+                    profile.preferred_city = cd['preferred_city']
+                    profile.save(update_fields=['whatsapp_number', 'cpf', 'preferred_city'])
 
-            # Persist Profile fields (CPF uniqueness already validated in the form)
-            profile.whatsapp_number = cd['whatsapp_number']
-            profile.cpf = cd['cpf']
-            profile.preferred_city = cd['preferred_city']
-            profile.save(update_fields=['whatsapp_number', 'cpf', 'preferred_city'])
+                    # Save M2M categories; set() handles both add and clear correctly
+                    from marketplace.models import CategoryCNH
+                    cats = list(CategoryCNH.objects.filter(code__in=cd['cnh_categories']))
+                    profile.cnh_categories.set(cats)
 
-            # Save M2M categories; set() handles both add and clear correctly
-            from marketplace.models import CategoryCNH
-            cats = list(CategoryCNH.objects.filter(code__in=cd['cnh_categories']))
-            profile.cnh_categories.set(cats)
+            except IntegrityError:
+                # Race condition: two concurrent requests with the same CPF
+                form.add_error(
+                    'cpf',
+                    'Este CPF já está cadastrado. Use outro CPF ou faça login.'
+                )
+                return render(request, 'accounts/complete_student_data.html', {
+                    'form': form,
+                    'next': next_url,
+                    'seo_title': 'Complete seu Perfil | TreinaCNH',
+                })
 
             messages.success(
                 request,

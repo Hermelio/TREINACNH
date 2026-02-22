@@ -41,7 +41,6 @@ class Profile(models.Model):
         'CPF',
         max_length=11,
         blank=True,
-        unique=True,
         null=True,
         help_text='CPF sem pontos ou traços (apenas números)'
     )
@@ -151,6 +150,12 @@ class Profile(models.Model):
         verbose_name = 'Perfil'
         verbose_name_plural = 'Perfis'
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['cpf'],
+                name='unique_profile_cpf',
+            )
+        ]
     
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username} ({self.get_role_display()})"

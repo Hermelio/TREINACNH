@@ -6,6 +6,7 @@ import re
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
+from django.db import transaction, IntegrityError
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Row, Column, Field, HTML
 from .models import Profile, Address, RoleChoices
@@ -181,29 +182,30 @@ class UserRegistrationForm(UserCreationForm):
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
         if commit:
-            user.save()
-            # Update profile with all fields
-            profile = user.profile
-            profile.role = self.cleaned_data['role']
-            profile.cpf = self.cleaned_data.get('cpf', '')
-            profile.whatsapp_number = self.cleaned_data.get('whatsapp_number', '')
-            profile.accept_whatsapp_messages = self.cleaned_data.get('accept_whatsapp_messages', True)
-            profile.accept_terms = self.cleaned_data.get('accept_terms', False)
-            profile.accept_privacy = self.cleaned_data.get('accept_privacy', False)
-            
-            if self.cleaned_data.get('preferred_city'):
-                profile.preferred_city = self.cleaned_data['preferred_city']
-            
-            profile.save()
-            
-            # If instructor and has car info, save to InstructorProfile if it exists
-            if profile.role == 'INSTRUCTOR':
-                try:
-                    from marketplace.models import InstructorProfile
-                    # Store has_own_car temporarily for later use when creating InstructorProfile
-                    profile._has_own_car = self.cleaned_data.get('has_own_car', False)
-                except:
-                    pass
+            try:
+                with transaction.atomic():
+                    user.save()
+                    # Update profile with all fields
+                    profile = user.profile
+                    profile.role = self.cleaned_data['role']
+                    profile.cpf = self.cleaned_data.get('cpf', '')
+                    profile.whatsapp_number = self.cleaned_data.get('whatsapp_number', '')
+                    profile.accept_whatsapp_messages = self.cleaned_data.get('accept_whatsapp_messages', True)
+                    profile.accept_terms = self.cleaned_data.get('accept_terms', False)
+                    profile.accept_privacy = self.cleaned_data.get('accept_privacy', False)
+
+                    if self.cleaned_data.get('preferred_city'):
+                        profile.preferred_city = self.cleaned_data['preferred_city']
+
+                    profile.save()
+            except IntegrityError:
+                # Safety net: clean_cpf() should already catch this, but guard against
+                # race conditions (two concurrent requests with the same CPF).
+                self.add_error(
+                    'cpf',
+                    'Este CPF já está cadastrado. Use outro CPF ou faça login.'
+                )
+                return None
         return user
 
 
