@@ -8,23 +8,152 @@
     </h1>
     
     {% if is_instructor %}
+        <!-- Instructor Profile Status Cards -->
+        <div class="row mb-4">
+            <!-- Perfil Profissional Card -->
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-person-badge me-2 text-primary"></i>Perfil Profissional
+                            </h5>
+                            {% if instructor_profile %}
+                                <span class="badge bg-{% if instructor_profile.is_verified %}success{% else %}warning{% endif %}">
+                                    {% if instructor_profile.is_verified %}✓ Verificado{% else %}⏳ Em Análise{% endif %}
+                                </span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if instructor_profile %}
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="small text-muted">Completude:</span>
+                                    <strong>{{ instructor_profile.profile_completion_score }}%</strong>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar {% if instructor_profile.profile_completion_score >= 80 %}bg-success{% elif instructor_profile.profile_completion_score >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                         style="width: {{ instructor_profile.profile_completion_score }}%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'marketplace:instructor_profile_edit' %}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-pencil-square me-1"></i>Editar
+                                </a>
+                                <a href="{% url 'marketplace:instructor_detail' pk=instructor_profile.pk %}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                    <i class="bi bi-eye me-1"></i>Ver Público
+                                </a>
+                            </div>
+                        {% else %}
+                            <p class="text-muted small mb-2">Complete seu perfil para aparecer nas buscas</p>
+                            <a href="{% url 'marketplace:instructor_profile_edit' %}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i>Criar Perfil
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Profile Views Card -->
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-eye-fill display-4 text-primary mb-3"></i>
+                        <h2 class="display-6 fw-bold mb-2">{{ profile_views|default:0 }}</h2>
+                        <p class="text-muted mb-0">Visualizações do Perfil</p>
+                        <small class="text-muted">Total de pessoas que viram seu perfil</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- WhatsApp Contacts Card -->
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-whatsapp display-4 text-success mb-3"></i>
+                        <h2 class="display-6 fw-bold mb-2">{{ leads.count }}</h2>
+                        <p class="text-muted mb-0">Contatos via WhatsApp</p>
+                        <small class="text-muted">Alunos que clicaram para falar com você</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Access Status Alert -->
+        {% if instructor_profile %}
+            {% if not instructor_profile.can_receive_leads %}
+                <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
+                    <div class="flex-grow-1">
+                        <h5 class="alert-heading mb-2">⛔ Você não está recebendo contatos de alunos!</h5>
+                        <p class="mb-2">
+                            {% if instructor_profile.is_trial_expired %}
+                                Seu período de teste gratuito de 14 dias expirou. Para continuar recebendo leads de alunos, você precisa contratar um plano.
+                            {% else %}
+                                Você precisa ativar um plano para receber contatos de alunos.
+                            {% endif %}
+                        </p>
+                        <a href="{% url 'billing:plans' %}" class="btn btn-warning">
+                            <i class="bi bi-star-fill me-2"></i>Ver Planos e Contratar
+                        </a>
+                    </div>
+                </div>
+            {% elif instructor_profile.is_trial_active and not instructor_profile.has_active_subscription %}
+                {% with days_remaining=instructor_profile.days_until_trial_end %}
+                    {% if days_remaining <= 7 %}
+                        <div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
+                            <i class="bi bi-clock-fill me-3 fs-4"></i>
+                            <div class="flex-grow-1">
+                                <h5 class="alert-heading mb-2">⏰ Período de Teste Expirando</h5>
+                                <p class="mb-2">
+                                    Restam apenas <strong>{{ days_remaining }} {% if days_remaining == 1 %}dia{% else %}dias{% endif %}</strong> do seu teste gratuito. 
+                                    Após este período, você não receberá mais contatos de alunos até contratar um plano.
+                                </p>
+                                <a href="{% url 'billing:plans' %}" class="btn btn-warning btn-sm">
+                                    <i class="bi bi-star-fill me-2"></i>Ver Planos
+                                </a>
+                            </div>
+                        </div>
+                    {% elif days_remaining <= 14 %}
+                        <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+                            <i class="bi bi-info-circle-fill me-3 fs-4"></i>
+                            <div class="flex-grow-1">
+                                <h5 class="alert-heading mb-2">🎉 Período de Teste Gratuito Ativo</h5>
+                                <p class="mb-2">
+                                    Você está no período de teste gratuito! Restam <strong>{{ days_remaining }} dias</strong>. 
+                                    Após este período, será necessário contratar um plano para continuar recebendo leads.
+                                </p>
+                                <a href="{% url 'billing:plans' %}" class="btn btn-info btn-sm">
+                                    <i class="bi bi-eye me-2"></i>Ver Planos Disponíveis
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endwith %}
+            {% elif instructor_profile.has_active_subscription %}
+                <div class="alert alert-success d-flex align-items-center mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-3 fs-4"></i>
+                    <div class="flex-grow-1">
+                        <h5 class="alert-heading mb-2">✅ Plano Ativo</h5>
+                        <p class="mb-0">
+                            Você tem um plano ativo e está recebendo contatos de alunos normalmente.
+                        </p>
+                    </div>
+                    <a href="{% url 'billing:my_subscription' %}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-credit-card me-1"></i>Ver Assinatura
+                    </a>
+                </div>
+            {% endif %}
+        {% endif %}
+        
         <!-- Instructor view - leads received -->
         <div class="card">
-            <div class="card-header">
-                <ul class="nav nav-tabs card-header-tabs">
-                    <li class="nav-item">
-                        <a class="nav-link {% if not request.GET.status %}active{% endif %}" href="{% url 'marketplace:my_leads' %}">Todos</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.GET.status == 'NEW' %}active{% endif %}" href="?status=NEW">Novos</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.GET.status == 'CONTACTED' %}active{% endif %}" href="?status=CONTACTED">Contatados</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.GET.status == 'CLOSED' %}active{% endif %}" href="?status=CLOSED">Fechados</a>
-                    </li>
-                </ul>
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-whatsapp me-2"></i>Alunos que Entraram em Contato via WhatsApp
+                </h5>
+                <small>Estes alunos clicaram no botão do WhatsApp para falar com você</small>
             </div>
             <div class="card-body">
                 {% if leads %}
@@ -32,50 +161,51 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Nome</th>
-                                    <th>Telefone</th>
-                                    <th>Horário Preferido</th>
-                                    <th>Status</th>
-                                    <th>Data</th>
+                                    <th>Nome do Aluno</th>
+                                    <th>WhatsApp</th>
+                                    <th>Data do Contato</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for lead in leads %}
                                     <tr>
-                                        <td>{{ lead.contact_name }}</td>
                                         <td>
-                                            <a href="https://wa.me/{{ lead.contact_phone|cut:' '|cut:'-'|cut:'(' |cut:')' }}" target="_blank" class="btn btn-sm btn-whatsapp">
+                                            <strong>{{ lead.contact_name }}</strong>
+                                            {% if lead.student_user %}
+                                                <br><small class="text-muted">@{{ lead.student_user.username }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="https://wa.me/55{{ lead.contact_phone|cut:' '|cut:'-'|cut:'(' |cut:')' }}" 
+                                               target="_blank" 
+                                               class="btn btn-sm btn-success">
                                                 <i class="bi bi-whatsapp me-1"></i>{{ lead.contact_phone }}
                                             </a>
                                         </td>
-                                        <td>{{ lead.preferred_schedule|default:"-" }}</td>
-                                        <td>
-                                            <span class="badge bg-{% if lead.status == 'NEW' %}primary{% elif lead.status == 'CONTACTED' %}warning{% else %}secondary{% endif %}">
-                                                {{ lead.get_status_display }}
-                                            </span>
-                                        </td>
                                         <td>{{ lead.created_at|date:"d/m/Y H:i" }}</td>
                                         <td>
-                                            <form method="post" action="{% url 'marketplace:lead_update_status' lead_pk=lead.pk %}" class="d-inline">
-                                                {% csrf_token %}
-                                                <select name="status" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()">
-                                                    <option value="NEW" {% if lead.status == 'NEW' %}selected{% endif %}>Novo</option>
-                                                    <option value="CONTACTED" {% if lead.status == 'CONTACTED' %}selected{% endif %}>Contatado</option>
-                                                    <option value="CLOSED" {% if lead.status == 'CLOSED' %}selected{% endif %}>Fechado</option>
-                                                    <option value="SPAM" {% if lead.status == 'SPAM' %}selected{% endif %}>Spam</option>
-                                                </select>
-                                            </form>
+                                            <a href="https://wa.me/55{{ lead.contact_phone|cut:' '|cut:'-'|cut:'(' |cut:')' }}?text=Olá {{ lead.contact_name }}, vi que você entrou em contato comigo pelo TreinaCNH!" 
+                                               target="_blank" 
+                                               class="btn btn-sm btn-primary">
+                                                <i class="bi bi-chat-dots-fill me-1"></i>Responder
+                                            </a>
                                         </td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
+                    
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <strong>Dica:</strong> Clique no botão "Responder" para iniciar uma conversa pelo WhatsApp com o aluno.
+                    </div>
                 {% else %}
                     <div class="text-center py-5">
-                        <i class="bi bi-inbox display-1 text-muted"></i>
-                        <p class="text-muted mt-3">Nenhum lead encontrado.</p>
+                        <i class="bi bi-chat-square-text display-1 text-muted"></i>
+                        <p class="text-muted mt-3">Nenhum aluno entrou em contato ainda.</p>
+                        <p class="text-muted">Quando alguém clicar no botão do WhatsApp no seu perfil, aparecerá aqui.</p>
                     </div>
                 {% endif %}
             </div>
@@ -114,4 +244,5 @@
         {% endif %}
     {% endif %}
 </div>
+
 {% endblock %}

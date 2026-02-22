@@ -95,7 +95,9 @@
                                 {% if is_student %}
                                     {% if instructor.whatsapp_number %}
                                         <a href="https://wa.me/55{{ instructor.whatsapp_number }}?text=Olá! Vi seu perfil no TreinaCNH e gostaria de saber mais sobre suas aulas." 
-                                           class="btn btn-success btn-sm" target="_blank">
+                                           class="btn btn-success btn-sm whatsapp-contact-btn" 
+                                           data-instructor-id="{{ instructor.id }}"
+                                           target="_blank">
                                             <i class="bi bi-whatsapp me-1"></i>Contatar via WhatsApp
                                         </a>
                                     {% endif %}
@@ -144,4 +146,37 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Register WhatsApp contact clicks
+    const whatsappButtons = document.querySelectorAll('.whatsapp-contact-btn');
+    
+    whatsappButtons.forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            // Don't prevent default - let WhatsApp open
+            // But send AJAX request to register the contact
+            const instructorId = this.dataset.instructorId;
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                             document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+            
+            // Send AJAX request
+            fetch(`/marketplace/instrutor/${instructorId}/whatsapp-contact/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            }).catch(err => {
+                console.log('Error registering WhatsApp contact:', err);
+                // Don't show error to user, just log it
+            });
+        });
+    });
+});
+</script>
 {% endblock %}

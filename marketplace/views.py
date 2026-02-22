@@ -12,16 +12,31 @@ from .forms import InstructorProfileForm, LeadForm, InstructorSearchForm, Studen
 from core.seo import build_seo
 
 
+@login_required
 def cities_list_view(request):
     """
     Main cities page - list all states with cities and instructor counts.
     Shows "new instructors" section and interactive map with filtering.
+    Only shows instructors who can receive leads (trial active or paid subscription).
+    Requires user authentication.
     """
-    from django.db.models import OuterRef, Subquery, Avg
+    from django.db.models import OuterRef, Subquery, Avg, Exists
+    from django.utils import timezone
+    from billing.models import Subscription, SubscriptionStatusChoices
     
-    # Get instructor count per state
+    # Subquery to check if instructor has active subscription
+    has_active_subscription = Subscription.objects.filter(
+        instructor=OuterRef('pk'),
+        status=SubscriptionStatusChoices.ACTIVE,
+        start_date__lte=timezone.now().date()
+    ).filter(
+        Q(end_date__isnull=True) | Q(end_date__gte=timezone.now().date())
+    )
+    
+    # Get instructor count per state (verified instructors)
     instructor_counts = InstructorProfile.objects.filter(
         is_visible=True,
+        is_verified=True,
         city__state=OuterRef('pk')
     ).values('city__state').annotate(
         total=Count('id')
@@ -34,9 +49,10 @@ def cities_list_view(request):
         instructor_count=Subquery(instructor_counts)
     ).order_by('code')
     
-    # Get ALL instructors (not just new ones)
+    # Get all verified instructors (will show in listing but may not receive leads)
     all_instructors = InstructorProfile.objects.filter(
-        is_visible=True
+        is_visible=True,
+        is_verified=True
     ).select_related('user', 'user__profile', 'city', 'city__state').prefetch_related('categories')
     
     # Apply filters from request
@@ -179,17 +195,34 @@ def cities_list_view(request):
     return render(request, 'marketplace/cities_list.html', context)
 
 
+@login_required
 def city_instructors_list_view(request, state_code, city_slug):
     """
     List instructors in a specific city with filters.
     Main marketplace page.
+    Only shows instructors who can receive leads (trial active or paid subscription).
+    Requires user authentication.
     """
+    from django.db.models import Exists
+    from django.utils import timezone
+    from billing.models import Subscription, SubscriptionStatusChoices
+    
     city = get_object_or_404(City, slug=city_slug, state__code=state_code.upper(), is_active=True)
     
-    # Base queryset
+    # Subquery to check if instructor has active subscription
+    has_active_subscription = Subscription.objects.filter(
+        instructor=OuterRef('pk'),
+        status=SubscriptionStatusChoices.ACTIVE,
+        start_date__lte=timezone.now().date()
+    ).filter(
+        Q(end_date__isnull=True) | Q(end_date__gte=timezone.now().date())
+    )
+    
+    # Base queryset - all verified instructors (will show in listing but may not receive leads)
     instructors = InstructorProfile.objects.filter(
         city=city,
-        is_visible=True
+        is_visible=True,
+        is_verified=True
     ).select_related('user', 'user__profile', 'city', 'city__state').prefetch_related('categories')
     
     # Apply filters
@@ -239,10 +272,12 @@ def city_instructors_list_view(request, state_code, city_slug):
     return render(request, 'marketplace/city_instructors_list.html', context)
 
 
+@login_required
 def instructor_detail_view(request, pk):
     """
     Instructor profile detail page.
     Shows bio, categories, availability, reviews, and contact options.
+    Requires user authentication.
     """
     instructor = get_object_or_404(
         InstructorProfile.objects.select_related('user', 'user__profile', 'city', 'city__state').prefetch_related('categories'),
@@ -253,6 +288,11 @@ def instructor_detail_view(request, pk):
     if not instructor.is_visible and (not request.user.is_authenticated or request.user != instructor.user):
         messages.error(request, 'Este perfil não está disponível.')
         return redirect('marketplace:cities_list')
+    
+    # Increment profile views counter (only if not the instructor viewing their own profile)
+    if request.user.is_authenticated and request.user != instructor.user:
+        from django.db.models import F
+        InstructorProfile.objects.filter(pk=pk).update(profile_views=F('profile_views') + 1)
     
     # Get reviews
     from reviews.models import Review
@@ -301,22 +341,41 @@ def instructor_detail_view(request, pk):
 
 
 @require_http_methods(["GET", "POST"])
+@login_required
 def lead_create_view(request, instructor_pk):
     """
     Create a lead/contact request for an instructor.
-    Can be used by logged-in users or anonymous visitors.
+    Requires user authentication.
     """
-    # Guard: authenticated students must have complete profile data
-    if request.user.is_authenticated:
-        profile = getattr(request.user, 'profile', None)
-        if profile and profile.is_student and not profile.is_student_data_complete:
-            from django.urls import reverse
-            from urllib.parse import urlencode
-            next_url = request.get_full_path()
-            return redirect(
-                reverse('accounts:complete_student_data') + '?' + urlencode({'next': next_url})
-            )
+    # Get instructor first
     instructor = get_object_or_404(InstructorProfile, pk=instructor_pk, is_visible=True)
+    
+    # Check if instructor can receive leads (trial active or has subscription)
+    if not instructor.can_receive_leads():
+        access_status = instructor.get_access_status()
+        
+        if access_status['reason'] == 'trial_expired':
+            messages.error(
+                request, 
+                f'O instrutor {instructor.user.get_full_name()} não está mais recebendo contatos. '
+                'O período de teste gratuito expirou e o instrutor precisa ativar um plano.'
+            )
+        else:
+            messages.error(
+                request, 
+                f'O instrutor {instructor.user.get_full_name()} não está disponível para receber contatos no momento.'
+            )
+        return redirect('marketplace:instructor_detail', pk=instructor.pk)
+    
+    # Guard: students must have complete profile data
+    profile = getattr(request.user, 'profile', None)
+    if profile and profile.is_student and not profile.is_student_data_complete:
+        from django.urls import reverse
+        from urllib.parse import urlencode
+        next_url = request.get_full_path()
+        return redirect(
+            reverse('accounts:complete_student_data') + '?' + urlencode({'next': next_url})
+        )
     
     if request.method == 'POST':
         form = LeadForm(request.POST, user=request.user)
@@ -324,10 +383,7 @@ def lead_create_view(request, instructor_pk):
             lead = form.save(commit=False)
             lead.instructor = instructor
             lead.city = instructor.city
-            
-            # Associate with user if logged in
-            if request.user.is_authenticated:
-                lead.student_user = request.user
+            lead.student_user = request.user
             
             # Save IP address
             x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -351,6 +407,36 @@ def lead_create_view(request, instructor_pk):
         'page_title': f'Solicitar Contato - {instructor.user.get_full_name()}',
     }
     return render(request, 'marketplace/lead_create.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def register_whatsapp_contact(request, instructor_pk):
+    """
+    Register when a student clicks on WhatsApp button.
+    Creates a simple lead record with just the student name.
+    Returns JSON response for AJAX call.
+    """
+    from django.http import JsonResponse
+    
+    instructor = get_object_or_404(InstructorProfile, pk=instructor_pk, is_visible=True)
+    
+    # Check if instructor can receive leads
+    if not instructor.can_receive_leads():
+        return JsonResponse({'success': False, 'error': 'Instrutor não disponível'}, status=400)
+    
+    # Create simple lead record
+    lead = Lead.objects.create(
+        student_user=request.user,
+        instructor=instructor,
+        city=instructor.city,
+        contact_name=request.user.get_full_name() or request.user.username,
+        contact_phone=getattr(request.user.profile, 'whatsapp_number', '') or getattr(request.user.profile, 'phone', '') or 'WhatsApp',
+        message='Contato via WhatsApp',
+        status='CONTACTED'  # Already contacted via WhatsApp
+    )
+    
+    return JsonResponse({'success': True, 'lead_id': lead.id})
 
 
 @login_required
@@ -424,17 +510,19 @@ def my_leads_view(request):
         # Show leads received
         try:
             instructor_profile = InstructorProfile.objects.get(user=request.user)
-            leads = Lead.objects.filter(instructor=instructor_profile).select_related('city').order_by('-created_at')
-            
-            # Filter by status
-            status_filter = request.GET.get('status')
-            if status_filter:
-                leads = leads.filter(status=status_filter)
+            # FILTER ONLY WHATSAPP CONTACTS (status=CONTACTED)
+            # These are students who clicked the WhatsApp button
+            leads = Lead.objects.filter(
+                instructor=instructor_profile,
+                status='CONTACTED'  # Only show WhatsApp contacts
+            ).select_related('city', 'student_user').order_by('-created_at')
             
             context = {
                 'leads': leads,
                 'is_instructor': True,
-                'page_title': 'Leads Recebidos',
+                'instructor_profile': instructor_profile,
+                'page_title': 'Contatos via WhatsApp',
+                'profile_views': instructor_profile.profile_views,  # Add view counter
             }
         except InstructorProfile.DoesNotExist:
             messages.warning(request, 'Complete seu perfil de instrutor primeiro.')
