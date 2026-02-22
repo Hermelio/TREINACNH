@@ -2,6 +2,7 @@
 Models for marketplace app - Cities, Instructors, Categories, and Leads.
 """
 from django.db import models
+from django.db.models import Q
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.text import slugify
@@ -296,6 +297,11 @@ class InstructorProfile(models.Model):
         default=0,
         help_text='Número total de avaliações recebidas'
     )
+    profile_views = models.PositiveIntegerField(
+        'Visualizações do Perfil',
+        default=0,
+        help_text='Número de vezes que o perfil foi visualizado'
+    )
     
     # Trial Period (14 days free)
     trial_start_date = models.DateTimeField(
@@ -384,6 +390,73 @@ class InstructorProfile(models.Model):
         from django.utils import timezone
         return timezone.now() > self.trial_end_date
     
+    def has_active_subscription(self):
+        """Check if instructor has an active paid subscription"""
+        from billing.models import SubscriptionStatusChoices
+        from django.utils import timezone
+        
+        return self.subscriptions.filter(
+            status=SubscriptionStatusChoices.ACTIVE,
+            start_date__lte=timezone.now().date()
+        ).filter(
+            Q(end_date__isnull=True) | Q(end_date__gte=timezone.now().date())
+        ).exists()
+    
+    def can_receive_leads(self):
+        """
+        Check if instructor can receive leads.
+        Returns True if:
+        - Trial is active and not expired OR
+        - Has an active paid subscription
+        """
+        # If trial is active and not expired
+        if self.is_trial_active and not self.is_trial_expired():
+            return True
+        
+        # If has active subscription
+        if self.has_active_subscription():
+            return True
+        
+        return False
+    
+    def get_access_status(self):
+        """
+        Get detailed access status for instructor.
+        Returns dict with status info.
+        """
+        from django.utils import timezone
+        
+        status = {
+            'can_receive_leads': False,
+            'reason': '',
+            'days_remaining': None,
+            'is_trial': False,
+            'has_subscription': False,
+        }
+        
+        # Check trial
+        if self.is_trial_active and not self.is_trial_expired():
+            status['can_receive_leads'] = True
+            status['is_trial'] = True
+            status['days_remaining'] = self.days_until_trial_end()
+            status['reason'] = 'trial_active'
+            return status
+        
+        # Check subscription
+        if self.has_active_subscription():
+            status['can_receive_leads'] = True
+            status['has_subscription'] = True
+            status['reason'] = 'subscription_active'
+            return status
+        
+        # Trial expired and no subscription
+        if self.trial_end_date and self.is_trial_expired():
+            status['reason'] = 'trial_expired'
+        else:
+            status['reason'] = 'no_access'
+        
+        return status
+    
     @property
     def profile_completion_score(self):
         """
@@ -400,8 +473,7 @@ class InstructorProfile(models.Model):
           Disponibilidade               10
           Avatar                        10
           WhatsApp                     10
-          Documento aprovado (CNH ou
-            Certificado DETRAN)        15
+          CPF                          15
           ─────────────────────────── ───
           TOTAL                        100
         """
@@ -439,13 +511,8 @@ class InstructorProfile(models.Model):
         if hasattr(self.user, 'profile') and self.user.profile.whatsapp_number:
             score += 10
 
-        # ── Documento aprovado (CNH OU Certificado DETRAN) ────────────
-        # Obrigatório para atingir 100 %
-        has_approved_doc = self.documents.filter(
-            doc_type__in=['CNH', 'CERT_INSTRUTOR'],
-            status='APPROVED'
-        ).exists()
-        if has_approved_doc:
+        # ── CPF (obrigatório para perfil completo) ────────────────────
+        if hasattr(self.user, 'profile') and self.user.profile.cpf:
             score += 15
 
         return min(score, 100)
