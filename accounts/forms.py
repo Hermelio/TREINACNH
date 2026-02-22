@@ -4,7 +4,7 @@ Forms for user registration, login, and profile management.
 import re
 
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordResetForm
 from django.contrib.auth.models import User
 from django.db import transaction, IntegrityError
 from crispy_forms.helper import FormHelper
@@ -471,3 +471,29 @@ class StudentDataForm(forms.Form):
             return City.objects.get(pk=city_id)
         except City.DoesNotExist:
             raise forms.ValidationError('Cidade inválida.')
+
+
+# ==========================================
+# PASSWORD RESET — Custom form
+# ==========================================
+
+class CustomPasswordResetForm(PasswordResetForm):
+    """
+    Extends Django's built-in PasswordResetForm to also include users who
+    signed up via Google (has_usable_password() == False). This enables a
+    Google-only user to create a local password via the "Forgot password" flow.
+
+    Security note: the email is always sent (or silently skipped if no account
+    exists), so there is no user-enumeration risk.
+    """
+
+    def get_users(self, email):
+        from django.contrib.auth import get_user_model
+        UserModel = get_user_model()
+        email_field = UserModel.get_email_field_name()
+        # Return ALL active users with this e-mail, regardless of whether
+        # they have a local password (covers Google-only accounts).
+        return UserModel._default_manager.filter(**{
+            f'{email_field}__iexact': email,
+            'is_active': True,
+        })

@@ -56,6 +56,12 @@
                         </button>
                     </form>
                     
+                    <div class="text-center mb-3">
+                        <a href="{% url 'accounts:password_reset' %}" class="text-muted small">
+                            Esqueci minha senha
+                        </a>
+                    </div>
+
                     <hr class="my-4">
                     <p class="text-center mb-0">
                         Não tem uma conta? <a href="{% url 'accounts:register' %}">Cadastre-se</a>

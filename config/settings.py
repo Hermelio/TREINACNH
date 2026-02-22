@@ -283,6 +283,25 @@ MAX_PROFILE_COMPLETION_SCORE = 100
 WHATSAPP_MESSAGE_TEMPLATE = "Olá! Vi seu perfil no TREINACNH e gostaria de agendar aulas de direção."
 
 # ==========================================
+# EMAIL CONFIGURATION
+# ==========================================
+# Em desenvolvimento usa console (imprime no terminal).
+# Em produção, configure SMTP via variáveis de ambiente no .env do servidor.
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='TreinaCNH <noreply@treinacnh.com.br>')
+SERVER_EMAIL = config('SERVER_EMAIL', default='noreply@treinacnh.com.br')
+EMAIL_SUBJECT_PREFIX = '[TreinaCNH] '
+
+# Password-reset link lifetime (seconds). Default 3 days → 1 day em produção.
+PASSWORD_RESET_TIMEOUT = config('PASSWORD_RESET_TIMEOUT', default=86400, cast=int)
+
+# ==========================================
 # DJANGO-ALLAUTH CONFIGURATION
 # ==========================================
 
@@ -303,7 +322,7 @@ ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http'  # Forçar HTTP para o ambiente atual
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = config('ACCOUNT_DEFAULT_HTTP_PROTOCOL', default='https')
 
 # Redirect URLs  (allauth overrides the top-level LOGIN_REDIRECT_URL)
 LOGIN_REDIRECT_URL = '/contas/painel/'
