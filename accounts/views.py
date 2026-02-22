@@ -96,54 +96,47 @@ def login_view(request):
 
     if request.method == 'POST':
         form = CustomLoginForm(request, data=request.POST)
+        # raw username used as session counter key (before form cleaning)
         raw_username = request.POST.get('username', '').strip().lower()
         fail_key = f'{_FAIL_COUNT_PREFIX}:{raw_username}'
 
         if form.is_valid():
-            username = form.cleaned_data.get('username')
-            user = authenticate(request, username=username, password=form.cleaned_data.get('password'))
+            # AuthenticationForm already ran authenticate() inside clean(); use get_user()
+            user = form.get_user()
+            # Success: wipe counters and log the user in
+            request.session.pop(fail_key, None)
+            request.session.pop(_FAIL_LAST_USER_KEY, None)
+            login(request, user)
+            messages.success(request, f'Bem-vindo de volta, {user.first_name or user.username}!')
+            logger.info('login_success user_id=%s ip=%s', user.pk, _client_ip(request))
+            return redirect('marketplace:my_leads')
+        else:
+            # Form invalid — could be wrong password, unknown user, empty fields, inactive account.
+            # Increment counter only when the account exists (wrong password scenario).
+            user_exists = bool(raw_username) and User.objects.filter(
+                Q(username__iexact=raw_username) | Q(email__iexact=raw_username)
+            ).exists()
 
-            if user is not None:
-                # Success: wipe counters and log the user in
-                request.session.pop(fail_key, None)
-                request.session.pop(_FAIL_LAST_USER_KEY, None)
-                login(request, user)
-                messages.success(request, f'Bem-vindo de volta, {user.first_name or user.username}!')
-                logger.info('login_success user_id=%s ip=%s', user.pk, _client_ip(request))
-                return redirect('marketplace:my_leads')
+            if user_exists:
+                count = request.session.get(fail_key, 0) + 1
+                request.session[fail_key] = count
+                request.session[_FAIL_LAST_USER_KEY] = raw_username
+                logger.warning(
+                    'login_failed_wrong_password username=%s count=%d ip=%s',
+                    raw_username, count, _client_ip(request),
+                )
             else:
-                # Credentials rejected — increment counter only if the account exists
-                user_exists = User.objects.filter(
-                    Q(username__iexact=username) | Q(email__iexact=username)
-                ).exists()
-
-                if user_exists:
-                    count = request.session.get(fail_key, 0) + 1
-                    request.session[fail_key] = count
-                    request.session[_FAIL_LAST_USER_KEY] = raw_username
-                    logger.warning(
-                        'login_failed_wrong_password username=%s count=%d ip=%s',
-                        username, count, _client_ip(request),
-                    )
-                else:
-                    # Unknown account — don't reveal its non-existence via a counter bump
-                    count = request.session.get(fail_key, 0)
+                # Unknown account — don't reveal non-existence via counter bump
+                count = request.session.get(fail_key, 0)
+                if raw_username:
                     logger.warning(
                         'login_failed_unknown_user username=%s ip=%s',
-                        username, _client_ip(request),
+                        raw_username, _client_ip(request),
                     )
 
-                show_recover_cta = count >= _SHOW_CTA_AFTER
-                messages.error(request, 'Usuário ou senha incorretos.')
-        else:
-            # Form-level validation error (e.g. empty fields)
-            count = request.session.get(fail_key, 0)
             show_recover_cta = count >= _SHOW_CTA_AFTER
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, error if field == '__all__' else f'{field}: {error}')
     else:
-        form = CustomLoginForm()
+        form = CustomLoginForm(request)
         # Recover CTA state from session so a page refresh keeps it visible
         last_username = request.session.get(_FAIL_LAST_USER_KEY, '')
         if last_username:
