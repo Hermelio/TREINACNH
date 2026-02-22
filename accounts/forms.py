@@ -395,13 +395,7 @@ class StudentDataForm(forms.Form):
     cnh_categories = forms.MultipleChoiceField(
         label='Categoria(s) CNH que você deseja obter',
         required=True,
-        choices=[
-            ('A', 'A — Motocicletas'),
-            ('B', 'B — Carros'),
-            ('C', 'C — Caminhões'),
-            ('D', 'D — Ônibus'),
-            ('E', 'E — Carretas'),
-        ],
+        choices=[],  # populated dynamically in __init__ from DB
         widget=forms.CheckboxSelectMultiple,
     )
     state = forms.ChoiceField(
@@ -421,9 +415,26 @@ class StudentDataForm(forms.Form):
         # Store references so cross-field validators can access them
         self._user = user
         self._profile = profile
-        from marketplace.models import State as StateModel
+        from marketplace.models import State as StateModel, CategoryCNH
         states = list(StateModel.objects.values_list('code', 'code').order_by('code'))
         self.fields['state'].choices = [('', 'Selecione um estado...')] + states
+
+        # Populate CNH categories from DB so new categories appear automatically.
+        # Preferred sort: ACC, A, B, C, D, E, AB, AC, AD, AE (others appended alphabetically).
+        _PREFERRED_ORDER = ['ACC', 'A', 'B', 'C', 'D', 'E', 'AB', 'AC', 'AD', 'AE']
+        all_cats = {c.code: c.label for c in CategoryCNH.objects.all()}
+        sorted_cats = [
+            (code, f"{code} — {all_cats[code]}")
+            for code in _PREFERRED_ORDER
+            if code in all_cats
+        ]
+        # Append any extra categories not in the preferred list (alphabetical)
+        extra = [
+            (code, f"{code} — {lbl}")
+            for code, lbl in sorted(all_cats.items())
+            if code not in _PREFERRED_ORDER
+        ]
+        self.fields['cnh_categories'].choices = sorted_cats + extra
 
         # Pre-fill from existing data
         if user:

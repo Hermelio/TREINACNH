@@ -129,24 +129,33 @@ class CityGeoCache(models.Model):
 
 
 class CategoryCNH(models.Model):
-    """CNH categories (A, B, C, D, E)"""
-    code = models.CharField('Código', max_length=1, unique=True, choices=[
-        ('A', 'Categoria A - Motos'),
-        ('B', 'Categoria B - Carros'),
-        ('C', 'Categoria C - Caminhões'),
-        ('D', 'Categoria D - Ônibus'),
-        ('E', 'Categoria E - Carretas'),
-    ])
+    """CNH categories (ACC, A, B, C, D, E, AB, AC, AD, AE, ...)"""
+    code = models.CharField(
+        'Código',
+        max_length=5,
+        unique=True,
+        help_text='Código oficial da categoria CNH (ex: A, B, AB, ACC)',
+    )
     label = models.CharField('Nome', max_length=100)
     description = models.TextField('Descrição', blank=True)
-    
+    sort_order = models.PositiveSmallIntegerField(
+        'Ordem de exibição',
+        default=99,
+        help_text='Menor número = exibido primeiro',
+    )
+
     class Meta:
         verbose_name = 'Categoria CNH'
         verbose_name_plural = 'Categorias CNH'
-        ordering = ['code']
-    
+        ordering = ['sort_order', 'code']
+
     def __str__(self):
-        return f"Categoria {self.code}"
+        return f"{self.code} — {self.label}" if self.label else f"Categoria {self.code}"
+
+    @property
+    def display_name(self):
+        """Short display string for templates: 'A — Motocicletas'"""
+        return str(self)
 
 
 class GenderChoices(models.TextChoices):

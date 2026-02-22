@@ -172,7 +172,9 @@ def cities_list_view(request):
         'selected_state': selected_state,
         'selected_city': selected_city,
         'all_states': states,  # For state dropdown
-        'cnh_categories': ['A', 'B', 'C', 'D', 'E'],
+        'cnh_categories': list(
+            CategoryCNH.objects.values_list('code', flat=True).order_by('code')
+        ),
     }
     return render(request, 'marketplace/cities_list.html', context)
 
