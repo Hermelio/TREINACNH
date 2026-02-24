@@ -57,7 +57,7 @@
                 {% for e in form.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
               </div>
 
-              <div class="col-md-6">
+              <div class="col-12">
                 <label for="id_whatsapp_number" class="form-label">WhatsApp <span class="text-danger">*</span></label>
                 <input type="tel" id="id_whatsapp_number" name="whatsapp_number"
                        class="form-control {% if form.whatsapp_number.errors %}is-invalid{% endif %}"
@@ -67,15 +67,7 @@
                 {% for e in form.whatsapp_number.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
               </div>
 
-              <div class="col-md-6">
-                <label for="id_cpf" class="form-label">CPF <span class="text-danger">*</span></label>
-                <input type="text" id="id_cpf" name="cpf"
-                       class="form-control {% if form.cpf.errors %}is-invalid{% endif %}"
-                       value="{{ form.cpf.value|default:'' }}"
-                       placeholder="000.000.000-00" inputmode="numeric" maxlength="14" required>
-                <div class="form-text">Apenas números, sem pontos ou traços.</div>
-                {% for e in form.cpf.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
-              </div>
+
             </div>
 
             <!-- ── Categoria CNH ──────────────────────────────────── -->
