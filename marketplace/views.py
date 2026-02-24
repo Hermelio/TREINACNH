@@ -7,19 +7,27 @@ from django.contrib import messages
 from django.db.models import Q, Count, Prefetch
 from django.core.paginator import Paginator
 from django.views.decorators.http import require_http_methods
-from .models import State, City, InstructorProfile, Lead, CategoryCNH, StudentLead
+from .models import State, City, InstructorProfile, Lead, CategoryCNH, StudentLead, CityGeoCache
 from .forms import InstructorProfileForm, LeadForm, InstructorSearchForm, StudentRegistrationForm
 from core.seo import build_seo
 
 
-@login_required
 def cities_list_view(request):
     """
     Main cities page - list all states with cities and instructor counts.
     Shows "new instructors" section and interactive map with filtering.
     Only shows instructors who can receive leads (trial active or paid subscription).
-    Requires user authentication.
+    Requires login — visitors are redirected to register/login.
     """
+    if not request.user.is_authenticated:
+        messages.info(
+            request,
+            'Cadastre-se ou faça login para ver os instrutores disponíveis na sua região.'
+        )
+        from django.urls import reverse
+        from urllib.parse import urlencode
+        next_url = request.get_full_path()
+        return redirect(reverse('accounts:register') + '?' + urlencode({'next': next_url}))
     from django.db.models import OuterRef, Subquery, Avg, Exists
     from django.utils import timezone
     from billing.models import Subscription, SubscriptionStatusChoices
@@ -54,7 +62,7 @@ def cities_list_view(request):
         is_visible=True,
         is_verified=True
     ).select_related('user', 'user__profile', 'city', 'city__state').prefetch_related('categories')
-    
+
     # Apply filters from request
     search_name = request.GET.get('search_name', '').strip()
     min_price = request.GET.get('min_price', '').strip()
@@ -134,21 +142,32 @@ def cities_list_view(request):
         created_at__gte=timezone.now() - timedelta(days=30)
     )[:6]
     
-    # Get all instructors with coordinates for map markers
-    instructors_with_location = all_instructors.filter(
-        latitude__isnull=False,
-        longitude__isnull=False
-    )
-    
-    # Convert to list with float coordinates
+    # Get all instructors for map markers, falling back to city cache when needed
+    from django.utils.text import slugify as _slugify
+    _city_cache = {
+        c.city_key: c
+        for c in CityGeoCache.objects.filter(geocoded=True)
+    }
+
     instructors_data = []
-    for inst in instructors_with_location:
+    for inst in all_instructors:
+        lat = inst.latitude
+        lng = inst.longitude
+        if (lat is None or lng is None) and inst.city_id:
+            # Try city geocache fallback
+            _key = _slugify(inst.city.name) + '|' + inst.city.state.code
+            _cached = _city_cache.get(_key)
+            if _cached and _cached.latitude and _cached.longitude:
+                lat = _cached.latitude
+                lng = _cached.longitude
+        if lat is None or lng is None:
+            continue  # truly no coordinates — skip
         instructors_data.append({
             'id': inst.id,
             'user__first_name': inst.user.first_name,
             'user__last_name': inst.user.last_name,
-            'latitude': float(inst.latitude),
-            'longitude': float(inst.longitude),
+            'latitude': float(lat),
+            'longitude': float(lng),
             'city__name': inst.city.name,
             'city__state__code': inst.city.state.code,
             'city__state__name': inst.city.state.name
@@ -176,7 +195,12 @@ def cities_list_view(request):
         'instructors_json': json.dumps(instructors_data),
         'all_instructors': all_instructors,
         'new_instructors': new_instructors,
-        'page_title': 'Instrutores por Cidade',
+        'seo_title': 'Encontre um Instrutor Credenciado | TreinaCNH',
+        'seo_description': (
+            'Busque instrutores de trânsito autônomos credenciados pelo DETRAN '
+            'na sua cidade. Compare preços, avaliações e agende aulas de direção.'
+        ),
+        'page_title': 'Encontre um Instrutor Credenciado',
         # Pass filter values back to template for maintaining state
         'search_name': search_name,
         'min_price': min_price,
@@ -272,13 +296,21 @@ def city_instructors_list_view(request, state_code, city_slug):
     return render(request, 'marketplace/city_instructors_list.html', context)
 
 
-@login_required
 def instructor_detail_view(request, pk):
     """
     Instructor profile detail page.
     Shows bio, categories, availability, reviews, and contact options.
-    Requires user authentication.
+    Requires login — visitors are redirected to register/login.
     """
+    if not request.user.is_authenticated:
+        messages.info(
+            request,
+            'Crie sua conta gratuitamente para ver o perfil completo dos instrutores.'
+        )
+        from django.urls import reverse
+        from urllib.parse import urlencode
+        next_url = request.get_full_path()
+        return redirect(reverse('accounts:register') + '?' + urlencode({'next': next_url}))
     instructor = get_object_or_404(
         InstructorProfile.objects.select_related('user', 'user__profile', 'city', 'city__state').prefetch_related('categories'),
         pk=pk
@@ -329,12 +361,21 @@ def instructor_detail_view(request, pk):
         ),
     )
 
+    # Flag: visitor is an instructor (and NOT the owner of this profile)
+    viewer_is_instructor = (
+        request.user.is_authenticated
+        and request.user != instructor.user
+        and hasattr(request.user, 'profile')
+        and request.user.profile.is_instructor
+    )
+
     context = {
         'instructor': instructor,
         'reviews': reviews,
         'avg_rating': avg_rating,
         'whatsapp_link': whatsapp_link,
         'student_data_incomplete': student_data_incomplete,
+        'viewer_is_instructor': viewer_is_instructor,
         **seo,
     }
     return render(request, 'marketplace/instructor_detail.html', context)
@@ -516,13 +557,25 @@ def my_leads_view(request):
                 instructor=instructor_profile,
                 status='CONTACTED'  # Only show WhatsApp contacts
             ).select_related('city', 'student_user').order_by('-created_at')
-            
+
+            # Build verification denial context
+            from django.utils import timezone as tz
+            from datetime import timedelta
+            can_reverify = False
+            reverification_unlocked_at = None
+            if instructor_profile.verification_denied and instructor_profile.verification_denied_at:
+                reverification_unlocked_at = instructor_profile.verification_denied_at + timedelta(hours=48)
+                can_reverify = tz.now() >= reverification_unlocked_at
+
             context = {
                 'leads': leads,
                 'is_instructor': True,
                 'instructor_profile': instructor_profile,
                 'page_title': 'Contatos via WhatsApp',
                 'profile_views': instructor_profile.profile_views,  # Add view counter
+                'verification_denied': instructor_profile.verification_denied,
+                'can_reverify': can_reverify,
+                'reverification_unlocked_at': reverification_unlocked_at,
             }
         except InstructorProfile.DoesNotExist:
             messages.warning(request, 'Complete seu perfil de instrutor primeiro.')
@@ -537,6 +590,54 @@ def my_leads_view(request):
         }
     
     return render(request, 'marketplace/my_leads.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def request_reverification_view(request):
+    """Instructor requests a new Detran verification after 48h cooldown."""
+    from django.utils import timezone as tz
+    from datetime import timedelta
+
+    profile = request.user.profile
+    if not profile.is_instructor:
+        messages.error(request, 'Acesso restrito a instrutores.')
+        return redirect('core:home')
+
+    try:
+        instructor = InstructorProfile.objects.get(user=request.user)
+    except InstructorProfile.DoesNotExist:
+        messages.error(request, 'Perfil de instrutor não encontrado.')
+        return redirect('marketplace:instructor_profile_edit')
+
+    if not instructor.verification_denied:
+        # Nothing to re-verify
+        return redirect('marketplace:my_leads')
+
+    # Check 48h cooldown
+    if instructor.verification_denied_at:
+        unlocked_at = instructor.verification_denied_at + timedelta(hours=48)
+        if tz.now() < unlocked_at:
+            messages.warning(
+                request,
+                'Aguarde 48 horas após a negação antes de solicitar nova verificação.',
+            )
+            return redirect('marketplace:my_leads')
+
+    # Reset denial — profile will go back to pending admin review
+    instructor.verification_denied = False
+    instructor.verification_denied_at = None
+    instructor.is_verified = False
+    instructor.is_visible = True
+    instructor.save(update_fields=[
+        'verification_denied', 'verification_denied_at', 'is_verified', 'is_visible'
+    ])
+    messages.success(
+        request,
+        'Solicitação de reverificação enviada com sucesso! '
+        'Nossa equipe irá analisar seu credenciamento e retornar em breve.',
+    )
+    return redirect('marketplace:my_leads')
 
 
 @login_required
@@ -570,6 +671,11 @@ def student_register_view(request):
             
             # Get selected categories before saving
             categories = form.cleaned_data.get('categories')
+            
+            # Gera external_id único — campo obrigatório no banco (NOT NULL)
+            if not student.external_id:
+                import uuid as _uuid
+                student.external_id = 'web_' + _uuid.uuid4().hex[:20]
             
             # Save student
             student.save()
