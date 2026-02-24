@@ -71,6 +71,29 @@
               </div>
             {% endif %}
 
+            <!-- Campos de cidade: aparecem apenas quando Instrutor for selecionado -->
+            <div id="instructor-city-block" style="display:none;" class="mb-4">
+              <div class="alert alert-info py-2 mb-3" style="border-radius:10px;">
+                <small><strong>📍 Onde você atua?</strong> Informe sua cidade para aparecer no mapa.</small>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Estado *</label>
+                {{ form.preferred_state }}
+                {% if form.preferred_state.errors %}
+                  <div class="text-danger small mt-1">{{ form.preferred_state.errors|join:", " }}</div>
+                {% endif %}
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Cidade *</label>
+                <select id="id_cp_city" name="preferred_city" class="form-select">
+                  <option value="">Selecione o estado primeiro...</option>
+                </select>
+                {% if form.preferred_city.errors %}
+                  <div class="text-danger small mt-1">{{ form.preferred_city.errors|join:", " }}</div>
+                {% endif %}
+              </div>
+            </div>
+
             <button type="submit" class="btn btn-dark w-100 py-3 fw-semibold" id="btn-continuar" disabled>
               Continuar →
             </button>
@@ -107,8 +130,26 @@
 
 <script>
   (function () {
-    const radios = document.querySelectorAll('.role-radio');
-    const btn    = document.getElementById('btn-continuar');
+    const radios     = document.querySelectorAll('.role-radio');
+    const btn        = document.getElementById('btn-continuar');
+    const cityBlock  = document.getElementById('instructor-city-block');
+    const stateSelect = document.getElementById('id_cp_state');
+    const citySelect  = document.getElementById('id_cp_city');
+
+    function isInstructor() {
+      const r = document.querySelector('input[name="role"]:checked');
+      return r && r.value === 'INSTRUCTOR';
+    }
+
+    function updateBtn() {
+      const anyChecked = Array.from(radios).some(r => r.checked);
+      if (!anyChecked) { btn.disabled = true; return; }
+      if (isInstructor()) {
+        btn.disabled = !citySelect.value;
+      } else {
+        btn.disabled = false;
+      }
+    }
 
     function updateUI() {
       radios.forEach(function (radio) {
@@ -120,14 +161,44 @@
           card.classList.remove('selected');
         }
       });
-
-      const anyChecked = Array.from(radios).some(r => r.checked);
-      btn.disabled = !anyChecked;
+      cityBlock.style.display = isInstructor() ? 'block' : 'none';
+      updateBtn();
     }
+
+    // Load cities when state changes
+    stateSelect.addEventListener('change', function () {
+      const code = this.value;
+      citySelect.innerHTML = '<option value="">Carregando...</option>';
+      citySelect.disabled = true;
+      if (!code) {
+        citySelect.innerHTML = '<option value="">Selecione o estado primeiro...</option>';
+        citySelect.disabled = false;
+        updateBtn();
+        return;
+      }
+      fetch('/instrutores/api/cidades/' + code + '/')
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          citySelect.innerHTML = '<option value="">Selecione a cidade...</option>';
+          (data.cities || []).forEach(function(c){
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.name;
+            citySelect.appendChild(opt);
+          });
+          citySelect.disabled = false;
+          updateBtn();
+        })
+        .catch(function(){
+          citySelect.innerHTML = '<option value="">Erro ao carregar cidades</option>';
+          citySelect.disabled = false;
+        });
+    });
+
+    citySelect.addEventListener('change', updateBtn);
 
     radios.forEach(function (radio) {
       radio.addEventListener('change', updateUI);
-      // Also allow clicking the card itself
       const cardId = radio.id === 'role_student' ? 'card_student' : 'card_instructor';
       document.getElementById(cardId).addEventListener('click', function () {
         radio.checked = true;

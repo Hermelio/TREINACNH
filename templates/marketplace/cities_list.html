@@ -217,7 +217,7 @@
                 </div>
             </div>
         </div>
-    
+
     <!-- All Instructors Section -->
     {% if all_instructors %}
     <div class="card mb-5 shadow-sm">
@@ -239,6 +239,11 @@
                                     </h6>
                                 </div>
                                 <div class="mb-2">
+                                    {% if instructor.is_pioneer %}
+                                        <span class="badge bg-warning text-dark me-1" style="font-size: 0.7rem;">
+                                            <i class="bi bi-star-fill me-1"></i>Pioneiro
+                                        </span>
+                                    {% endif %}
                                     {% if instructor.is_verified %}
                                         <span class="badge bg-success" style="font-size: 0.7rem;">
                                             <i class="bi bi-patch-check-fill me-1"></i>Verificado
@@ -252,11 +257,6 @@
                                 <p class="card-text small text-muted mb-1">
                                     <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ instructor.city.name }}, {{ instructor.city.state.code }}
                                 </p>
-                                {% if instructor.phone %}
-                                <p class="card-text small text-muted mb-1">
-                                    <i class="bi bi-telephone-fill text-success me-1"></i>{{ instructor.phone }}
-                                </p>
-                                {% endif %}
                                 <a href="{% url 'marketplace:instructor_detail' pk=instructor.pk %}" class="btn btn-sm btn-primary mt-2 w-100"><i class="bi bi-eye-fill me-1"></i>Ver Perfil</a>
                             </div>
                         </div>
@@ -266,64 +266,8 @@
         </div>
     </div>
     {% endif %}
-    
-    <!-- New Instructors Section -->
-    {% if new_instructors %}
-    <div class="card mb-5 shadow-sm">
-        <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-            <h4 class="mb-0 text-white"><i class="bi bi-stars me-2"></i>Novos Instrutores</h4>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                {% for instructor in new_instructors %}
-                    <div class="col-md-4 mb-3">
-                        <div class="card h-100">
-                            <div class="card-body">
-                                <h6 class="card-title">{{ instructor.user.get_full_name }}</h6>
-                                <p class="card-text small text-muted">
-                                    <i class="bi bi-geo-alt-fill me-1"></i>{{ instructor.city }}
-                                </p>
-                                <a href="{% url 'marketplace:instructor_detail' pk=instructor.pk %}" class="btn btn-sm btn-outline-primary">Ver Perfil</a>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-    {% endif %}
-    
-    <!-- States and Cities List -->
-    {% for state in states %}
-        <div class="card mb-4">
-            <div class="card-header bg-light">
-                <h4 class="mb-0">{{ state.name }} ({{ state.code }})</h4>
-                <small class="text-muted">{{ state.city_count }} cidade(s)</small>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    {% for city in state.cities.all %}
-                        <div class="col-md-3 mb-3">
-                            <a href="{% url 'marketplace:city_list' state_code=state.code city_slug=city.slug %}" class="text-decoration-none">
-                                <div class="card h-100 hover-shadow">
-                                    <div class="card-body text-center">
-                                        <i class="bi bi-geo-fill text-primary fs-2"></i>
-                                        <h6 class="mt-2 mb-1">{{ city.name }}</h6>
-                                        <small class="text-muted">{{ city.instructor_count }} instrutor(es)</small>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    {% empty %}
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle me-2"></i>Nenhuma cidade cadastrada ainda.
-        </div>
-    {% endfor %}
-    </div>
+
+</div>
 </div>
 
 {% endblock %}

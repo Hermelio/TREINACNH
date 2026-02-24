@@ -13,7 +13,7 @@ from billing.models import Plan
 plan, created = Plan.objects.get_or_create(
     name='Plano Instrutor',
     defaults={
-        'description': 'Plano mensal para instrutores de autoescola',
+        'description': 'Plano mensal para instrutores autônomos',
         'price_monthly': 49.99,
         'features': '''Perfil completo visível no site
 Contato via WhatsApp

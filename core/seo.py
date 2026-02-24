@@ -15,10 +15,10 @@ SEO_PAGES = {
         ),
     },
     'core:about': {
-        'title': 'Sobre a TreinaCNH | Plataforma de Instrutores Autônomos',
+        'title': 'O que é a TreinaCNH | TreinaCNH',
         'description': (
-            'Conheça a TreinaCNH, plataforma que conecta alunos a instrutores de '
-            'trânsito autônomos credenciados em todo o Brasil.'
+            'A TreinaCNH conecta alunos a instrutores de trânsito autônomos '
+            'credenciados em todo o Brasil. Veja como funciona e comece hoje.'
         ),
     },
     'core:contact': {
@@ -29,7 +29,7 @@ SEO_PAGES = {
         ),
     },
     'core:faq': {
-        'title': 'Perguntas Frequentes sobre Aulas de Direção | TreinaCNH',
+        'title': 'Central de Ajuda e FAQ | TreinaCNH',
         'description': (
             'Tire dúvidas sobre instrutores autônomos, aulas práticas de CNH, '
             'preços e como funciona a plataforma TreinaCNH.'

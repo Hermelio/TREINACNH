@@ -133,12 +133,9 @@ class ProfileAdmin(admin.ModelAdmin):
     actions = ['export_to_csv']
 
     def role_badge(self, obj):
-        colors = {'ADMIN': '#7c3aed', 'INSTRUCTOR': '#1d4ed8', 'STUDENT': '#065f46'}
-        color = colors.get(obj.role, '#555')
-        return format_html(
-            '<span style="color:{};font-weight:700">{}</span>',
-            color, obj.get_role_display(),
-        )
+        css_map = {'ADMIN': 'badge-admin', 'INSTRUCTOR': 'badge-instructor', 'STUDENT': 'badge-student'}
+        css = css_map.get(obj.role, 'badge-inactive')
+        return format_html('<span class="{}">{}</span>', css, obj.get_role_display())
     role_badge.short_description = 'Papel'
     role_badge.admin_order_field = 'role'
 
@@ -193,3 +190,8 @@ class AddressAdmin(admin.ModelAdmin):
     search_fields = ('city', 'neighborhood', 'profile__user__username')
     readonly_fields = ('created_at',)
 
+
+# ── Admin site branding ────────────────────────────────────────────────────
+admin.site.site_header = '🚗 TreinaCNH Admin'
+admin.site.site_title  = 'TreinaCNH Admin'
+admin.site.index_title = 'Painel de Administração'

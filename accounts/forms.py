@@ -83,7 +83,7 @@ class UserRegistrationForm(UserCreationForm):
         help_text='Selecione sua cidade para ver instrutores próximos'
     )
     cpf = forms.CharField(
-        required=True,
+        required=False,
         label='CPF',
         max_length=11,
         widget=forms.TextInput(attrs={
@@ -111,10 +111,27 @@ class UserRegistrationForm(UserCreationForm):
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         help_text='Apenas para instrutores'
     )
+    birth_date = forms.DateField(
+        required=False,
+        label='Data de Nascimento',
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+    )
+    cnh_categories = forms.ModelMultipleChoiceField(
+        queryset=None,
+        required=False,
+        label='Categorias de CNH',
+        widget=forms.CheckboxSelectMultiple()
+    )
     accept_whatsapp_messages = forms.BooleanField(
         required=False,
         initial=True,
         label='Aceito receber mensagens via WhatsApp',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    accept_service_offers = forms.BooleanField(
+        required=False,
+        initial=True,
+        label='Quero que instrutores e auto-escolas me ofereçam serviços',
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
     accept_terms = forms.BooleanField(
@@ -134,20 +151,23 @@ class UserRegistrationForm(UserCreationForm):
         model = User
         fields = ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nome de usuário'}),
+            'username': forms.HiddenInput(),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Import here to avoid circular import
-        from marketplace.models import City, State
-        
+        from marketplace.models import City, State, CategoryCNH
+
+        # Username is auto-generated — not shown to user
+        self.fields['username'].required = False
+
         # Load all states
         self.fields['preferred_state'].queryset = State.objects.all().order_by('code')
-        
+
         # Cities will be loaded dynamically via JavaScript, but set empty queryset
         self.fields['preferred_city'].queryset = City.objects.none()
-        
+
         # If editing and has data, load the cities for that state
         if self.data.get('preferred_state'):
             try:
@@ -157,12 +177,17 @@ class UserRegistrationForm(UserCreationForm):
                 ).order_by('name')
             except (ValueError, TypeError):
                 pass
-        
+
+        # CNH categories
+        self.fields['cnh_categories'].queryset = CategoryCNH.objects.all().order_by('code')
+
         self.fields['password1'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Senha'})
         self.fields['password2'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Confirme a senha'})
 
     def clean_cpf(self):
         cpf = self.cleaned_data.get('cpf', '')
+        if not cpf:
+            return cpf  # Vazio permitido para alunos; obrigatoriedade checada no clean()
         digits = ''.join(c for c in cpf if c.isdigit())
         if len(digits) != 11:
             raise forms.ValidationError('CPF deve ter exatamente 11 dígitos.')
@@ -176,11 +201,34 @@ class UserRegistrationForm(UserCreationForm):
             return value
         return _normalize_whatsapp_br(value)
 
+    def clean(self):
+        cleaned = super().clean()
+        role = cleaned.get('role')
+        city = cleaned.get('preferred_city')
+        cpf = cleaned.get('cpf', '')
+        if role == RoleChoices.INSTRUCTOR:
+            if not city:
+                self.add_error('preferred_city', 'Instrutores devem informar a cidade onde atuam.')
+            if not cpf:
+                self.add_error('cpf', 'Instrutores devem informar o CPF.')
+        return cleaned
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
+
+        # Auto-generate unique username from email
+        email = self.cleaned_data['email']
+        base = re.sub(r'[^a-z0-9_]', '', email.split('@')[0].lower())[:25] or 'user'
+        username = base
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f'{base}{counter}'
+            counter += 1
+        user.username = username
+
         if commit:
             try:
                 with transaction.atomic():
@@ -188,16 +236,23 @@ class UserRegistrationForm(UserCreationForm):
                     # Update profile with all fields
                     profile = user.profile
                     profile.role = self.cleaned_data['role']
-                    profile.cpf = self.cleaned_data.get('cpf', '')
+                    cpf_value = self.cleaned_data.get('cpf', '')
+                    if cpf_value:
+                        profile.cpf = cpf_value
                     profile.whatsapp_number = self.cleaned_data.get('whatsapp_number', '')
                     profile.accept_whatsapp_messages = self.cleaned_data.get('accept_whatsapp_messages', True)
+                    profile.accept_service_offers = self.cleaned_data.get('accept_service_offers', True)
                     profile.accept_terms = self.cleaned_data.get('accept_terms', False)
                     profile.accept_privacy = self.cleaned_data.get('accept_privacy', False)
-
+                    if self.cleaned_data.get('birth_date'):
+                        profile.birth_date = self.cleaned_data['birth_date']
                     if self.cleaned_data.get('preferred_city'):
                         profile.preferred_city = self.cleaned_data['preferred_city']
-
                     profile.save()
+                    # M2M — must be set after save()
+                    categories = self.cleaned_data.get('cnh_categories')
+                    if categories:
+                        profile.cnh_categories.set(categories)
             except IntegrityError:
                 # Safety net: clean_cpf() should already catch this, but guard against
                 # race conditions (two concurrent requests with the same CPF).
@@ -336,6 +391,7 @@ class CompleteProfileForm(forms.Form):
     """
     Minimal form shown after Google login so the user can choose
     whether they are a student (Aluno) or instructor (Instrutor).
+    Instructors must also inform their state and city.
     """
     role = forms.ChoiceField(
         label='Como você vai usar o TreinaCNH?',
@@ -346,6 +402,34 @@ class CompleteProfileForm(forms.Form):
         widget=forms.RadioSelect,
         required=True,
     )
+    preferred_state = forms.ChoiceField(
+        label='Estado onde você atua',
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_cp_state'}),
+    )
+    preferred_city = forms.IntegerField(
+        label='Cidade onde você atua',
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_cp_city'}),
+        error_messages={'required': 'Selecione sua cidade.'},
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from marketplace.models import State
+        state_choices = [('', 'Selecione o estado...')] + [
+            (s.code, s.name) for s in State.objects.order_by('code')
+        ]
+        self.fields['preferred_state'].choices = state_choices
+
+    def clean(self):
+        cleaned = super().clean()
+        role = cleaned.get('role')
+        city_id = cleaned.get('preferred_city')
+        if role == RoleChoices.INSTRUCTOR:
+            if not city_id:
+                self.add_error('preferred_city', 'Instrutores devem informar a cidade onde atuam.')
+        return cleaned
 
 
 class StudentDataForm(forms.Form):
@@ -380,17 +464,6 @@ class StudentDataForm(forms.Form):
             'inputmode': 'tel',
         }),
         help_text='DDD + número, sem +55. Ex: 11 97835-4889. O instrutor usará este número para te contatar.',
-    )
-    cpf = forms.CharField(
-        label='CPF',
-        max_length=14,
-        required=True,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '000.000.000-00',
-            'inputmode': 'numeric',
-        }),
-        help_text='Apenas números, sem pontos ou traços.',
     )
     cnh_categories = forms.MultipleChoiceField(
         label='Categoria(s) CNH que você deseja obter',
@@ -448,24 +521,9 @@ class StudentDataForm(forms.Form):
             if wa_digits.startswith('55') and len(wa_digits) >= 12:
                 wa_digits = wa_digits[2:]
             self.fields['whatsapp_number'].initial = wa_digits or wa
-            self.fields['cpf'].initial = profile.cpf
             if profile.preferred_city:
                 self.fields['state'].initial = profile.preferred_city.state.code
                 self.fields['preferred_city'].initial = profile.preferred_city_id
-
-    def clean_cpf(self):
-        raw = self.cleaned_data.get('cpf', '')
-        digits = ''.join(c for c in raw if c.isdigit())
-        if len(digits) != 11:
-            raise forms.ValidationError('CPF deve ter exatamente 11 dígitos.')
-        # Check uniqueness at form-validation time (exclude own profile on resubmit)
-        from accounts.models import Profile as ProfileModel
-        qs = ProfileModel.objects.filter(cpf=digits)
-        if self._profile is not None:
-            qs = qs.exclude(pk=self._profile.pk)
-        if qs.exists():
-            raise forms.ValidationError('Este CPF já está cadastrado.')
-        return digits
 
     def clean_whatsapp_number(self):
         value = self.cleaned_data.get('whatsapp_number', '').strip()

@@ -29,7 +29,15 @@ def register_view(request):
     """
     if request.user.is_authenticated:
         return redirect('accounts:dashboard')
-    
+
+    # Preserve ?next= so user lands on the intended page after registering
+    next_url = request.POST.get('next') or request.GET.get('next', '')
+    from django.utils.http import url_has_allowed_host_and_scheme
+    next_safe = (
+        url_has_allowed_host_and_scheme(url=next_url, allowed_hosts={request.get_host()})
+        if next_url else False
+    )
+
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
@@ -44,6 +52,17 @@ def register_view(request):
             user.profile.is_profile_complete = True
             user.profile.save(update_fields=['is_profile_complete'])
 
+            # Se o usuario escolheu ser instrutor, cria o InstructorProfile imediatamente
+            # Nao depende do signal user_logged_in (que pode falhar se preferred_city nao estiver cacheado)
+            if user.profile.is_instructor:
+                from marketplace.models import InstructorProfile as _IP
+                city = user.profile.preferred_city
+                if city:
+                    _IP.objects.get_or_create(
+                        user=user,
+                        defaults={'city': city, 'is_visible': False, 'is_verified': False},
+                    )
+
             # Auto login after registration
             # Pass explicit backend — required when multiple auth backends are configured (allauth + ModelBackend)
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
@@ -57,15 +76,48 @@ def register_view(request):
                 # Redirect to success page with instructions
                 return redirect('accounts:registration_success')
             else:
+                # Automatically create a StudentLead so the new student appears in Admin Leads
+                try:
+                    from marketplace.models import StudentLead
+                    _profile = user.profile
+                    _city = _profile.preferred_city
+                    if _city and not StudentLead.objects.filter(email=user.email).exists():
+                        import uuid as _uuid
+                        _lead = StudentLead.objects.create(
+                            external_id='web_' + _uuid.uuid4().hex[:20],
+                            name=user.get_full_name() or user.username,
+                            phone=_profile.whatsapp_number or _profile.phone or '',
+                            email=user.email,
+                            city=_city,
+                            state=_city.state,
+                            accept_whatsapp=_profile.accept_whatsapp_messages,
+                            accept_terms=_profile.accept_terms,
+                            accept_email=True,
+                        )
+                        _cats = _profile.cnh_categories.all()
+                        if _cats.exists():
+                            _lead.categories.set(_cats)
+                except Exception as _e:
+                    logger.warning(f'Não foi possível criar StudentLead para {user.email}: {_e}')
+
                 messages.success(request, 'Conta criada com sucesso! Bem-vindo ao TREINACNH.')
+                if next_safe:
+                    return redirect(next_url)
                 return redirect('accounts:dashboard')
         else:
             messages.error(request, 'Por favor, corrija os erros abaixo.')
     else:
         form = UserRegistrationForm()
 
-    
-    return render(request, 'accounts/register.html', {'form': form})
+    return render(request, 'accounts/register.html', {
+        'form': form,
+        'next': next_url,
+        'seo_title': 'Cadastre-se como Instrutor de Trânsito | TreinaCNH',
+        'seo_description': (
+            'Crie sua conta gratuita na TreinaCNH e seja encontrado por alunos '
+            'que precisam de aulas de direção na sua cidade. Cadastro rápido.'
+        ),
+    })
 
 
 @login_required
@@ -87,12 +139,24 @@ _SHOW_CTA_AFTER = 3
 
 @ratelimit(key='ip', rate='10/m', method='POST', block=True)
 def login_view(request):
-    """User login view with rate limiting and incremental password-recovery CTA."""
+    """User login view with rate limiting, incremental password-recovery CTA,
+    and safe ?next= redirect support for @login_required destinations."""
+    from django.utils.http import url_has_allowed_host_and_scheme
     if request.user.is_authenticated:
         return redirect('marketplace:my_leads')
 
     User = get_user_model()
     show_recover_cta = False
+    # Read ?next= from GET or POST (set by @login_required redirect)
+    next_url = request.POST.get('next') or request.GET.get('next', '')
+    next_safe = (
+        url_has_allowed_host_and_scheme(
+            url=next_url,
+            allowed_hosts={request.get_host()},
+            require_https=request.is_secure(),
+        )
+        if next_url else False
+    )
 
     if request.method == 'POST':
         form = CustomLoginForm(request, data=request.POST)
@@ -109,6 +173,9 @@ def login_view(request):
             login(request, user)
             messages.success(request, f'Bem-vindo de volta, {user.first_name or user.username}!')
             logger.info('login_success user_id=%s ip=%s', user.pk, _client_ip(request))
+            # Redirect to ?next= if safe, otherwise default dashboard
+            if next_safe:
+                return redirect(next_url)
             return redirect('marketplace:my_leads')
         else:
             # Form invalid — could be wrong password, unknown user, empty fields, inactive account.
@@ -146,6 +213,7 @@ def login_view(request):
     return render(request, 'accounts/login.html', {
         'form': form,
         'show_recover_cta': show_recover_cta,
+        'next': next_url,
     })
 
 
@@ -206,7 +274,28 @@ def complete_profile_view(request):
             role = form.cleaned_data['role']
             profile.role = role
             profile.is_profile_complete = True
+
+            # Salva cidade do instrutor (fluxo Google — CompleteProfileForm agora coleta cidade)
+            if role == RoleChoices.INSTRUCTOR:
+                city_id = form.cleaned_data.get('preferred_city')
+                if city_id:
+                    from marketplace.models import City as _City
+                    try:
+                        profile.preferred_city = _City.objects.get(pk=city_id)
+                    except _City.DoesNotExist:
+                        pass
+
             profile.save()
+
+            # Cria InstructorProfile imediatamente ao escolher role=INSTRUCTOR (fluxo Google)
+            if role == RoleChoices.INSTRUCTOR:
+                from marketplace.models import InstructorProfile as _IP
+                city = profile.preferred_city
+                if city:
+                    _IP.objects.get_or_create(
+                        user=request.user,
+                        defaults={'city': city, 'is_visible': False, 'is_verified': False},
+                    )
 
             if next_url_safe:
                 return redirect(next_url)
@@ -280,12 +369,11 @@ def complete_student_data_view(request):
                         user.email = cd['email']
                     user.save(update_fields=['first_name', 'last_name', 'email'])
 
-                    # Persist Profile fields (CPF uniqueness already validated in the form)
+                    # Persist Profile fields
                     profile.whatsapp_number = cd['whatsapp_number']
-                    profile.cpf = cd['cpf']
                     profile.preferred_city = cd['preferred_city']
                     profile.is_profile_complete = True
-                    profile.save(update_fields=['whatsapp_number', 'cpf', 'preferred_city', 'is_profile_complete'])
+                    profile.save(update_fields=['whatsapp_number', 'preferred_city', 'is_profile_complete'])
 
                     # Save M2M categories; set() handles both add and clear correctly
                     from marketplace.models import CategoryCNH
@@ -293,16 +381,46 @@ def complete_student_data_view(request):
                     profile.cnh_categories.set(cats)
 
             except IntegrityError:
-                # Race condition: two concurrent requests with the same CPF
-                form.add_error(
-                    'cpf',
-                    'Este CPF já está cadastrado. Use outro CPF ou faça login.'
-                )
+                # Handle any database errors
+                messages.error(request, 'Erro ao salvar os dados. Tente novamente.')
                 return render(request, 'accounts/complete_student_data.html', {
                     'form': form,
                     'next': next_url,
                     'seo_title': 'Complete seu Perfil | TreinaCNH',
                 })
+
+            # Create or update StudentLead so the student appears in Admin → Leads de Alunos.
+            # This runs after the profile is fully saved (city + whatsapp + categories all set).
+            try:
+                from marketplace.models import StudentLead
+                _city = profile.preferred_city
+                if _city:
+                    import uuid as _uuid
+                    _lead, _created = StudentLead.objects.get_or_create(
+                        email=request.user.email,
+                        defaults={
+                            'external_id': 'web_' + _uuid.uuid4().hex[:20],
+                            'name': request.user.get_full_name() or request.user.username,
+                            'phone': profile.whatsapp_number or profile.phone or '',
+                            'city': _city,
+                            'state': _city.state,
+                            'accept_whatsapp': profile.accept_whatsapp_messages,
+                            'accept_terms': profile.accept_terms,
+                            'accept_email': True,
+                        }
+                    )
+                    if not _created:
+                        # Update existing lead with latest data
+                        _lead.name  = request.user.get_full_name() or request.user.username
+                        _lead.phone = profile.whatsapp_number or profile.phone or ''
+                        _lead.city  = _city
+                        _lead.state = _city.state
+                        _lead.save(update_fields=['name', 'phone', 'city', 'state'])
+                    # Sync CNH categories
+                    _lead.categories.set(profile.cnh_categories.all())
+            except Exception as _e:
+                import logging as _log
+                _log.getLogger(__name__).warning(f'Não foi possível criar/atualizar StudentLead para {request.user.email}: {_e}')
 
             messages.success(
                 request,

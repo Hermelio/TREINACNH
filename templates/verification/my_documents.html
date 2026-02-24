@@ -6,14 +6,26 @@
 
   {# Page heading #}
   <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
-    <h2 class="mb-0"><i class="bi bi-file-earmark-check me-2 text-primary"></i>Meus Documentos</h2>
+    <h2 class="mb-0"><i class="bi bi-file-earmark-check me-2 text-primary"></i>Status de Verificação</h2>
     {% if is_verified %}
       <span class="badge bg-success fs-6 px-3 py-2">&#x2705; Instrutor Verificado</span>
     {% else %}
-      <a href="{% url 'verification:document_upload' %}" class="btn btn-primary">
-        <i class="bi bi-cloud-upload-fill me-1"></i>Enviar Documento
-      </a>
+      <span class="badge bg-warning text-dark fs-6 px-3 py-2"><i class="bi bi-hourglass-split me-1"></i>Aguardando Verificação</span>
     {% endif %}
+  </div>
+
+  {# Info message about new verification process #}
+  <div class="alert alert-info border-0 shadow-sm mb-4">
+    <div class="d-flex align-items-start">
+      <i class="bi bi-info-circle-fill fs-4 me-3 text-primary"></i>
+      <div>
+        <h5 class="alert-heading mb-2">Nova Forma de Verificação</h5>
+        <p class="mb-0">
+          A verificação de documentos agora é realizada pela nossa equipe administrativa utilizando apenas o CPF cadastrado. 
+          <strong>Não é necessário enviar documentos.</strong> Nossa equipe entrará em contato caso precise de informações adicionais.
+        </p>
+      </div>
+    </div>
   </div>
 
   {% if messages %}
@@ -25,96 +37,54 @@
     {% endfor %}
   {% endif %}
 
-  {# Progress cards #}
+  {# Status card #}
   <div class="row g-3 mb-4">
-
-    {# CNH card #}
-    <div class="col-sm-6 col-lg-4">
-      {% if cnh_doc %}
-        <div class="card h-100 border-0 shadow-sm border-start border-4
-          {% if cnh_doc.status == 'APPROVED' %}border-success{% elif cnh_doc.status == 'PENDING' %}border-warning{% else %}border-danger{% endif %}">
-      {% else %}
-        <div class="card h-100 border-0 shadow-sm border-start border-4 border-secondary">
-      {% endif %}
-          <div class="card-body">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-              <span class="fw-semibold">CNH</span>
-              {% if cnh_doc %}
-                <span class="badge
-                  {% if cnh_doc.status == 'APPROVED' %}bg-success
-                  {% elif cnh_doc.status == 'PENDING' %}bg-warning text-dark
-                  {% else %}bg-danger{% endif %}">
-                  {{ cnh_doc.get_status_display }}
-                </span>
-              {% else %}
-                <span class="badge bg-secondary">Nao enviado</span>
-              {% endif %}
-            </div>
-            <div class="small text-muted mb-2">Carteira Nacional de Habilitacao</div>
-            {% if cnh_doc %}
-              <div class="small text-muted">Enviado em {{ cnh_doc.uploaded_at|date:"d/m/Y" }}</div>
-              {% if cnh_doc.status == 'REJECTED' and cnh_doc.notes %}
-                <div class="alert alert-danger py-1 px-2 small mt-2 mb-2">
-                  <strong>Motivo:</strong> {{ cnh_doc.notes }}
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title mb-3">
+            <i class="bi bi-shield-check me-2 text-primary"></i>Status da Verificação
+          </h5>
+          
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="d-flex align-items-center p-3 bg-light rounded">
+                <i class="bi bi-person-badge fs-3 me-3 {% if is_verified %}text-success{% else %}text-warning{% endif %}"></i>
+                <div>
+                  <div class="fw-semibold">Verificação do Perfil</div>
+                  <div class="small text-muted">
+                    {% if is_verified %}
+                      <span class="text-success">✓ Verificado pela equipe</span>
+                    {% else %}
+                      <span class="text-warning">◷ Em análise pela equipe administrativa</span>
+                    {% endif %}
+                  </div>
                 </div>
-              {% endif %}
-              {% if can_upload_cnh %}
-                <a href="{% url 'verification:document_upload' %}" class="btn btn-sm btn-outline-danger mt-2">
-                  <i class="bi bi-arrow-clockwise me-1"></i>Reenviar
-                </a>
-              {% endif %}
-            {% else %}
-              <a href="{% url 'verification:document_upload' %}" class="btn btn-sm btn-outline-primary mt-2">
-                <i class="bi bi-upload me-1"></i>Enviar agora
-              </a>
-            {% endif %}
-          </div>
-        </div>
-    </div>
-
-    {# Certificado card #}
-    <div class="col-sm-6 col-lg-4">
-      {% if cert_doc %}
-        <div class="card h-100 border-0 shadow-sm border-start border-4
-          {% if cert_doc.status == 'APPROVED' %}border-success{% elif cert_doc.status == 'PENDING' %}border-warning{% else %}border-danger{% endif %}">
-      {% else %}
-        <div class="card h-100 border-0 shadow-sm border-start border-4 border-secondary">
-      {% endif %}
-          <div class="card-body">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-              <span class="fw-semibold">Certificado</span>
-              {% if cert_doc %}
-                <span class="badge
-                  {% if cert_doc.status == 'APPROVED' %}bg-success
-                  {% elif cert_doc.status == 'PENDING' %}bg-warning text-dark
-                  {% else %}bg-danger{% endif %}">
-                  {{ cert_doc.get_status_display }}
-                </span>
-              {% else %}
-                <span class="badge bg-secondary">Nao enviado</span>
-              {% endif %}
+              </div>
             </div>
-            <div class="small text-muted mb-2">Certificado de Instrutor</div>
-            {% if cert_doc %}
-              <div class="small text-muted">Enviado em {{ cert_doc.uploaded_at|date:"d/m/Y" }}</div>
-              {% if cert_doc.status == 'REJECTED' and cert_doc.notes %}
-                <div class="alert alert-danger py-1 px-2 small mt-2 mb-2">
-                  <strong>Motivo:</strong> {{ cert_doc.notes }}
+            
+            <div class="col-md-6">
+              <div class="d-flex align-items-center p-3 bg-light rounded">
+                <i class="bi bi-file-earmark-person fs-3 me-3 text-info"></i>
+                <div>
+                  <div class="fw-semibold">Documentação</div>
+                  <div class="small text-muted">Verificação automática via CPF</div>
                 </div>
-              {% endif %}
-              {% if can_upload_cert %}
-                <a href="{% url 'verification:document_upload' %}" class="btn btn-sm btn-outline-danger mt-2">
-                  <i class="bi bi-arrow-clockwise me-1"></i>Reenviar
-                </a>
-              {% endif %}
-            {% else %}
-              <a href="{% url 'verification:document_upload' %}" class="btn btn-sm btn-outline-primary mt-2">
-                <i class="bi bi-upload me-1"></i>Enviar agora
-              </a>
-            {% endif %}
+              </div>
+            </div>
           </div>
+          
+          {% if not is_verified %}
+            <div class="alert alert-warning border-0 mt-3 mb-0">
+              <i class="bi bi-clock-history me-2"></i>
+              Seu perfil está em análise. Nossa equipe está validando seus dados através do CPF cadastrado. 
+              Você será notificado assim que a verificação for concluída.
+            </div>
+          {% endif %}
         </div>
+      </div>
     </div>
+  </div>
 
     {# Info / tip card #}
     <div class="col-sm-12 col-lg-4">
@@ -151,13 +121,13 @@
 
   </div>{# /row #}
 
-  {# History table #}
-  <div class="card shadow-sm border-0">
-    <div class="card-header fw-semibold">
-      <i class="bi bi-clock-history me-1"></i>Historico de Envios
-    </div>
-    <div class="card-body p-0">
-      {% if documents %}
+  {# History table - Only show if there are documents already uploaded #}
+  {% if documents %}
+    <div class="card shadow-sm border-0">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-clock-history me-1"></i>Histórico de Documentos (Antigos)
+      </div>
+      <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
@@ -165,8 +135,7 @@
                 <th>Tipo</th>
                 <th>Status</th>
                 <th>Enviado em</th>
-                <th>Selfie</th>
-                <th>Observacoes</th>
+                <th>Observações</th>
               </tr>
             </thead>
             <tbody>
@@ -183,13 +152,6 @@
                 </td>
                 <td>{{ doc.uploaded_at|date:"d/m/Y H:i" }}</td>
                 <td>
-                  {% if doc.selfie %}
-                    <i class="bi bi-check-circle-fill text-success" title="Selfie enviada"></i>
-                  {% else %}
-                    <i class="bi bi-dash text-muted"></i>
-                  {% endif %}
-                </td>
-                <td>
                   {% if doc.status == 'REJECTED' and doc.notes %}
                     <span class="text-danger small">{{ doc.notes }}</span>
                   {% else %}
@@ -201,19 +163,9 @@
             </tbody>
           </table>
         </div>
-      {% else %}
-        <div class="p-4 text-center text-muted">
-          <i class="bi bi-inbox fs-2 d-block mb-2"></i>
-          Nenhum documento enviado ainda.
-          <div class="mt-3">
-            <a href="{% url 'verification:document_upload' %}" class="btn btn-primary btn-sm">
-              <i class="bi bi-cloud-upload-fill me-1"></i>Enviar primeiro documento
-            </a>
-          </div>
-        </div>
-      {% endif %}
+      </div>
     </div>
-  </div>
+  {% endif %}
 
 </div>
 {% endblock %}

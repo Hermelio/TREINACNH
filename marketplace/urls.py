@@ -16,6 +16,7 @@ urlpatterns = [
     # Instructor management (authenticated) - must come before dynamic routes
     path('meu-perfil/editar/', views.instructor_profile_edit_view, name='instructor_profile_edit'),
     path('meus-leads/', views.my_leads_view, name='my_leads'),
+    path('reverificar/', views.request_reverification_view, name='request_reverification'),
     path('lead/<int:lead_pk>/atualizar/', views.lead_update_status_view, name='lead_update_status'),
     
     # Public pages - ÚNICA versão: Instrutores por Cidade

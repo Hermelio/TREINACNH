@@ -277,7 +277,20 @@ class InstructorProfile(models.Model):
         default=False,
         help_text='Instrutor com documentos aprovados'
     )
-    
+
+    # Verification denial (admin action: "Não autorizado")
+    verification_denied = models.BooleanField(
+        'Verificação Negada',
+        default=False,
+        help_text='Admin marcou verificação como não autorizada pelo Detran'
+    )
+    verification_denied_at = models.DateTimeField(
+        'Data da Negação',
+        null=True,
+        blank=True,
+        help_text='Data e hora em que a verificação foi negada pelo admin'
+    )
+
     # Statistics
     total_students = models.PositiveIntegerField(
         'Total de Alunos',
@@ -341,6 +354,20 @@ class InstructorProfile(models.Model):
         default=False,
         help_text='E-mail de bloqueio enviado'
     )
+
+    # Pioneer Program (closed list – do NOT set automatically)
+    is_pioneer = models.BooleanField(
+        'Instrutor Pioneiro',
+        default=False,
+        db_index=True,
+        help_text='Concedido manualmente a instrutores pioneiros cadastrados na lista fechada'
+    )
+    pioneer_free_until = models.DateField(
+        'Plano Grátis até (Pioneiro)',
+        null=True,
+        blank=True,
+        help_text='Data até a qual o pioneiro possui plano gratuito (60 dias)'
+    )
     
     # Metadata
     created_at = models.DateTimeField('Criado em', auto_now_add=True)
@@ -402,13 +429,27 @@ class InstructorProfile(models.Model):
             Q(end_date__isnull=True) | Q(end_date__gte=timezone.now().date())
         ).exists()
     
+    def is_pioneer_active(self):
+        """Return True if pioneer benefit is currently valid."""
+        from django.utils import timezone
+        return bool(
+            self.is_pioneer
+            and self.pioneer_free_until
+            and self.pioneer_free_until >= timezone.now().date()
+        )
+
     def can_receive_leads(self):
         """
         Check if instructor can receive leads.
         Returns True if:
+        - Pioneer benefit is active OR
         - Trial is active and not expired OR
         - Has an active paid subscription
         """
+        # Pioneer benefit
+        if self.is_pioneer_active():
+            return True
+
         # If trial is active and not expired
         if self.is_trial_active and not self.is_trial_expired():
             return True
@@ -432,8 +473,18 @@ class InstructorProfile(models.Model):
             'days_remaining': None,
             'is_trial': False,
             'has_subscription': False,
+            'is_pioneer': False,
         }
-        
+
+        # Pioneer benefit takes priority
+        if self.is_pioneer_active():
+            delta = self.pioneer_free_until - timezone.now().date()
+            status['can_receive_leads'] = True
+            status['is_pioneer'] = True
+            status['days_remaining'] = delta.days
+            status['reason'] = 'pioneer_active'
+            return status
+
         # Check trial
         if self.is_trial_active and not self.is_trial_expired():
             status['can_receive_leads'] = True
@@ -524,7 +575,11 @@ class InstructorProfile(models.Model):
         
         if self.is_verified:
             badge_list.append({'name': 'Verificado', 'class': 'success', 'icon': 'bi-patch-check-fill'})
-        
+
+        # Pioneer badge (explicit list only, never automatic)
+        if self.is_pioneer:
+            badge_list.append({'name': 'Instrutor Pioneiro', 'class': 'warning text-dark', 'icon': 'bi-trophy-fill'})
+
         # New instructor (created in last 30 days)
         from django.utils import timezone
         from datetime import timedelta

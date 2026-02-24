@@ -13,6 +13,25 @@
                     <h1 class="mb-4" style="color: #000000; font-weight: 700;">Cadastro Realizado com Sucesso!</h1>
                     
                     {% if user.profile.is_instructor %}
+
+                    <div class="alert alert-danger text-start mb-3 d-flex align-items-start gap-3" role="alert">
+                        <i class="bi bi-hourglass-split fs-4 mt-1 flex-shrink-0"></i>
+                        <div>
+                            <strong>Seu perfil só ficará disponível depois que sua credencial for validada.</strong><br>
+                            Tempo estimado: <strong>24h ~ 48h</strong> após o cadastro.
+                        </div>
+                    </div>
+
+                    <div class="alert alert-success text-start mb-4 d-flex align-items-start gap-3" role="alert">
+                        <i class="bi bi-pencil-square fs-4 mt-1 flex-shrink-0"></i>
+                        <div>
+                            <strong>Complete seu Perfil</strong> para ficar disponível automaticamente quando sua credencial for validada.<br>
+                            <a href="{% url 'marketplace:instructor_profile_edit' %}" class="btn btn-success btn-sm mt-2">
+                                <i class="bi bi-pencil-fill me-1"></i>Completar Perfil Agora
+                            </a>
+                        </div>
+                    </div>
+
                     <div class="alert alert-info text-start mb-4">
                         <h5 class="alert-heading" style="color: #000000;">
                             <i class="bi bi-info-circle-fill me-2"></i>Próximos Passos

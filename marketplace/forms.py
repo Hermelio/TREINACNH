@@ -17,7 +17,7 @@ class InstructorProfileForm(forms.ModelForm):
             'bio', 'neighborhoods_text', 'gender', 'age', 'years_experience',
             'has_own_car', 'car_model', 'categories', 'available_morning',
             'available_afternoon', 'available_evening', 'base_price_per_hour',
-            'price_notes', 'is_visible'
+            'price_notes'
         ]
         widgets = {
             'city': forms.Select(attrs={'class': 'form-select'}),
@@ -37,10 +37,6 @@ class InstructorProfileForm(forms.ModelForm):
             'available_evening': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'base_price_per_hour': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': '0.00'}),
             'price_notes': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Pacotes disponíveis'}),
-            'is_visible': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        }
-        labels = {
-            'is_visible': 'Meu perfil está visível para alunos',
         }
     
     def __init__(self, *args, **kwargs):
@@ -84,9 +80,6 @@ class InstructorProfileForm(forms.ModelForm):
             HTML('<h5 class="mb-3 mt-4">Preços (Opcional)</h5>'),
             Field('base_price_per_hour', css_class='mb-3'),
             Field('price_notes', css_class='mb-3'),
-            
-            HTML('<hr class="my-4">'),
-            Field('is_visible', wrapper_class='form-check mb-3'),
             
             Submit('submit', 'Salvar Perfil', css_class='btn btn-primary btn-lg')
         )

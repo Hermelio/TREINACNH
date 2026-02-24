@@ -131,6 +131,11 @@ class Profile(models.Model):
         default=True,
         help_text='Permite receber mensagens via WhatsApp'
     )
+    accept_service_offers = models.BooleanField(
+        'Aceita Ofertas de Serviços',
+        default=True,
+        help_text='Aluno aceita ser contactado por instrutores e auto-escolas com ofertas de serviços'
+    )
     accept_terms = models.BooleanField(
         'Aceita Termos de Uso',
         default=False,
@@ -188,7 +193,6 @@ class Profile(models.Model):
             and self.user.last_name
             and self.user.email
             and (self.phone or self.whatsapp_number)
-            and self.cpf
             and self.preferred_city_id
             and self.cnh_categories.exists()
         )

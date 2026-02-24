@@ -46,6 +46,11 @@ def plans_view(request):
     context = {
         'plans': plans,
         'active_subscription': active_subscription,
+        'seo_title': 'Planos para Instrutores de Trânsito | TreinaCNH',
+        'seo_description': (
+            'Conheça os planos da TreinaCNH para instrutores autônomos. '
+            'Apareça para alunos da sua região com preços acessíveis.'
+        ),
         'page_title': 'Planos para Instrutores',
     }
     return render(request, 'billing/plans.html', context)
@@ -257,7 +262,10 @@ def mercadopago_webhook(request):
     try:
         # Parse webhook data
         data = json.loads(request.body)
-        logger.info(f"Webhook received: {data}")
+        # Log only the notification type and data ID — never the full body (may contain PII)
+        notif_type = data.get('type', 'unknown')
+        notif_id = data.get('data', {}).get('id', 'none')
+        logger.info("Webhook received: type=%s id=%s", notif_type, notif_id)
 
         # Check notification type
         if data.get('type') == 'payment':

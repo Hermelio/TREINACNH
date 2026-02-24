@@ -132,7 +132,9 @@ else:
             'OPTIONS': {
                 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
                 'charset': 'utf8mb4',
+                'connect_timeout': 10,
             },
+            'CONN_MAX_AGE': 60,  # Reuse DB connections for 60 s per worker
         }
     }
 
@@ -191,12 +193,14 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=0, cast=int)
     SECURE_HSTS_INCLUDE_SUBDOMAINS = config('SECURE_HSTS_INCLUDE_SUBDOMAINS', default=False, cast=bool)
     SECURE_HSTS_PRELOAD = config('SECURE_HSTS_PRELOAD', default=False, cast=bool)
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    X_FRAME_OPTIONS = 'DENY'
-    SECURE_REFERRER_POLICY = 'same-origin'
     # Tell Django it's behind an HTTPS reverse proxy (nginx sets this header)
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Always-on headers (apply in dev AND prod — no reason to skip in DEBUG)
+SECURE_BROWSER_XSS_FILTER = True        # legacy IE header; harmless for modern browsers
+SECURE_CONTENT_TYPE_NOSNIFF = True      # X-Content-Type-Options: nosniff
+X_FRAME_OPTIONS = 'DENY'                # Clickjacking protection
+SECURE_REFERRER_POLICY = 'same-origin'  # Referrer-Policy
 
 # Additional Security Settings
 SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookie

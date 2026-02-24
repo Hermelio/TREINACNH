@@ -5,18 +5,34 @@ from django.utils import timezone
 from .models import NewsArticle, StaticPage
 
 
-class StaticViewSitemap(Sitemap):
-    priority = 0.9
+class PriorityPagesSitemap(Sitemap):
+    """Páginas que queremos como sitelinks — prioridade máxima."""
+    priority = 1.0
     changefreq = 'weekly'
 
     def items(self):
-        # Apenas nomes de URLs que existem em core/urls.py
         return [
             'core:home',
+            'marketplace:cities_list',
+            'accounts:register',
+            'billing:plans',
             'core:about',
-            'core:contact',
             'core:faq',
+        ]
+
+    def location(self, item):
+        return reverse(item)
+
+
+class StaticViewSitemap(Sitemap):
+    """Páginas estáticas de menor prioridade."""
+    priority = 0.4
+    changefreq = 'monthly'
+
+    def items(self):
+        return [
             'core:news_list',
+            'core:contact',
         ]
 
     def location(self, item):
@@ -25,7 +41,7 @@ class StaticViewSitemap(Sitemap):
 
 class StaticPageSitemap(Sitemap):
     """Páginas do model StaticPage (termos, politica, etc.)"""
-    priority = 0.4
+    priority = 0.3
     changefreq = 'yearly'
 
     def items(self):
@@ -43,11 +59,7 @@ class InstructorSitemap(Sitemap):
     changefreq = 'monthly'
 
     def items(self):
-        return InstructorProfile.objects.filter(
-            is_visible=True,
-            latitude__isnull=False,
-            longitude__isnull=False
-        )
+        return InstructorProfile.objects.filter(is_visible=True, is_verified=True)
 
     def lastmod(self, obj):
         return getattr(obj, 'updated_at', timezone.now())
@@ -55,7 +67,7 @@ class InstructorSitemap(Sitemap):
 
 class NewsSitemap(Sitemap):
     """Sitemap para notícias/blog (NewsArticle)"""
-    priority = 0.8
+    priority = 0.6
     changefreq = 'weekly'
 
     def items(self):
@@ -69,6 +81,7 @@ class NewsSitemap(Sitemap):
 
 
 sitemaps = {
+    'priority': PriorityPagesSitemap,
     'static': StaticViewSitemap,
     'paginas': StaticPageSitemap,
     'instrutores': InstructorSitemap,

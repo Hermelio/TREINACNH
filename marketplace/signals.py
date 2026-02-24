@@ -2,10 +2,27 @@
 Signals for marketplace app.
 Handles automatic notifications when instructors register and statistics updates.
 """
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import pre_save, post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 from .models import InstructorProfile, StudentLead, Lead, LeadStatusChoices
+
+
+@receiver(pre_save, sender=InstructorProfile)
+def sync_visibility_with_verification(sender, instance, **kwargs):
+    """
+    Auto-set is_visible based on is_verified.
+    Only admin can verify, so visibility is always admin-controlled.
+    When admin approves → is_visible=True; when admin revokes → is_visible=False.
+    """
+    if instance.pk:
+        try:
+            old = InstructorProfile.objects.get(pk=instance.pk)
+            if old.is_verified != instance.is_verified:
+                instance.is_visible = instance.is_verified
+        except InstructorProfile.DoesNotExist:
+            pass
+    # New profiles always start with is_visible=False (model default)
 
 
 @receiver(post_save, sender=InstructorProfile)

@@ -1,5 +1,13 @@
 {% extends 'base.html' %}
 
+{% block extra_css %}
+<style>
+.cnh-check-wrap > div > div { margin-bottom: 0.4rem; }
+.cnh-check-wrap label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; margin: 0; font-weight: 500; }
+.cnh-check-wrap input[type=checkbox] { width: 17px; height: 17px; cursor: pointer; accent-color: #0d6efd; flex-shrink: 0; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-5" style="padding-top: 7rem !important;">
     <div class="row">
@@ -35,6 +43,16 @@
                                 <span class="badge bg-success"><i class="bi bi-patch-check-fill me-1"></i>Verificado</span>
                             {% else %}
                                 <span class="badge bg-warning"><i class="bi bi-hourglass-split me-1"></i>Aguardando Verificação</span>
+                            {% endif %}
+                            {% if instructor_profile.is_pioneer %}
+                                <span class="badge bg-warning text-dark mt-1 d-block">
+                                    <i class="bi bi-trophy-fill me-1"></i>Instrutor Pioneiro
+                                </span>
+                                {% if instructor_profile.pioneer_free_until %}
+                                    <small class="text-muted d-block mt-1">
+                                        <i class="bi bi-calendar-check me-1"></i>Plano grátis até {{ instructor_profile.pioneer_free_until }}
+                                    </small>
+                                {% endif %}
                             {% endif %}
                         </div>
                     </div>
@@ -138,23 +156,14 @@
                 
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h5 class="card-title mb-4"><i class="bi bi-card-list me-2"></i>Categorias que Ensina</h5>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">{{ form.categories.label }}{% if form.categories.field.required %} *{% endif %}</label>
-                            <div class="row">
-                                {% for choice in form.categories %}
-                                    <div class="col-md-6">
-                                        <div class="form-check">
-                                            {{ choice }}
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                            {% if form.categories.errors %}
-                                <div class="text-danger small">{{ form.categories.errors }}</div>
-                            {% endif %}
-                        </div>
+                        <h5 class="card-title mb-1"><i class="bi bi-card-list me-2"></i>Categorias que Ensina</h5>
+                        <p class="text-muted small mb-3">Selecione todas as categorias que você está habilitado a lecionar</p>
+
+                        <div class="cnh-check-wrap">{{ form.categories }}</div>
+
+                        {% if form.categories.errors %}
+                            <div class="text-danger small mt-2">{{ form.categories.errors }}</div>
+                        {% endif %}
                     </div>
                 </div>
                 
@@ -210,14 +219,14 @@
                 
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h5 class="card-title mb-4"><i class="bi bi-eye me-2"></i>Visibilidade</h5>
-                        
-                        <div class="form-check form-switch">
-                            {{ form.is_visible }}
-                            <label class="form-check-label">{{ form.is_visible.label }}</label>
-                            <small class="form-text text-muted d-block mt-1">Quando ativado, seu perfil aparece nos resultados de busca</small>
-                            {% if form.is_visible.errors %}
-                                <div class="text-danger small">{{ form.is_visible.errors }}</div>
+                        <h5 class="card-title mb-3"><i class="bi bi-eye me-2"></i>Visibilidade</h5>
+                        <div class="alert alert-info mb-0 py-2">
+                            <i class="bi bi-shield-lock me-2"></i>
+                            A visibilidade do seu perfil é ativada automaticamente pelo admin após a aprovação do cadastro.
+                            {% if instructor_profile.is_visible %}
+                                <br><span class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>Seu perfil está visível para alunos.</span>
+                            {% else %}
+                                <br><span class="text-warning fw-semibold"><i class="bi bi-hourglass-split me-1"></i>Aguardando aprovação para ficar visível.</span>
                             {% endif %}
                         </div>
                     </div>
@@ -237,4 +246,5 @@
         </div>
     </div>
 </div>
+
 {% endblock %}

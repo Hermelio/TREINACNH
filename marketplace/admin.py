@@ -5,7 +5,10 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.db.models import Count
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
+from django.urls import path
+from django.utils import timezone
+from datetime import timedelta
 import csv
 from .models import (
     State, City, CategoryCNH, InstructorProfile, Lead, StudentLead,
@@ -114,18 +117,21 @@ class CategoryCNHAdmin(admin.ModelAdmin):
 class InstructorProfileAdmin(admin.ModelAdmin):
     """Admin for InstructorProfile model"""
     list_display = (
-        'user_full_name', 'user_email', 'user_phone', 'user_cpf', 'city', 
-        'verification_status', 'is_visible', 'completion_badge', 'created_at',
+        'user_full_name', 'user_cpf', 'city', 'user_phone',
+        'verification_status', 'pioneer_badge', 'visible_badge',
+        'trial_status_badge', 'completion_badge', 'created_at',
     )
-    list_filter = ('is_verified', 'is_visible', 'gender', 'has_own_car', 'city__state', 'created_at')
+    list_display_links = ('user_full_name',)
+    list_per_page = 25
+    list_filter = ('is_verified', 'is_visible', 'is_trial_active', 'gender', 'has_own_car', 'city__state', 'created_at')
     search_fields = ('user__username', 'user__first_name', 'user__last_name', 'city__name', 'user__profile__cpf', 'user__profile__phone')
-    readonly_fields = ('created_at', 'updated_at', 'profile_completion_score')
+    readonly_fields = ('created_at', 'updated_at', 'profile_completion_score', 'user_cpf', 'verification_denied_at')
     filter_horizontal = ('categories',)
     date_hierarchy = 'created_at'
 
     fieldsets = (
         ('Usuário', {
-            'fields': ('user', 'city')
+            'fields': ('user', 'user_cpf', 'city')
         }),
         ('Informações Profissionais', {
             'fields': ('bio', 'neighborhoods_text', 'years_experience', 'categories')
@@ -143,7 +149,12 @@ class InstructorProfileAdmin(admin.ModelAdmin):
             'fields': ('base_price_per_hour', 'price_notes')
         }),
         ('Status', {
-            'fields': ('is_visible', 'is_verified', 'profile_completion_score')
+            'fields': ('is_visible', 'is_verified', 'profile_completion_score',
+                       'verification_denied', 'verification_denied_at')
+        }),
+        ('⏱ Trial Gratuito', {
+            'fields': ('is_trial_active', 'trial_start_date', 'trial_end_date'),
+            'description': 'Edite diretamente as datas ou use as ações em massa na listagem para adicionar/remover dias.',
         }),
         ('Metadados', {
             'fields': ('created_at', 'updated_at'),
@@ -177,29 +188,42 @@ class InstructorProfileAdmin(admin.ModelAdmin):
 
     def verification_status(self, obj):
         if obj.is_verified:
-            return format_html('<span style="background:#28a745;color:#fff;padding:4px 12px;border-radius:12px;font-weight:700;">✓ VERIFICADO</span>')
-        else:
-            return format_html('<span style="background:#ffc107;color:#000;padding:4px 12px;border-radius:12px;font-weight:700;">⏳ PENDENTE</span>')
+            return format_html('<span class="badge-verified">✓ Verificado</span>')
+        return format_html('<span class="badge-pending">⏳ Pendente</span>')
     verification_status.short_description = 'Status'
+
+    def pioneer_badge(self, obj):
+        if getattr(obj, 'is_pioneer', False):
+            return format_html('<span class="badge-pioneer">⭐ Pioneiro</span>')
+        return '—'
+    pioneer_badge.short_description = 'Pioneiro'
+
+    def visible_badge(self, obj):
+        if obj.is_visible:
+            return format_html('<span class="badge-visible">👁 Visível</span>')
+        return format_html('<span class="badge-hidden">🔒 Oculto</span>')
+    visible_badge.short_description = 'Visibilidade'
 
     def completion_badge(self, obj):
         try:
             score = obj.profile_completion_score
-            # Ensure it's a number (handle SafeString if present)
             if isinstance(score, str):
                 score = float(score.replace('%', '').strip())
             else:
                 score = float(score)
         except (ValueError, AttributeError):
             score = 0
-        
-        color = 'green' if score >= 80 else ('orange' if score >= 50 else 'red')
-        return format_html(
-            '<span style="color:{};font-weight:bold;">{}%</span>', color, int(score)
-        )
+        css = 'badge-active' if score >= 80 else ('badge-pending' if score >= 50 else 'badge-failed')
+        return format_html('<span class="{}">{}</span>', css, '{}%'.format(int(score)))
     completion_badge.short_description = 'Completude'
 
-    actions = ['approve_instructors', 'make_unverified', 'make_visible', 'make_invisible', 'export_to_csv']
+    actions = [
+        'approve_instructors', 'mark_not_authorized',
+        'make_unverified', 'make_visible', 'make_invisible', 'export_to_csv',
+        'trial_add_7', 'trial_add_14', 'trial_add_30',
+        'trial_sub_7', 'trial_sub_14',
+        'trial_custom_days',
+    ]
 
     def export_to_csv(self, request, queryset):
         """Export selected instructors to CSV"""
@@ -272,6 +296,27 @@ class InstructorProfileAdmin(admin.ModelAdmin):
         )
     approve_instructors.short_description = '✅ APROVAR INSTRUTORES (após validação manual dos dados)'
 
+    def mark_not_authorized(self, request, queryset):
+        """Mark instructors as not authorized by Detran. Hides profile and shows denial notice."""
+        count = 0
+        for instructor in queryset:
+            instructor.is_verified = False
+            instructor.is_visible = False
+            instructor.verification_denied = True
+            instructor.verification_denied_at = timezone.now()
+            instructor.save(update_fields=[
+                'is_verified', 'is_visible',
+                'verification_denied', 'verification_denied_at',
+            ])
+            count += 1
+        self.message_user(
+            request,
+            f'{count} instrutor(es) marcado(s) como Não Autorizado. '
+            'Perfis ocultados. Instrutor(es) verão aviso no painel.',
+            messages.WARNING,
+        )
+    mark_not_authorized.short_description = '🚫 Não autorizado (negado pelo Detran)'
+
     def make_unverified(self, request, queryset):
         updated = queryset.update(is_verified=False)
         self.message_user(request, f'{updated} instrutor(es) desmarcado(s) como verificado.')
@@ -286,6 +331,118 @@ class InstructorProfileAdmin(admin.ModelAdmin):
         updated = queryset.update(is_visible=False)
         self.message_user(request, f'{updated} instrutor(es) tornado(s) invisível(is).')
     make_invisible.short_description = 'Tornar invisível'
+
+    # ---- Trial management helpers ----
+
+    def trial_status_badge(self, obj):
+        if not obj.is_trial_active:
+            if obj.trial_end_date and obj.trial_end_date < timezone.now():
+                return format_html('<span class="badge-trial-exp">⛔ Expirado</span>')
+            return format_html('<span class="badge-inactive">— Sem trial</span>')
+        if obj.trial_end_date:
+            remaining = (obj.trial_end_date - timezone.now()).days
+            if remaining < 0:
+                return format_html('<span class="badge-trial-exp">⛔ Expirado</span>')
+            css = 'badge-active' if remaining > 7 else ('badge-pending' if remaining > 2 else 'badge-failed')
+            return format_html('<span class="{}">⏱ {} dia(s)</span>', css, remaining)
+        return format_html('<span class="badge-trial">Ativo</span>')
+    trial_status_badge.short_description = 'Trial'
+
+    def _adjust_trial(self, request, queryset, days):
+        updated = 0
+        for instructor in queryset:
+            if instructor.trial_end_date:
+                instructor.trial_end_date = instructor.trial_end_date + timedelta(days=days)
+            else:
+                # Se ainda não tem trial, cria a partir de agora
+                instructor.trial_start_date = timezone.now()
+                instructor.trial_end_date = timezone.now() + timedelta(days=max(days, 0))
+                instructor.is_trial_active = True
+            # Reativa trial se foi adicionado dias e estava inativo/expirado
+            if days > 0 and instructor.trial_end_date > timezone.now():
+                instructor.is_trial_active = True
+            instructor.save(update_fields=['trial_start_date', 'trial_end_date', 'is_trial_active'])
+            updated += 1
+        verb = f'+{days}' if days > 0 else str(days)
+        self.message_user(
+            request,
+            f'{updated} instrutor(es) ajustado(s): {verb} dia(s) no trial.',
+            messages.SUCCESS,
+        )
+
+    def trial_add_7(self, request, queryset):
+        self._adjust_trial(request, queryset, 7)
+    trial_add_7.short_description = '⏱ Trial: adicionar +7 dias'
+
+    def trial_add_14(self, request, queryset):
+        self._adjust_trial(request, queryset, 14)
+    trial_add_14.short_description = '⏱ Trial: adicionar +14 dias'
+
+    def trial_add_30(self, request, queryset):
+        self._adjust_trial(request, queryset, 30)
+    trial_add_30.short_description = '⏱ Trial: adicionar +30 dias'
+
+    def trial_sub_7(self, request, queryset):
+        self._adjust_trial(request, queryset, -7)
+    trial_sub_7.short_description = '⏱ Trial: remover -7 dias'
+
+    def trial_sub_14(self, request, queryset):
+        self._adjust_trial(request, queryset, -14)
+    trial_sub_14.short_description = '⏱ Trial: remover -14 dias'
+
+    def trial_custom_days(self, request, queryset):
+        """Ação com formulário intermediário para número personalizado de dias."""
+        if 'apply' in request.POST:
+            try:
+                days = int(request.POST.get('days', 0))
+            except (ValueError, TypeError):
+                self.message_user(request, 'Valor inválido. Digite um número inteiro.', messages.ERROR)
+                return
+            self._adjust_trial(request, queryset, days)
+            return
+
+        # Monta o formulário intermediário inline
+        ids = request.POST.getlist('_selected_action')
+        names = ', '.join(
+            inst.user.get_full_name() or inst.user.username
+            for inst in queryset[:5]
+        )
+        extra = f' e mais {queryset.count() - 5}...' if queryset.count() > 5 else ''
+        form_html = f"""
+        <html><head><title>Ajustar Trial</title>
+        <style>
+            body {{font-family:Arial,sans-serif;margin:40px;color:#333}}
+            .box {{background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;padding:30px;max-width:480px}}
+            h2 {{margin-top:0;color:#495057}}
+            label {{display:block;margin-bottom:6px;font-weight:bold}}
+            input[type=number] {{width:120px;padding:8px;font-size:16px;border:1px solid #ced4da;border-radius:4px}}
+            .hint {{color:#6c757d;font-size:13px;margin-top:4px}}
+            .btns {{margin-top:20px}}
+            .btn-primary {{background:#007bff;color:#fff;border:none;padding:10px 24px;border-radius:4px;font-size:15px;cursor:pointer}}
+            .btn-cancel {{background:#6c757d;color:#fff;border:none;padding:10px 18px;border-radius:4px;font-size:15px;cursor:pointer;margin-left:10px;text-decoration:none}}
+        </style></head><body>
+        <div class="box">
+            <h2>⏱ Ajustar Trial Personalizado</h2>
+            <p>Instrutores selecionados: <strong>{names}{extra}</strong></p>
+            <form method="post">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{self._get_csrf_token(request)}"/>
+                <input type="hidden" name="action" value="trial_custom_days"/>
+                {''.join(f'<input type="hidden" name="_selected_action" value="{i}"/>' for i in ids)}
+                <label for="days">Dias a ajustar:</label>
+                <input type="number" id="days" name="days" value="7" min="-365" max="365" required/>
+                <div class="hint">Use número positivo para adicionar dias ou negativo para remover. Ex: 7 ou -7</div>
+                <div class="btns">
+                    <button type="submit" name="apply" value="1" class="btn-primary">✔ Aplicar</button>
+                    <a href="../" class="btn-cancel">Cancelar</a>
+                </div>
+            </form>
+        </div></body></html>"""
+        return HttpResponse(form_html)
+    trial_custom_days.short_description = '⏱ Trial: ajustar número personalizado de dias'
+
+    def _get_csrf_token(self, request):
+        from django.middleware.csrf import get_token
+        return get_token(request)
 
 
 @admin.register(Lead)

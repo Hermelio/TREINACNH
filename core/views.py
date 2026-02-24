@@ -5,6 +5,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Count, Q, OuterRef, Subquery
 from marketplace.models import State, City, InstructorProfile
 from .models import StaticPage, FAQEntry, HomeBanner, NewsArticle
+from accounts.models import Profile
 from .seo import get_page_seo, build_seo
 from django.http import HttpResponse
 from django.views.decorators.http import require_GET
@@ -26,7 +27,14 @@ def robots_txt(request):
     lines = [
         "User-Agent: *",
         "Disallow: /admin/",
-        "Disallow: /contas/",
+        "Disallow: /contas/entrar/",
+        "Disallow: /contas/sair/",
+        "Disallow: /contas/painel/",
+        "Disallow: /contas/perfil/",
+        "Disallow: /contas/completar",
+        "Disallow: /contas/cadastro-sucesso/",
+        "Disallow: /contas/senha/",
+        "Allow: /contas/registrar/",
         "Allow: /",
         f"Sitemap: {site_url}/sitemap.xml",
     ]
@@ -73,7 +81,8 @@ def home_view(request):
     
     # Stats
     total_instructors = InstructorProfile.objects.filter(is_visible=True, is_verified=True).count()
-    total_students = StudentLead.objects.count()
+    # Soma: leads antigos importados + alunos novos cadastrados no portal
+    total_students = StudentLead.objects.count() + Profile.objects.filter(role='STUDENT').count()
     total_cities = City.objects.filter(is_active=True).annotate(
         instructor_count=Count('instructors', filter=Q(instructors__is_visible=True))
     ).filter(instructor_count__gt=0).count()
@@ -228,10 +237,54 @@ def about_view(request):
 
 
 def contact_view(request):
-    """Contact page"""
+    """Contact page with email functionality"""
+    from django.contrib import messages
+    from django.core.mail import send_mail
+    from django.conf import settings
+    
     if request.method == 'POST':
-        from django.contrib import messages
-        messages.success(request, 'Mensagem enviada com sucesso! Responderemos em breve.')
+        # Get form data
+        name = request.POST.get('name', '').strip()
+        email = request.POST.get('email', '').strip()
+        subject = request.POST.get('subject', '').strip()
+        message = request.POST.get('message', '').strip()
+        
+        # Validate required fields
+        if not all([name, email, subject, message]):
+            messages.error(request, 'Por favor, preencha todos os campos.')
+            context = get_page_seo('core:contact')
+            return render(request, 'core/contact.html', context)
+        
+        # Prepare email content
+        email_subject = f"[CONTATO] {subject}"
+        email_message = f"""
+Nova mensagem de contato recebida através do site TreinaCNH:
+
+Nome: {name}
+E-mail: {email}
+Assunto: {subject}
+
+Mensagem:
+{message}
+
+---
+Esta mensagem foi enviada através do formulário de contato do site.
+        """
+        
+        try:
+            # Send email to treinacnh@gmail.com
+            send_mail(
+                subject=email_subject,
+                message=email_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=['treinacnh@gmail.com'],
+                fail_silently=False,
+            )
+            messages.success(request, 'Mensagem enviada com sucesso! Responderemos em breve.')
+        except Exception as e:
+            # Log the error (in production) and show user-friendly message
+            print(f"Erro ao enviar email de contato: {e}")
+            messages.error(request, 'Erro ao enviar mensagem. Por favor, tente novamente mais tarde ou entre em contato por email: treinacnh@gmail.com')
     
     context = get_page_seo('core:contact')
     return render(request, 'core/contact.html', context)

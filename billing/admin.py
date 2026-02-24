@@ -48,10 +48,9 @@ class SubscriptionAdmin(admin.ModelAdmin):
     instructor_name.short_description = 'Instrutor'
     
     def is_active_badge(self, obj):
-        is_active = obj.is_active
-        color = 'green' if is_active else 'red'
-        text = 'Sim' if is_active else 'Não'
-        return format_html('<span style="color: {}; font-weight: bold;">{}</span>', color, text)
+        if obj.is_active:
+            return format_html('<span class="badge-active">✓ Ativo</span>')
+        return format_html('<span class="badge-inactive">✗ Inativo</span>')
     is_active_badge.short_description = 'Ativo agora'
     
     actions = ['activate_subscriptions', 'pause_subscriptions']
@@ -70,7 +69,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
     """Admin for Payment model"""
-    list_display = ('external_id', 'subscription_instructor', 'amount', 'payment_method', 'status', 'paid_at', 'created_at')
+    list_display = ('external_id', 'subscription_instructor', 'amount', 'payment_method', 'payment_status_badge', 'paid_at', 'created_at')
     list_filter = ('status', 'payment_method', 'created_at')
     search_fields = ('external_id', 'subscription__instructor__user__username', 'preference_id')
     readonly_fields = ('created_at', 'updated_at', 'external_id', 'preference_id', 'payment_details')
@@ -93,6 +92,13 @@ class PaymentAdmin(admin.ModelAdmin):
     def subscription_instructor(self, obj):
         return obj.subscription.instructor.user.get_full_name()
     subscription_instructor.short_description = 'Instrutor'
+
+    def payment_status_badge(self, obj):
+        css_map = {'PAID': 'badge-paid', 'PENDING': 'badge-pending', 'FAILED': 'badge-failed', 'PROCESSING': 'badge-processing'}
+        css = css_map.get(obj.status, 'badge-inactive')
+        return format_html('<span class="{}">{}</span>', css, obj.get_status_display())
+    payment_status_badge.short_description = 'Status'
+    payment_status_badge.admin_order_field = 'status'
     
     def has_add_permission(self, request):
         # Payments are created automatically
@@ -128,10 +134,9 @@ class HighlightAdmin(admin.ModelAdmin):
     instructor_name.short_description = 'Instrutor'
     
     def is_current_badge(self, obj):
-        is_current = obj.is_current
-        color = 'green' if is_current else 'gray'
-        text = 'Ativo agora' if is_current else 'Inativo'
-        return format_html('<span style="color: {}; font-weight: bold;">{}</span>', color, text)
+        if obj.is_current:
+            return format_html('<span class="badge-active">✓ Ativo agora</span>')
+        return format_html('<span class="badge-inactive">Inativo</span>')
     is_current_badge.short_description = 'Status Atual'
     
     actions = ['activate_highlights', 'deactivate_highlights']
